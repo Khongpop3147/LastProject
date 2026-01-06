@@ -1,0 +1,12 @@
+{
+  "github": {
+    "enabled": false,
+    "silent": true
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ]
+}
