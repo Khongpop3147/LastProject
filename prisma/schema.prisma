@@ -1,121 +1,135 @@
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  role         String   @default("USER")
-  addresses    Address[]
-  cart         Cart?
-  orders       Order[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  passwordResetTokens  PasswordResetToken[]
+  id                  String               @id @default(uuid())
+  name                String
+  email               String               @unique
+  passwordHash        String
+  role                String               @default("USER")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  addresses           Address[]
+  cart                Cart?
+  orders              Order[]
+  passwordResetTokens PasswordResetToken[]
 }
 
+/// Categories with locales
 model Category {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id           String             @id @default(uuid())
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  products     Product[]
+  translations CategoryLocale[]
 }
 
+model CategoryLocale {
+  id         String    @id @default(uuid())
+  category   Category  @relation(fields: [categoryId], references: [id])
+  categoryId String
+  locale     String    // 'th' | 'en'
+  name       String
+  @@unique([categoryId, locale])
+}
+
+/// Products with locales
 model Product {
+  id           String              @id @default(uuid())
+  price        Float
+  categoryId   String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  salePrice    Float?
+  isFeatured   Boolean             @default(false)
+  stock        Int                 @default(0)
+  imageUrl     String?
+  category     Category?           @relation(fields: [categoryId], references: [id])
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  translations ProductLocale[]
+}
+
+model ProductLocale {
   id          String    @id @default(uuid())
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   String
+  locale      String    // 'th' | 'en'
   name        String
   description String?
-  price       Float
-  salePrice   Float?
-  imageUrl    String?
-  stock       Int       @default(0)
-  isFeatured   Boolean  @default(false)  
-  category    Category? @relation(fields: [categoryId], references: [id])
-  categoryId  String?
-  orderItems  OrderItem[]
-  cartItems   CartItem[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  @@unique([productId, locale])
 }
 
 model Cart {
   id        String     @id @default(uuid())
-  user      User       @relation(fields: [userId], references: [id])
   userId    String     @unique
-  items     CartItem[]
-  createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id])
+  items     CartItem[]
 }
 
 model CartItem {
-  id        String   @id @default(uuid())
-  cart      Cart     @relation(fields: [cartId], references: [id])
+  id        String  @id @default(uuid())
   cartId    String
-  product   Product  @relation(fields: [productId], references: [id])
   productId String
-  quantity  Int      @default(1)
-
+  quantity  Int     @default(1)
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
   @@unique([cartId, productId])
 }
 
-
 model Order {
   id            String      @id @default(uuid())
-  user          User        @relation(fields: [userId], references: [id])
   userId        String
-  recipient     String
-  line1         String
-  line2         String?
-  line3         String? 
-  city          String
-  postalCode    String?
-  country       String
   status        String      @default("PENDING")
   totalAmount   Float
   paymentMethod String?
-  slipUrl       String?     // เพิ่มตรงนี้เพื่อเก็บลิงก์สลิป
-  items         OrderItem[]
-  coupon        Coupon?     @relation(fields: [couponId], references: [id])
   couponId      String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  slipUrl       String?
+  city          String
+  country       String
+  line1         String
+  line2         String?
+  postalCode    String?
+  recipient     String
+  line3         String?
+  coupon        Coupon?     @relation(fields: [couponId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  items         OrderItem[]
 }
 
-
-
-
 model OrderItem {
-  id              String   @id @default(uuid())
-  order           Order    @relation(fields: [orderId], references: [id])
+  id              String  @id @default(uuid())
   orderId         String
-  product         Product  @relation(fields: [productId], references: [id])
   productId       String
   quantity        Int
   priceAtPurchase Float
+  order           Order   @relation(fields: [orderId], references: [id])
+  product         Product @relation(fields: [productId], references: [id])
 }
 
 model Coupon {
-  id            String   @id @default(uuid())
-  code          String   @unique
+  id            String    @id @default(uuid())
+  code          String    @unique
   discountType  String
   discountValue Float
   usageLimit    Int?
-  usedCount     Int      @default(0)
+  usedCount     Int       @default(0)
   expiresAt     DateTime?
   orders        Order[]
 }
 
 model Address {
   id         String  @id @default(uuid())
-  user       User    @relation(fields: [userId], references: [id])
   userId     String
   recipient  String
   line1      String
@@ -123,6 +137,7 @@ model Address {
   city       String
   postalCode String
   country    String
+  user       User    @relation(fields: [userId], references: [id])
 }
 
 model AuditLog {
@@ -134,50 +149,84 @@ model AuditLog {
   timestamp   DateTime @default(now())
 }
 
+/// FAQ with locales
 model Faq {
-  id         String   @id @default(uuid())
-  question   String
-  answer     String?  // ถ้ายังไม่มีคำตอบ ให้เป็น null
-  createdAt  DateTime @default(now())
+  id           String        @id @default(uuid())
+  createdAt    DateTime      @default(now())
+  translations FaqLocale[]
 }
 
+model FaqLocale {
+  id       String @id @default(uuid())
+  faq      Faq    @relation(fields: [faqId], references: [id])
+  faqId    String
+  locale   String // 'th' | 'en'
+  question String
+  answer   String?
+  @@unique([faqId, locale])
+}
+
+/// Banner with locales
 model Banner {
-  id        String   @id @default(uuid())
-  title     String?
+  id           String           @id @default(uuid())
+  imageUrl     String
+  position     String           @default("hero")
+  order        Int              @default(0)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  translations BannerLocale[]
+}
+
+model BannerLocale {
+  id          String   @id @default(uuid())
+  bannerId    String
+  banner      Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  locale      String   // 'th' | 'en'
+  title       String?
+  sub         String?
   description String?
-  sub       String?
-  imageUrl  String
-  order     Int      @default(0)
-  position  String   @default("hero")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@unique([bannerId, locale])
+}
+
+/// SubBanner with locales
+model SubBanner {
+  id           String              @id @default(uuid())
+  buttonLink   String
+  imageUrl     String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  translations SubBannerLocale[]
+}
+
+model SubBannerLocale {
+  id          String     @id @default(uuid())
+  subBanner   SubBanner  @relation(fields: [subBannerId], references: [id])
+  subBannerId String
+  locale      String     // 'th' | 'en'
+  title       String
+  description String
+  buttonText  String
+  @@unique([subBannerId, locale])
 }
 
 model PasswordResetToken {
   id        String   @id @default(cuid())
   token     String   @unique
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
   expiresAt DateTime
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Supplier {
-  id           String   @id @default(uuid())
-  companyName  String
-  productName  String
-  stock        Int      @default(0)
-  unitPrice    Float    @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model SubBanner {
   id          String   @id @default(uuid())
-  title       String
-  description String
-  buttonText  String
-  buttonLink  String
+  companyName String
+  productName String
+  stock       Int      @default(0)
+  unitPrice   Float    @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
