@@ -174,17 +174,20 @@ model Banner {
   order        Int              @default(0)
   createdAt    DateTime         @default(now())
   updatedAt    DateTime         @updatedAt
+
   translations BannerLocale[]
 }
 
 model BannerLocale {
-  id          String  @id @default(uuid())
-  banner      Banner  @relation(fields: [bannerId], references: [id])
+  id          String   @id @default(uuid())
   bannerId    String
-  locale      String  // 'th' | 'en'
+  banner      Banner   @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  locale      String   // 'th' | 'en'
   title       String?
   sub         String?
   description String?
+
   @@unique([bannerId, locale])
 }
 
