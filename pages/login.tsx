@@ -30,7 +30,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     try {
-      // ส่ง flag form.remember เข้า login()
       await login(form.email, form.password, form.remember);
     } catch (err: any) {
       setError(err.message);
@@ -40,7 +39,7 @@ export default function LoginPage() {
   return (
     <Layout title="Login">
       <div className="flex h-screen">
-        {/* ฝั่งฟอร์ม */}
+        {/* --- ฝั่งซ้าย: ฟอร์ม --- */}
         <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-50 p-8">
           <div className="w-full max-w-sm">
             <h2 className="text-2xl font-bold text-blue-600 mb-6">
@@ -88,7 +87,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {/* Remember + Forgot (เหนือปุ่ม Log in) */}
+              {/* Remember + Forgot */}
               <div className="flex items-center justify-between text-sm mb-6">
                 <label className="flex items-center space-x-2">
                   <input
@@ -118,24 +117,46 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* OR */}
-            <div className="flex items-center my-6">
-              <hr className="flex-grow border-gray-300" />
-              <span className="mx-4 text-gray-500">OR</span>
-              <hr className="flex-grow border-gray-300" />
+            {/* Divider */}
+            <div className="flex items-center my-6 w-full">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink-0 mx-4 text-gray-500 text-sm">
+                Or continue with
+              </span>
+              <div className="flex-grow border-t border-gray-300"></div>
             </div>
 
-            {/* Sign up */}
+            {/* Social Button (Line) */}
+            <div className="flex justify-center mb-6">
+              <button
+                type="button"
+                onClick={() => console.log("Line Login")}
+                // ลบ border และ bg สีเดิมออก
+                // เพิ่ม hover:opacity-80 เพื่อให้เวลาเอาเมาส์ชี้แล้วรูปจางลงนิดนึง (User รู้ว่ากดได้)
+                // หรือใช้ hover:scale-110 ถ้าอยากให้ปุ่มขยาย
+                className="w-12 h-12 transition-all hover:opacity-80 hover:scale-105 active:scale-95"
+              >
+                <Image
+                  src="/images/line.png"
+                  alt="Line Login"
+                  width={48} // กำหนดขนาดจริงให้ชัดเจน (w-12 ใน Tailwind คือ 48px)
+                  height={48}
+                  className="w-full h-full object-cover rounded-lg" // ใส่ rounded-full ถ้ารูปเป็นวงกลม หรือลบออกถ้ารูปเป็นสี่เหลี่ยม
+                />
+              </button>
+            </div>
+
+            {/* Sign Up Button (แยกออกมาข้างล่าง) */}
             <button
               onClick={() => router.push("/register")}
-              className="w-full bg-blue-600 text-white py-2 rounded-full hover:bg-blue-700 transition"
+              className="w-full border-2 border-blue-600 text-blue-600 py-2 rounded-full hover:bg-blue-50 transition"
             >
               Sign up Now
             </button>
           </div>
-        </div>
-
-        {/* ฝั่งภาพประกอบ */}
+        </div>{" "}
+        {/* ✅ เพิ่ม div นี้กลับเข้ามา เพื่อปิดส่วนซ้าย */}
+        {/* --- ฝั่งขวา: ภาพประกอบ --- */}
         <div className="hidden md:block w-1/2 relative">
           <Image
             src="/images/image.png"
