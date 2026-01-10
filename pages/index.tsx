@@ -73,65 +73,91 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async () => {
   const rawHero = await prisma.banner.findMany({
     where: { position: "hero" },
     orderBy: { order: "asc" },
+    include: { translations: true },
   });
-  const banners: BannerSlide[] = rawHero.map((b) => ({
-    title: b.title ?? "",
-    sub: b.sub ?? "",
-    img: b.imageUrl,
-  }));
+  const banners: BannerSlide[] = rawHero.map((b) => {
+    const translation =
+      b.translations.find((t) => t.locale === "th") || b.translations[0];
+    return {
+      title: translation?.title ?? "",
+      sub: translation?.sub ?? "",
+      img: b.imageUrl,
+    };
+  });
 
   // 2. ดึง sub/promotional banners (position = "sub")
   const rawSub = await prisma.banner.findMany({
     where: { position: "sub" },
     orderBy: { order: "asc" },
+    include: { translations: true },
   });
-  const subBanners: BannerSlide[] = rawSub.map((b) => ({
-    title: b.title ?? "",
-    sub: b.sub ?? "",
-    img: b.imageUrl,
-  }));
+  const subBanners: BannerSlide[] = rawSub.map((b) => {
+    const translation =
+      b.translations.find((t) => t.locale === "th") || b.translations[0];
+    return {
+      title: translation?.title ?? "",
+      sub: translation?.sub ?? "",
+      img: b.imageUrl,
+    };
+  });
 
   // 3. ดึง featured products (เฉพาะที่ isFeatured = true)
   const rawFeatured = await prisma.product.findMany({
     where: { isFeatured: true },
     orderBy: { updatedAt: "desc" },
     take: 6,
+    include: { translations: true },
   });
-  const featured: Product[] = rawFeatured.map((p) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    price: p.price,
-    imageUrl: p.imageUrl,
-    stock: p.stock,
-    salePrice: p.salePrice ?? null,
-    isFeatured: p.isFeatured,
-  }));
+  const featured: Product[] = rawFeatured.map((p) => {
+    const translation =
+      p.translations.find((t) => t.locale === "th") || p.translations[0];
+    return {
+      id: p.id,
+      name: translation?.name ?? "",
+      description: translation?.description ?? null,
+      price: p.price,
+      imageUrl: p.imageUrl,
+      stock: p.stock,
+      salePrice: p.salePrice ?? null,
+      isFeatured: p.isFeatured,
+    };
+  });
 
   // 4. ดึง onSale products
   const rawOnSale = await prisma.product.findMany({
     where: { salePrice: { not: null } },
     orderBy: { updatedAt: "desc" },
     take: 8,
+    include: { translations: true },
   });
-  const onSale: Product[] = rawOnSale.map((p) => ({
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    price: p.price,
-    imageUrl: p.imageUrl,
-    stock: p.stock,
-    salePrice: p.salePrice!,
-    isFeatured: p.isFeatured,
-  }));
+  const onSale: Product[] = rawOnSale.map((p) => {
+    const translation =
+      p.translations.find((t) => t.locale === "th") || p.translations[0];
+    return {
+      id: p.id,
+      name: translation?.name ?? "",
+      description: translation?.description ?? null,
+      price: p.price,
+      imageUrl: p.imageUrl,
+      stock: p.stock,
+      salePrice: p.salePrice!,
+      isFeatured: p.isFeatured,
+    };
+  });
 
   // 5. ดึง categories
   const rawCategories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
+    include: {
+      translations: true,
+    },
+    orderBy: { id: "asc" },
   });
   const categories: Category[] = rawCategories.map((c) => ({
     id: c.id,
-    name: c.name,
+    name:
+      c.translations.find((t) => t.locale === "th")?.name ||
+      c.translations[0]?.name ||
+      "",
   }));
 
   return {
