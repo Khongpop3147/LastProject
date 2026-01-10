@@ -1,11 +1,13 @@
+// components/Layout.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import Head from "next/head";
+import Link from "next/link"; // ← เพิ่มตรงนี้
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import PromoModal from "./PromoModal";
-import CookieConsent from "./CookieConsent"; // import component cookie consent
+import CookieConsent from "./CookieConsent";
 import type { ReactNode } from "react";
 
 interface LayoutProps {
@@ -17,51 +19,56 @@ export default function Layout({
   children,
   title = "ICN_FREEZE",
 }: LayoutProps) {
-  // state ควบคุมการโชว์โปรโมชัน
   const [showPromo, setShowPromo] = useState(false);
-  // state ควบคุมการโชว์ popup cookie consent
   const [showCookieConsent, setShowCookieConsent] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      // ตรวจสอบ promo modal
       const seenPromo = localStorage.getItem("promoShown");
       if (!seenPromo) {
         setShowPromo(true);
         localStorage.setItem("promoShown", "true");
       }
-
-      // ตรวจสอบ cookie consent
-      const cookieConsent = localStorage.getItem("cookieConsent"); // หรือ Cookies.get("cookieConsent") ถ้าใช้ js-cookie
+      const cookieConsent = localStorage.getItem("cookieConsent");
       if (!cookieConsent) {
         setShowCookieConsent(true);
       }
     }
   }, []);
 
-  // ฟังก์ชันปิด cookie consent popup และเซ็ตสถานะ
   const handleCookieConsent = (accepted: boolean) => {
     localStorage.setItem("cookieConsent", accepted ? "true" : "false");
     setShowCookieConsent(false);
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-green-50">
+    <div className="flex flex-col min-h-screen bg-white">
       <Head>
         <title>{title}</title>
         <meta name="description" content="ตลาดสินค้าเกษตรสดใหม่ ICN_FREEZE" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* Navbar ชิดบนสุด */}
-      <header>
-        <Navbar />
+      {/* fixed header */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow">
+        <div className="flex items-center justify-between px-4 py-2">
+          {/* Language Switcher */}
+          <nav className="flex space-x-2">
+            <Link href="/" locale="th" className="hover:underline">
+              ไทย
+            </Link>
+            <span>|</span>
+            <Link href="/" locale="en" className="hover:underline">
+              EN
+            </Link>
+          </nav>
+          {/* Main Navbar */}
+          <Navbar />
+        </div>
       </header>
 
-      {/* แสดง modal โปรโมชัน */}
+      {/* promo + cookie */}
       <PromoModal show={showPromo} onClose={() => setShowPromo(false)} />
-
-      {/* แสดง popup cookie consent */}
       {showCookieConsent && (
         <CookieConsent
           onAccept={() => handleCookieConsent(true)}
@@ -69,12 +76,11 @@ export default function Layout({
         />
       )}
 
-      {/* เนื้อหาแต่ละหน้าหลัก ให้มี padding ด้านข้างตามดีไซน์ */}
-      <main className="flex-grow w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* content with top margin so it doesn't sit under the fixed header */}
+      <main className="flex-grow w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
         {children}
       </main>
 
-      {/* Footer กว้างเต็มจอ */}
       <Footer />
     </div>
   );

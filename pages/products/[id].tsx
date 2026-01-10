@@ -1,42 +1,62 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import type { GetServerSideProps } from "next";
+// pages/products/[id].tsx
+import { GetServerSideProps } from "next";
+import useTranslation from "next-translate/useTranslation";
 import Layout from "@/components/Layout";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Product as ProductType } from "@/types/product";
 import { useAuth } from "@/context/AuthContext";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 
 interface ProductPageProps {
-  product: ProductType & { createdAt: string; updatedAt: string };
+  product: {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    salePrice: number | null;
+    stock: number;
+    imageUrl: string | null;
+  } | null;
 }
 
 export default function ProductPage({ product }: ProductPageProps) {
+  const { t, lang } = useTranslation("common");
   const router = useRouter();
   const { token } = useAuth();
 
-  // ถ้า stock > 0 เริ่ม qty ที่ 1, ถ้า stock = 0 เริ่ม qty ที่ 0
-  const [qty, setQty] = useState(() => (product.stock > 0 ? 1 : 0));
+  if (!product) {
+    return (
+      <Layout title={t("notFound")}>
+        <div className="container py-16 text-center">
+          <h1 className="text-2xl font-semibold">{t("productNotFound")}</h1>
+          <Link href="/" className="text-blue-600 hover:underline">
+            ← {t("backHome")}
+          </Link>
+        </div>
+      </Layout>
+    );
+  }
+
+  const [qty, setQty] = useState(product.stock > 0 ? 1 : 0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ตรวจสอบ qty ให้ไม่เกิน stock และไม่ต่ำกว่า 1 (ในกรณี stock>0)
   useEffect(() => {
     if (product.stock === 0) {
       setQty(0);
-      setError("สินค้าหมด");
-      return;
-    }
-    // stock > 0
-    if (qty < 1) {
-      setQty(1);
-    } else if (qty > product.stock) {
-      setQty(product.stock);
-      setError(`สั่งได้สูงสุด ${product.stock} ชิ้น`);
+      setError(t("outOfStock"));
     } else {
-      setError("");
+      if (qty < 1) setQty(1);
+      if (qty > product.stock) {
+        setQty(product.stock);
+        setError(t("maxQty", { count: product.stock }));
+      } else {
+        setError("");
+      }
     }
-  }, [qty, product.stock]);
+  }, [qty, product.stock, t]);
 
   const addToCart = async () => {
     if (!token) {
@@ -44,28 +64,21 @@ export default function ProductPage({ product }: ProductPageProps) {
       return;
     }
     if (error || product.stock === 0) return;
-
     setLoading(true);
     try {
-      // ดึงตะกร้าเพื่อตรวจสอบยอดเดิม
       const cartRes = await fetch("/api/cart", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!cartRes.ok) throw new Error("ไม่สามารถดึงข้อมูลตะกร้าได้");
-      const cartData = await cartRes.json();
-      const items = cartData.items || [];
+      if (!cartRes.ok) throw new Error(t("cartFetchError"));
+      const { items } = await cartRes.json();
       const inCart = items.find((i: any) => i.productId === product.id);
       const current = inCart?.quantity ?? 0;
-
       if (current + qty > product.stock) {
-        setError(
-          `สั่งได้สูงสุด ${product.stock} ชิ้น (มีในตะกร้าแล้ว ${current} ชิ้น)`
-        );
+        setError(t("maxInCart", { stock: product.stock, current }));
         setLoading(false);
         return;
       }
 
-      // เพิ่มลงตะกร้า
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: {
@@ -74,12 +87,10 @@ export default function ProductPage({ product }: ProductPageProps) {
         },
         body: JSON.stringify({ productId: product.id, quantity: qty }),
       });
-      if (!res.ok) throw new Error("เพิ่มลงตะกร้าไม่สำเร็จ");
-
+      if (!res.ok) throw new Error(t("addCartError"));
       router.push("/cart");
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "เกิดข้อผิดพลาด ลองใหม่อีกครั้ง");
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
@@ -87,22 +98,18 @@ export default function ProductPage({ product }: ProductPageProps) {
 
   return (
     <Layout title={product.name}>
-      <div className="max-w-4xl mx-auto p-4 bg-white rounded-lg shadow">
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* รูปสินค้า */}
-          <div className="w-full md:w-1/2">
+          <div className="md:w-1/2">
             <img
               src={product.imageUrl || "/images/placeholder.png"}
               alt={product.name}
               className="w-full h-auto object-cover rounded"
             />
           </div>
-
-          {/* รายละเอียด */}
           <div className="flex-1">
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
             <p className="text-gray-600 mb-4">{product.description}</p>
-
             {product.salePrice != null ? (
               <div className="mb-4">
                 <span className="text-2xl text-red-600 font-bold mr-2">
@@ -115,15 +122,14 @@ export default function ProductPage({ product }: ProductPageProps) {
             ) : (
               <p className="text-xl text-green-700 mb-4">฿{product.price}</p>
             )}
-
-            <p className="mb-4">Stock: {product.stock}</p>
-
-            {/* กรณี stock = 0 */}
+            <p className="mb-4">
+              {t("stock")}: {product.stock}
+            </p>
             {product.stock === 0 ? (
-              <p className="text-red-600 font-semibold mb-4">สินค้าหมด</p>
+              <p className="text-red-600 font-semibold">{t("outOfStock")}</p>
             ) : (
               <div className="mb-4">
-                <label className="block mb-1">จำนวน:</label>
+                <label className="block mb-1">{t("quantity")}:</label>
                 <input
                   type="number"
                   min={1}
@@ -135,8 +141,6 @@ export default function ProductPage({ product }: ProductPageProps) {
                 {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
               </div>
             )}
-
-            {/* ปุ่มเพิ่มลงตะกร้า */}
             <button
               onClick={addToCart}
               disabled={loading || !!error || product.stock === 0}
@@ -147,15 +151,14 @@ export default function ProductPage({ product }: ProductPageProps) {
               }`}
             >
               {product.stock === 0
-                ? "ไม่สามารถซื้อได้"
+                ? t("cannotBuy")
                 : loading
-                ? "กำลังเพิ่ม..."
-                : "เพิ่มลงในตะกร้า"}
+                ? t("adding")
+                : t("addToCart")}
             </button>
-
             <div className="mt-4">
-              <Link href="/" className="text-blue-500 hover:underline">
-                &larr; กลับหน้าหลัก
+              <Link href="/" className="text-blue-600 hover:underline">
+                ← {t("backHome")}
               </Link>
             </div>
           </div>
@@ -167,23 +170,33 @@ export default function ProductPage({ product }: ProductPageProps) {
 
 export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
   params,
+  locale,
 }) => {
   const id = params?.id as string;
-  const p = await prisma.product.findUnique({ where: { id } });
-  if (!p) return { notFound: true };
+  const lang = locale ?? "th";
 
-  const product: ProductType & { createdAt: string; updatedAt: string } = {
-    id: p.id,
-    name: p.name,
-    description: p.description,
-    price: p.price,
-    imageUrl: p.imageUrl,
-    stock: p.stock,
-    isFeatured: p.isFeatured,
-    salePrice: p.salePrice ?? null,
-    createdAt: p.createdAt.toISOString(),
-    updatedAt: p.updatedAt.toISOString(),
+  const raw = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      translations: { where: { locale: lang }, take: 1 },
+    },
+  });
+  if (!raw) {
+    return { props: { product: null } };
+  }
+
+  const trans = raw.translations[0];
+  return {
+    props: {
+      product: {
+        id: raw.id,
+        name: trans?.name ?? "",
+        description: trans?.description ?? "",
+        price: raw.price,
+        salePrice: raw.salePrice,
+        stock: raw.stock,
+        imageUrl: raw.imageUrl,
+      },
+    },
   };
-
-  return { props: { product } };
 };

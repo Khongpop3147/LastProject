@@ -1,8 +1,9 @@
-/* next.config.js */
+const nextTranslate = require("next-translate-plugin");
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+module.exports = nextTranslate({
   reactStrictMode: true,
   swcMinify: true,
   images: { domains: [] },
-};
-module.exports = nextConfig;
+  // (i18n.json จะถูกอ่านจาก root โดยอัตโนมัติ)
+});

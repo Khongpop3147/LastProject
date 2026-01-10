@@ -5,13 +5,14 @@ import Layout from "@/components/AdminLayout";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { useState } from "react";
-import { adminGuard } from "@/lib/adminGuard";
+import { parseCookies } from "nookies";
+import { verify } from "jsonwebtoken";
 
 interface Faq {
   id: string;
   question: string;
   answer?: string | null;
-  createdAt: string; // serialize as string
+  createdAt: string; // serialized as ISO string
 }
 
 interface Props {
@@ -83,24 +84,53 @@ export default function AdminQaPage({ faqs }: Props) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async (ctx) =>
-  adminGuard(ctx, async () => {
-    const raw = await prisma.faq.findMany({
-      orderBy: { createdAt: "desc" },
-    });
+/**
+ * Only allow ADMIN users:
+ *  - checks for a JWT in cookies
+ *  - verifies and confirms role==='ADMIN'
+ *  - otherwise redirect to /login
+ */
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const cookies = parseCookies(ctx);
+  const token = cookies.token;
 
-    const faqs: Faq[] = raw.map((f) => ({
-      id: f.id,
-      question: f.question,
-      answer: f.answer,
-      createdAt: f.createdAt.toISOString(),
-    }));
+  if (!token) {
+    return {
+      redirect: { destination: "/login", permanent: false },
+    };
+  }
 
-    return { props: { faqs } };
+  let payload: any;
+  try {
+    payload = verify(token, process.env.JWT_SECRET!);
+  } catch {
+    return {
+      redirect: { destination: "/login", permanent: false },
+    };
+  }
+
+  if (payload.role !== "ADMIN") {
+    return {
+      redirect: { destination: "/login", permanent: false },
+    };
+  }
+
+  // Fetch all FAQs together with their translations
+  const raw = await prisma.faq.findMany({
+    include: { translations: true },
+    orderBy: { createdAt: "desc" },
   });
 
-// export const getServerSideProps: GetServerSideProps = async (ctx) =>
-//   adminGuard(ctx, async () => {
-//     // ถ้ามีข้อมูลฝั่งเซิร์ฟเวอร์จะ fetch มาใส่ใน props ได้ที่นี่
-//     return { props: {} };
-//   }); ถ้าอยากให้ต้อง login ก่อนเข้า admin
+  // Map into the shape we need, picking the Thai locale entry
+  const faqs: Faq[] = raw.map((f) => {
+    const tr = f.translations.find((t) => t.locale === "th");
+    return {
+      id: f.id,
+      question: tr?.question ?? "",
+      answer: tr?.answer ?? null,
+      createdAt: f.createdAt.toISOString(),
+    };
+  });
+
+  return { props: { faqs } };
+};

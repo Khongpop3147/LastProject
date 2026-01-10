@@ -10,8 +10,16 @@ export default async function handler(
 
   if (req.method === "DELETE") {
     try {
-      // ลบหมวดหมู่ โดย cascade constraint ถ้าต้องการ
-      await prisma.category.delete({ where: { id } });
+      // 1) ลบ translations (ถ้าไม่มี cascade)
+      await prisma.categoryLocale.deleteMany({
+        where: { categoryId: id },
+      });
+
+      // 2) ลบ Category
+      await prisma.category.delete({
+        where: { id },
+      });
+
       return res.status(204).end(); // No Content
     } catch (err: any) {
       return res.status(500).json({ error: err.message });

@@ -31,22 +31,31 @@ const parseForm = (req: NextApiRequest): Promise<Parsed> =>
 
     form.parse(req, (err, fields, files) => {
       if (err) return reject(err);
-      // cast fields to string
+
+      // normalize fields to string only
       const flds: Record<string, string> = {};
       for (const key in fields) {
-        const val = fields[key];
-        flds[key] = Array.isArray(val) ? val[0] ?? "" : val ?? "";
+        const raw = fields[key];
+        let txt = "";
+        if (Array.isArray(raw)) {
+          txt = typeof raw[0] === "string" ? raw[0] : "";
+        } else if (typeof raw === "string") {
+          txt = raw;
+        }
+        flds[key] = txt;
       }
-      // Normalize files: ensure each value is a single File, not File[]
+
+      // normalize files to single File
       const normalizedFiles: Record<string, File> = {};
       for (const key in files) {
-        const fileValue = files[key];
-        if (Array.isArray(fileValue)) {
-          normalizedFiles[key] = fileValue[0];
-        } else if (fileValue) {
-          normalizedFiles[key] = fileValue;
+        const fileVal = files[key];
+        if (Array.isArray(fileVal)) {
+          if (fileVal[0]) normalizedFiles[key] = fileVal[0];
+        } else if (fileVal) {
+          normalizedFiles[key] = fileVal;
         }
       }
+
       resolve({ fields: flds, files: normalizedFiles });
     });
   });
@@ -63,37 +72,77 @@ export default async function handler(
     return res.status(400).json({ error: "Invalid banner id" });
   }
 
-  // PUT: อัปเดตแบนเนอร์ (รองรับรูปใหม่และ position ด้วย)
+  // PUT: update banner with locale upsert
   if (req.method === "PUT") {
     try {
       const { fields, files } = await parseForm(req);
 
-      // แปลงค่า fields (รวม position)
-      const title = fields.title?.trim() || null;
-      const sub = fields.sub?.trim() || null;
-      const order = parseInt(fields.order || "0", 10);
-      const position = fields.position?.trim() || null;
-      const description = fields.description?.trim();
-      // เตรียม object สำหรับอัปเดต
-      const data: any = { order };
-      if (fields.hasOwnProperty("title")) data.title = title;
-      if (fields.hasOwnProperty("sub")) data.sub = sub;
-      if (position !== null) data.position = position;
-      if (description !== null) data.description = description;
-      // ถ้ามีรูปใหม่ อัปเดต imageUrl
+      const order = parseInt(fields.order || "0", 10) || 0;
+      const position = fields.position?.trim();
+      let imageUrl: string | undefined;
       if (files.image) {
         const file = Array.isArray(files.image) ? files.image[0] : files.image;
         const tmpPath = (file.filepath || (file as any).path) as string;
         const fileName = path.basename(tmpPath);
-        data.imageUrl = `/uploads/banners/${fileName}`;
+        imageUrl = `/uploads/banners/${fileName}`;
       }
+
+      // locale-specific fields
+      const titleTh = fields.titleTh || "";
+      const titleEn = fields.titleEn || "";
+      const subTh = fields.subTh || "";
+      const subEn = fields.subEn || "";
+      const descTh = fields.descTh || "";
+      const descEn = fields.descEn || "";
 
       const updated = await prisma.banner.update({
         where: { id },
-        data,
+        data: {
+          ...(position ? { position } : {}),
+          order,
+          ...(imageUrl ? { imageUrl } : {}),
+          translations: {
+            upsert: [
+              {
+                where: { bannerId_locale: { bannerId: id, locale: "th" } },
+                update: { title: titleTh, sub: subTh, description: descTh },
+                create: {
+                  locale: "th",
+                  title: titleTh,
+                  sub: subTh,
+                  description: descTh,
+                },
+              },
+              {
+                where: { bannerId_locale: { bannerId: id, locale: "en" } },
+                update: { title: titleEn, sub: subEn, description: descEn },
+                create: {
+                  locale: "en",
+                  title: titleEn,
+                  sub: subEn,
+                  description: descEn,
+                },
+              },
+            ],
+          },
+        },
+        include: { translations: true },
       });
 
-      return res.status(200).json(updated);
+      const th = updated.translations.find((t) => t.locale === "th")!;
+      const en = updated.translations.find((t) => t.locale === "en")!;
+      return res.status(200).json({
+        id: updated.id,
+        imageUrl: updated.imageUrl,
+        order: updated.order,
+        position: updated.position,
+        titleTh: th.title,
+        titleEn: en.title,
+        subTh: th.sub,
+        subEn: en.sub,
+        descriptionTh: th.description,
+        descriptionEn: en.description,
+      });
     } catch (err: any) {
       console.error("Update banner error:", err);
       return res
@@ -102,7 +151,7 @@ export default async function handler(
     }
   }
 
-  // DELETE: ลบแบนเนอร์
+  // DELETE: remove banner
   if (req.method === "DELETE") {
     try {
       await prisma.banner.delete({ where: { id } });

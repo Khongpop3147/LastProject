@@ -17,44 +17,59 @@ export default async function handler(
     return res.status(405).end();
   }
 
-  // 1. ยอดขายทั้งหมด (sum ของ totalAmount ทุกออร์เดอร์)
+  // อ่าน locale จาก query (default เป็น 'th')
+  const locale =
+    typeof req.query.locale === "string" &&
+    ["th", "en"].includes(req.query.locale)
+      ? req.query.locale
+      : "th";
+
+  // 1) ยอดขายรวม
   const salesAgg = await prisma.order.aggregate({
     _sum: { totalAmount: true },
   });
   const totalSales = salesAgg._sum.totalAmount ?? 0;
 
-  // 2. จำนวนออร์เดอร์ทั้งหมด
+  // 2) นับจำนวนออร์เดอร์ทั้งหมด
   const totalOrders = await prisma.order.count();
 
-  // 3. ลูกค้าใหม่ (นับผู้ใช้ที่สมัครภายใน 30 วันที่ผ่านมา)
+  // 3) นับลูกค้าใหม่ใน 30 วันล่าสุด
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const newCustomers = await prisma.user.count({
     where: { createdAt: { gte: thirtyDaysAgo } },
   });
 
-  // 4. สินค้าขายดี (top 5 ตามจำนวนที่ขายได้)
+  // 4) หาสินค้าขายดี (top 5 ตามปริมาณ)
   const top = await prisma.orderItem.groupBy({
     by: ["productId"],
     _sum: { quantity: true },
     orderBy: { _sum: { quantity: "desc" } },
     take: 5,
   });
-  // ดึงชื่อสินค้า
+
+  // ดึงชื่อสินค้าตาม locale
   const topProducts = await Promise.all(
     top.map(async (t) => {
       const prod = await prisma.product.findUnique({
         where: { id: t.productId },
-        select: { name: true },
+        include: {
+          translations: {
+            where: { locale },
+            take: 1,
+            select: { name: true },
+          },
+        },
       });
+
       return {
-        name: prod?.name ?? "Unknown",
+        name: prod?.translations[0]?.name ?? "Unknown",
         sold: t._sum.quantity ?? 0,
       };
     })
   );
 
-  res.status(200).json({
+  return res.status(200).json({
     totalSales,
     totalOrders,
     newCustomers,
