@@ -3,11 +3,12 @@
 
 import { useState, useEffect } from "react";
 import Head from "next/head";
-import Link from "next/link"; // ← เพิ่มตรงนี้
+import Link from "next/link";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import PromoModal from "./PromoModal";
 import CookieConsent from "./CookieConsent";
+import BottomNavigation from "./BottomNavigation";
 import type { ReactNode } from "react";
 
 interface LayoutProps {
@@ -46,11 +47,11 @@ export default function Layout({
       <Head>
         <title>{title}</title>
         <meta name="description" content="ตลาดสินค้าเกษตรสดใหม่ ICN_FREEZE" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
 
-      {/* fixed header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow">
+      {/* fixed header - Hidden on mobile */}
+      <header className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-white shadow">
         <div className="flex items-center justify-between px-4 py-2">
           {/* Language Switcher */}
           <nav className="flex space-x-2">
@@ -77,11 +78,15 @@ export default function Layout({
       )}
 
       {/* content with top margin so it doesn't sit under the fixed header */}
-      <main className="flex-grow w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
+      {/* Add bottom padding on mobile to prevent content from being hidden by bottom navigation */}
+      <main className="flex-grow w-full mx-auto py-4 md:mt-20 pb-20 md:pb-0">
         {children}
       </main>
 
       <Footer />
+
+      {/* Bottom Navigation - Mobile Only */}
+      <BottomNavigation cartCount={0} />
     </div>
   );
 }

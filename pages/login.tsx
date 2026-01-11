@@ -155,7 +155,7 @@ export default function LoginPage() {
             </button>
           </div>
         </div>{" "}
-        {/* ✅ เพิ่ม div นี้กลับเข้ามา เพื่อปิดส่วนซ้าย */}
+        {/*  เพิ่ม div นี้กลับเข้ามา เพื่อปิดส่วนซ้าย */}
         {/* --- ฝั่งขวา: ภาพประกอบ --- */}
         <div className="hidden md:block w-1/2 relative">
           <Image

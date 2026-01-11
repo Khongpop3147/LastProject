@@ -1,167 +1,125 @@
+// components/ProductCard.tsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import type { Product } from "@/types/product";
 
 interface ProductCardProps {
   product: Product & { stock: number };
+  backgroundColor?: string;
+  showBadge?: "sale" | "new" | null;
+  salePercent?: number;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ 
+  product, 
+  backgroundColor = "bg-gradient-to-br from-orange-400 to-orange-500",
+  showBadge = null,
+  salePercent = 25
+}: ProductCardProps) {
   const { token } = useAuth();
   const router = useRouter();
-  const [adding, setAdding] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const handleAddToCart = async () => {
+  const handleWishlist = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
     if (!token) {
       router.push("/login");
       return;
     }
-    setAdding(true);
-
-    try {
-      const cartRes = await fetch("/api/cart", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!cartRes.ok) throw new Error("Cannot fetch cart");
-
-      const { items: cartItems } = await cartRes.json();
-      const currentQuantity =
-        (cartItems as { productId: string; quantity: number }[]).find(
-          (item) => item.productId === product.id
-        )?.quantity ?? 0;
-
-      if (currentQuantity + 1 > product.stock) {
-        alert("จำนวนสินค้าเกินสต็อกที่มี");
-        setAdding(false);
-        return;
-      }
-
-      const addRes = await fetch("/api/cart", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId: product.id, quantity: 1 }),
-      });
-      if (!addRes.ok) throw new Error("Failed to add to cart");
-
-      router.push("/cart");
-    } catch {
-      alert("เกิดข้อผิดพลาดในการเพิ่มสินค้า");
-    } finally {
-      setAdding(false);
-    }
+    
+    setIsWishlisted(!isWishlisted);
+    // TODO: Add API call to add/remove from wishlist
   };
 
+  const hasDiscount = product.salePrice && product.salePrice < product.price;
+  const displayPrice = product.salePrice || product.price;
+  
+  // Calculate real discount percentage from prices
+  const calculatedDiscountPercent = hasDiscount 
+    ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
+    : 0;
+  
+  // Use calculated discount if available, otherwise use prop
+  const discountPercent = hasDiscount ? calculatedDiscountPercent : salePercent;
+  
+  const rating = 4.9; // Mock rating
+  const reviewCount = 219; // Mock review count
+
   return (
-    <div className="w-full max-w-[200px] bg-white border rounded-2xl p-3 flex flex-col text-center shadow-sm hover:shadow-lg transition relative">
-      {product.stock > 0 ? (
-        <Link
-          href={`/products/${product.id}`}
-          className="group block relative z-10"
-        >
-          <div className="relative w-full pt-[100%] rounded-lg overflow-hidden mb-3">
-            <Image
-              src={product.imageUrl ?? "/images/placeholder.png"}
-              alt={product.name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          </div>
-          <h3 className="text-black font-semibold text-base sm:text-lg md:text-xl mb-1 group-hover:text-green-600 transition-colors">
-            {product.name}
-          </h3>
-          {product.description && (
-            <p className="text-gray-500 text-sm sm:text-base mb-2 line-clamp-2">
-              {product.description}
-            </p>
-          )}
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            {product.salePrice != null ? (
-              <>
-                <span className="text-gray-400 line-through">
-                  ฿{product.price}
-                </span>
-                <span className="text-red-600 font-bold">
-                  ฿{product.salePrice}
-                </span>
-              </>
-            ) : (
-              <span className="text-green-600 font-bold">฿{product.price}</span>
-            )}
-          </div>
-        </Link>
-      ) : (
-        <div className="group block relative z-10 cursor-default">
-          <div className="relative w-full pt-[100%] rounded-lg overflow-hidden mb-3">
-            <Image
-              src={product.imageUrl ?? "/images/placeholder.png"}
-              alt={product.name}
-              fill
-              className="object-cover transition-transform duration-300"
-            />
-            <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-lg text-red-600 font-bold">
-              สินค้าหมด
+    <Link href={`/products/${product.id}`}>
+      <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
+        {/* Image Section with Background Color */}
+        <div className={`relative ${backgroundColor} aspect-square overflow-hidden`}>
+          {/* Badge */}
+          {showBadge === "sale" && (
+            <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10">
+              ลด {discountPercent}%
             </div>
+          )}
+          {showBadge === "new" && (
+            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10">
+              ใหม่
+            </div>
+          )}
+
+          {/* Product Image */}
+          <div className="relative w-full h-full p-4">
+            <Image
+              src={product.imageUrl ?? "/images/placeholder.png"}
+              alt={product.name}
+              fill
+              className="object-contain group-hover:scale-110 transition-transform duration-300"
+            />
           </div>
-          <h3 className="text-black font-semibold text-lg mb-1">
+
+          {/* Wishlist Button */}
+          <button
+            onClick={handleWishlist}
+            className="absolute bottom-2 right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all z-10"
+          >
+            <Heart
+              className={`w-5 h-5 ${
+                isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"
+              }`}
+            />
+          </button>
+        </div>
+
+        {/* Content Section */}
+        <div className="p-3">
+          {/* Product Name - 2 lines */}
+          <h3 className="text-sm md:text-base font-medium text-gray-800 line-clamp-2 mb-2 min-h-[40px]">
             {product.name}
           </h3>
-          {product.description && (
-            <p className="text-gray-500 text-xs mb-2 line-clamp-2">
-              {product.description}
-            </p>
-          )}
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            {product.salePrice != null ? (
-              <>
-                <span className="text-gray-400 line-through">
-                  ฿{product.price}
-                </span>
-                <span className="text-red-600 font-bold">
-                  ฿{product.salePrice}
-                </span>
-              </>
-            ) : (
-              <span className="text-green-600 font-bold">฿{product.price}</span>
+
+          {/* Price Section */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-lg md:text-xl font-bold text-blue-600">
+              ฿{displayPrice.toLocaleString()}
+            </span>
+            {hasDiscount && (
+              <span className="text-sm text-gray-400 line-through">
+                ฿{product.price.toLocaleString()}
+              </span>
             )}
+          </div>
+
+          {/* Rating Section */}
+          <div className="flex items-center gap-1">
+            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+            <span className="text-sm font-medium text-gray-700">{rating}</span>
+            <span className="text-xs text-gray-400">({reviewCount}รีวิว)</span>
           </div>
         </div>
-      )}
-
-      {product.stock === 0 ? (
-        <button
-          disabled
-          className="mt-auto w-full py-2 sm:py-3 rounded-full bg-gray-300 text-gray-700 cursor-not-allowed"
-        >
-          สินค้าหมด
-        </button>
-      ) : (
-        <button
-          onClick={handleAddToCart}
-          disabled={adding}
-          className={`
-           mt-auto 
-           w-full 
-           flex items-center justify-center space-x-2 
-           bg-green-600 text-white 
-           py-2 sm:py-3 
-           text-sm sm:text-base 
-           rounded-full hover:bg-green-700 transition 
-           ${adding ? "opacity-50 cursor-not-allowed" : ""}
-        `}
-        >
-          <Plus size={16} />
-          <span>{adding ? "กำลังเพิ่ม..." : "หยิบใส่รถเข็น"}</span>
-        </button>
-      )}
-    </div>
+      </div>
+    </Link>
   );
 }
