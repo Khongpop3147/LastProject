@@ -8,6 +8,7 @@ import CouponBanner from "@/components/CouponBanner";
 import CategoryCarousel from "@/components/CategoryCarousel";
 import DiscountCarousel from "@/components/DiscountCarousel";
 import SubBanner from "@/components/SubBanner";
+import SubBannerCarousel from "@/components/SubBannerCarousel";
 import ProductCard from "@/components/ProductCard";
 import { prisma } from "@/lib/prisma";
 import { Category, Product } from "@/types/product";
@@ -67,6 +68,13 @@ export default function HomePage({
         </div>
         <CategoryCarousel categories={categories} />
       </section>
+
+      {/* Sub Banner - แบนเนอร์โปรโมชั่น */}
+      {subBanners && subBanners.length > 0 && (
+        <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
+          <SubBannerCarousel slides={subBanners} />
+        </section>
+      )}
 
       {/* Flash Sale */}
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
@@ -230,9 +238,16 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
 }) => {
   const lang = locale ?? "th";
 
-  // 1. Hero banners
+  // 1. Hero banners (กรองเฉพาะ banner หลัก ไม่รวม sub banner)
   const rawHero = await prisma.bannerLocale.findMany({
-    where: { locale: lang },
+    where: { 
+      locale: lang,
+      banner: { 
+        isNot: {
+          position: "sub"
+        }
+      }
+    },
     include: { banner: true },
     orderBy: { banner: { order: "asc" } },
   });

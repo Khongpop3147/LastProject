@@ -29,7 +29,7 @@ export default function Banner({ slides, isPromotion = false }: BannerProps) {
   }, [total]);
 
   return (
-    <div className="my-4 relative w-full h-32 md:h-48 lg:h-64 overflow-hidden rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500">
+    <div className="my-4 relative w-full h-52 md:h-48 lg:h-64 overflow-hidden rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500">
       {/* Background Image */}
       <Image
         src={slides[idx].img}
