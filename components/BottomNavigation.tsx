@@ -35,7 +35,7 @@ export default function BottomNavigation({ cartCount = 0 }: BottomNavigationProp
       ),
     },
     {
-      href: "/products",
+      href: "/all-products",
       label: "สินค้า",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
