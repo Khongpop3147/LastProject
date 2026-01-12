@@ -1,13 +1,15 @@
 // pages/products/[id].tsx
 import { GetServerSideProps } from "next";
-import useTranslation from "next-translate/useTranslation";
-import Layout from "@/components/Layout";
-import Link from "next/link";
-import { prisma } from "@/lib/prisma";
-import { Product as ProductType } from "@/types/product";
-import { useAuth } from "@/context/AuthContext";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
+import Image from "next/image";
+import { ArrowLeft, Heart, Share2, Star, Package, Check, ShoppingCart } from "lucide-react";
+import Layout from "@/components/Layout";
+import ProductOptions, { ProductOption } from "@/components/ProductOptions";
+import QuantitySelector from "@/components/QuantitySelector";
+import ReviewCard from "@/components/ReviewCard";
+import { prisma } from "@/lib/prisma";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProductPageProps {
   product: {
@@ -18,150 +20,442 @@ interface ProductPageProps {
     salePrice: number | null;
     stock: number;
     imageUrl: string | null;
+    categoryId: string | null;
   } | null;
 }
 
 export default function ProductPage({ product }: ProductPageProps) {
-  const { t, lang } = useTranslation("common");
   const router = useRouter();
   const { token } = useAuth();
 
+  // State management
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>("EU");
+  const [selectedShipping, setSelectedShipping] = useState<string>("standard");
+  const [quantity, setQuantity] = useState(1);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   if (!product) {
     return (
-      <Layout title={t("notFound")}>
+      <Layout title="ไม่พบสินค้า">
         <div className="container py-16 text-center">
-          <h1 className="text-2xl font-semibold">{t("productNotFound")}</h1>
-          <Link href="/" className="text-blue-600 hover:underline">
-            ← {t("backHome")}
-          </Link>
+          <h1 className="text-2xl font-semibold">ไม่พบสินค้า</h1>
+          <button
+            onClick={() => router.push("/")}
+            className="mt-4 text-blue-600 hover:underline"
+          >
+            ← กลับหน้าหลัก
+          </button>
         </div>
       </Layout>
     );
   }
 
-  const [qty, setQty] = useState(product.stock > 0 ? 1 : 0);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Calculate discount
+  const hasDiscount = product.salePrice && product.salePrice < product.price;
+  const displayPrice = product.salePrice || product.price;
+  const discountPercent = hasDiscount
+    ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
+    : 0;
 
-  useEffect(() => {
-    if (product.stock === 0) {
-      setQty(0);
-      setError(t("outOfStock"));
-    } else {
-      if (qty < 1) setQty(1);
-      if (qty > product.stock) {
-        setQty(product.stock);
-        setError(t("maxQty", { count: product.stock }));
-      } else {
-        setError("");
-      }
+  // Mock data
+  const mockRating = 4.9;
+  const mockReviewCount = 219;
+
+  // Mock reviews - แสดงเป็นการ์ด
+  const mockReviewCards = [
+    {
+      id: "1",
+      userName: "สมศรี มีเงินแสง",
+      rating: 5,
+      comment: "สินค้าคุณภาพดีมาก ใช้งานได้เป็นอย่างดีมากๆ ขอบคุณร้านค้ามากนะคะ ทั้งผู้ขายอุบายน่ารักมาก",
+      timeAgo: "2 วันก่อน",
+      avatar: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    },
+    {
+      id: "2",
+      userName: "สมศรี มีเงินแสง",
+      rating: 4,
+      comment: "ราคาคุ้มค่า แพคเกจดี ใช้ได้ทุกวัน",
+      timeAgo: "2 วันก่อน",
+      avatar: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
     }
-  }, [qty, product.stock, t]);
+  ];
 
-  const addToCart = async () => {
+  // Product options
+  const productOptions: ProductOption[] = [
+    { id: "1", label: "แดง", value: "red", color: "#EF4444" },
+    { id: "2", label: "เหลือง", value: "yellow", color: "#F59E0B" },
+    { id: "3", label: "แดงเข้ม", value: "dark-red", color: "#991B1B" },
+    { id: "4", label: "ม่วง", value: "purple", color: "#9333EA" },
+  ];
+
+  // Size options
+  const sizeOptions: ProductOption[] = [
+    { id: "eu", label: "EU", value: "EU" },
+  ];
+
+  // Handlers
+  const handleWishlist = () => {
     if (!token) {
       router.push("/login");
       return;
     }
-    if (error || product.stock === 0) return;
+    setIsWishlisted(!isWishlisted);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: product.name,
+        text: product.description,
+        url: window.location.href,
+      });
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    if (product.stock === 0) return;
+
     setLoading(true);
     try {
-      const cartRes = await fetch("/api/cart", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!cartRes.ok) throw new Error(t("cartFetchError"));
-      const { items } = await cartRes.json();
-      const inCart = items.find((i: any) => i.productId === product.id);
-      const current = inCart?.quantity ?? 0;
-      if (current + qty > product.stock) {
-        setError(t("maxInCart", { stock: product.stock, current }));
-        setLoading(false);
-        return;
-      }
-
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ productId: product.id, quantity: qty }),
+        body: JSON.stringify({ productId: product.id, quantity }),
       });
-      if (!res.ok) throw new Error(t("addCartError"));
+
+      if (!res.ok) throw new Error("เพิ่มสินค้าล้มเหลว");
       router.push("/cart");
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error) {
+      console.error(error);
+      alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Layout title={product.name}>
-      <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow">
-        <div className="flex flex-col md:flex-row gap-6">
-          <div className="md:w-1/2">
-            <img
-              src={product.imageUrl || "/images/placeholder.png"}
-              alt={product.name}
-              className="w-full h-auto object-cover rounded"
-            />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-gray-600 mb-4">{product.description}</p>
-            {product.salePrice != null ? (
-              <div className="mb-4">
-                <span className="text-2xl text-red-600 font-bold mr-2">
-                  ฿{product.salePrice}
-                </span>
-                <span className="text-xl text-gray-500 line-through">
-                  ฿{product.price}
-                </span>
-              </div>
-            ) : (
-              <p className="text-xl text-green-700 mb-4">฿{product.price}</p>
-            )}
-            <p className="mb-4">
-              {t("stock")}: {product.stock}
-            </p>
-            {product.stock === 0 ? (
-              <p className="text-red-600 font-semibold">{t("outOfStock")}</p>
-            ) : (
-              <div className="mb-4">
-                <label className="block mb-1">{t("quantity")}:</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={product.stock}
-                  value={qty}
-                  onChange={(e) => setQty(Number(e.target.value))}
-                  className="w-20 border rounded px-2 py-1 text-center"
-                />
-                {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-              </div>
-            )}
+    <Layout title={product.name} hideBottomNav={true}>
+      <div className="min-h-screen bg-white pb-40">
+        {/* Header */}
+        <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <button
+            onClick={() => router.back()}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
+          >
+            <ArrowLeft className="w-6 h-6 text-gray-700" />
+          </button>
+          <div className="flex gap-2">
             <button
-              onClick={addToCart}
-              disabled={loading || !!error || product.stock === 0}
-              className={`px-6 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition ${
-                loading || error || product.stock === 0
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-              }`}
+              onClick={handleWishlist}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
             >
-              {product.stock === 0
-                ? t("cannotBuy")
-                : loading
-                ? t("adding")
-                : t("addToCart")}
+              <Heart
+                className={`w-6 h-6 ${
+                  isWishlisted ? "fill-red-500 text-red-500" : "text-gray-700"
+                }`}
+              />
             </button>
-            <div className="mt-4">
-              <Link href="/" className="text-blue-600 hover:underline">
-                ← {t("backHome")}
-              </Link>
+            <button
+              onClick={() => router.push("/cart")}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
+            >
+              <ShoppingCart className="w-6 h-6 text-gray-700" />
+            </button>
+            <button
+              onClick={handleShare}
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
+            >
+              <Share2 className="w-6 h-6 text-gray-700" />
+            </button>
+          </div>
+        </div>
+
+        {/* Product Image */}
+        <div className="relative w-full aspect-square bg-gradient-to-br from-yellow-400 to-yellow-500">
+          <Image
+            src={product.imageUrl || "/images/placeholder.png"}
+            alt={product.name}
+            fill
+            className="object-cover"
+            priority
+          />
+          {hasDiscount && (
+            <div className="absolute top-4 right-4 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-md">
+              ลด {discountPercent}%
+            </div>
+          )}
+        </div>
+
+        {/* Product Info */}
+        <div className="px-4 py-5">
+          {/* Price */}
+          <div className="mb-3">
+            {hasDiscount ? (
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl md:text-4xl font-bold text-blue-600">
+                  ฿{displayPrice.toLocaleString()}
+                </span>
+                <span className="text-xl text-gray-400 line-through">
+                  ฿{product.price.toLocaleString()}
+                </span>
+              </div>
+            ) : (
+              <span className="text-3xl md:text-4xl font-bold text-blue-600">
+                ฿{displayPrice.toLocaleString()}
+              </span>
+            )}
+          </div>
+
+          {/* Product Name */}
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
+            {product.name}
+          </h1>
+
+          {/* Rating */}
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg mb-4">
+            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+            <span className="text-lg font-semibold text-gray-900">
+              {mockRating}
+            </span>
+            <span className="text-base text-gray-500">
+              ({mockReviewCount} รีวิว)
+            </span>
+          </div>
+
+          {/* Description */}
+          <div className="mb-4">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+              รายละเอียดสินค้า
+            </h3>
+            <p className="text-base text-gray-700 leading-relaxed">
+              {product.description}
+            </p>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                รีวิวลูกค้า
+              </h3>
+              <button className="text-blue-600 text-base font-semibold hover:underline">
+                เพิ่มรีวิว
+              </button>
+            </div>
+
+            {mockReviewCards.map((review) => (
+              <ReviewCard
+                key={review.id}
+                userName={review.userName}
+                rating={review.rating}
+                comment={review.comment}
+                timeAgo={review.timeAgo}
+                userAvatar={review.avatar}
+              />
+            ))}
+
+            <button className="w-full py-3 border-2 border-blue-600 text-blue-600 rounded-xl font-semibold text-base hover:bg-blue-50 transition-colors">
+              ดูรีวิวทั้งหมด
+            </button>
+          </div>
+
+          {/* Material Composition */}
+          <div className="mb-4">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
+              รายละเอียด
+            </h3>
+            <div className="mb-3">
+              <h4 className="text-base font-semibold text-gray-900 mb-2">วัสดุ</h4>
+              <div className="flex gap-4">
+                <div className="px-3 py-1.5 bg-pink-50 rounded-lg">
+                  <span className="text-sm text-gray-700">ผ้าฝ้าย 95%</span>
+                </div>
+                <div className="px-3 py-1.5 bg-pink-50 rounded-lg">
+                  <span className="text-sm text-gray-700">ไนลอน 5%</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <h4 className="text-base font-semibold text-gray-900 mb-2">ผลิตจาก</h4>
+              <div className="px-3 py-1.5 bg-gray-100 rounded-lg inline-block">
+                <span className="text-sm text-gray-700">EU</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-base font-semibold text-gray-900">ผู้ผลิตมา</h4>
+                <button className="text-blue-600 text-sm font-semibold hover:underline">
+                  ดูทั้งหมด →
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Shipping Options */}
+          <div className="mb-4">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
+              วิธีจัดส่ง
+            </h3>
+
+            {/* Standard Shipping */}
+            <div
+              onClick={() => setSelectedShipping("standard")}
+              className={`p-4 rounded-xl border-2 mb-3 cursor-pointer transition-colors ${
+                selectedShipping === "standard"
+                  ? "border-blue-600 bg-blue-50"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedShipping === "standard"
+                        ? "border-blue-600 bg-blue-600"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {selectedShipping === "standard" && (
+                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                    )}
+                  </div>
+                  <span className="font-semibold text-gray-900">จัดส่งปกติ</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">5-7 วัน</span>
+                  <span className="font-bold text-green-600">ฟรี</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Express Shipping */}
+            <div
+              onClick={() => setSelectedShipping("express")}
+              className={`p-4 rounded-xl border-2 mb-3 cursor-pointer transition-colors ${
+                selectedShipping === "express"
+                  ? "border-blue-600 bg-blue-50"
+                  : "border-gray-200 bg-white"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedShipping === "express"
+                        ? "border-blue-600 bg-blue-600"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {selectedShipping === "express" && (
+                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                    )}
+                  </div>
+                  <span className="font-semibold text-gray-900">จัดส่งด่วน</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">1-2 วัน</span>
+                  <span className="font-bold text-gray-900">฿50</span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-3">
+              จะจัดส่งให้ท่านในวันจันทร์ที่ 25 เมษายน 2568
+            </p>
+
+            {/* Free Shipping Badge */}
+            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+              <Package className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="font-semibold text-green-700">จัดส่งฟรี</p>
+                <p className="text-xs text-green-600">สำหรับสั่งซื้อตั้งแต่ 500 บาทขึ้นไป</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quantity */}
+          <div className="mb-6">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
+              จำนวน
+            </h3>
+            <QuantitySelector
+              quantity={quantity}
+              onDecrease={() => setQuantity(Math.max(1, quantity - 1))}
+              onIncrease={() => setQuantity(Math.min(product.stock, quantity + 1))}
+              max={product.stock}
+              disabled={product.stock === 0}
+            />
+          </div>
+        </div>
+
+        {/* Bottom Actions */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex gap-3 z-50">
+          <button
+            onClick={handleWishlist}
+            className="flex-shrink-0 w-14 h-14 flex items-center justify-center rounded-xl border-2 border-gray-300 hover:border-gray-400 transition-colors"
+          >
+            <Heart
+              className={`w-6 h-6 ${
+                isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
+              }`}
+            />
+          </button>
+          <button
+            onClick={async () => {
+              if (!token) {
+                router.push("/login");
+                return;
+              }
+              if (product.stock === 0) return;
+              
+              try {
+                const res = await fetch("/api/cart", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                  },
+                  body: JSON.stringify({ productId: product.id, quantity }),
+                });
+                if (res.ok) {
+                  alert("เพิ่มสินค้าลงตะกร้าแล้ว");
+                }
+              } catch (error) {
+                console.error(error);
+              }
+            }}
+            className="flex-1 h-14 rounded-xl font-bold text-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors"
+          >
+            เพิ่มลงตะกร้า
+          </button>
+          <button
+            onClick={handleAddToCart}
+            disabled={loading || product.stock === 0}
+            className={`flex-1 h-14 rounded-xl font-bold text-lg transition-colors ${
+              product.stock === 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
+          >
+            {product.stock === 0
+              ? "สินค้าหมด"
+              : loading
+              ? "กำลังเพิ่ม..."
+              : "ซื้อเลย"}
+          </button>
         </div>
       </div>
     </Layout>
@@ -181,6 +475,7 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
       translations: { where: { locale: lang }, take: 1 },
     },
   });
+
   if (!raw) {
     return { props: { product: null } };
   }
@@ -196,6 +491,7 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
         salePrice: raw.salePrice,
         stock: raw.stock,
         imageUrl: raw.imageUrl,
+        categoryId: raw.categoryId,
       },
     },
   };

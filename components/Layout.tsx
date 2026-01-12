@@ -14,11 +14,13 @@ import type { ReactNode } from "react";
 interface LayoutProps {
   children: ReactNode;
   title?: string;
+  hideBottomNav?: boolean;
 }
 
 export default function Layout({
   children,
   title = "ICN_FREEZE",
+  hideBottomNav = false,
 }: LayoutProps) {
   const [showPromo, setShowPromo] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
@@ -86,7 +88,7 @@ export default function Layout({
       <Footer />
 
       {/* Bottom Navigation - Mobile Only */}
-      <BottomNavigation cartCount={0} />
+      {!hideBottomNav && <BottomNavigation cartCount={0} />}
     </div>
   );
 }
