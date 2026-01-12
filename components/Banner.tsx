@@ -38,16 +38,7 @@ export default function Banner({ slides, isPromotion = false }: BannerProps) {
         className="object-cover"
       />
 
-      {/* Text Overlay */}
-      <div className="absolute inset-0 flex items-center px-6">
-        <div className="text-white max-w-[60%]">
-          <h2 className="font-bold text-xl md:text-2xl lg:text-3xl mb-1">{slides[idx].title}</h2>
-          <p className="text-sm md:text-base mb-2">{slides[idx].sub}</p>
-          <button className="text-xs bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full hover:bg-white/30 transition-colors">
-            Happening Now
-          </button>
-        </div>
-      </div>
+     
 
       {/* Dots indicator */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">

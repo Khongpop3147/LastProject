@@ -71,14 +71,12 @@ export default function ProductCard({
           )}
 
           {/* Product Image */}
-          <div className="relative w-full h-full p-4">
-            <Image
-              src={product.imageUrl ?? "/images/placeholder.png"}
-              alt={product.name}
-              fill
-              className="object-contain group-hover:scale-110 transition-transform duration-300"
-            />
-          </div>
+          <Image
+            src={product.imageUrl ?? "/images/placeholder.png"}
+            alt={product.name}
+            fill
+            className="object-cover group-hover:scale-110 transition-transform duration-300"
+          />
 
           {/* Wishlist Button */}
           <button
