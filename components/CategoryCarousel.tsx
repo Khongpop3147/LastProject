@@ -9,21 +9,21 @@ interface CategoryCarouselProps {
 }
 
 export default function CategoryCarousel({ categories = [] }: CategoryCarouselProps) {
-  // แสดงแค่ 16 หมวดหมู่แรก (เพิ่มขึ้นสำหรับ Desktop)
-  const displayCategories = categories.slice(0, 16);
+  // แสดงหมวดหมู่ตามขนาดหน้าจอ: 9 (mobile), 12 (tablet), 18 (desktop)
+  const displayCategories = categories.slice(0, 18);
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 lg:gap-5">
       {displayCategories.map((cat) => (
         <Link
           key={cat.id}
           href={`/all-products?category=${cat.id}`}
           className="flex flex-col items-center"
         >
-          <div className="w-full aspect-square bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center hover:shadow-md transition-shadow p-2">
+          <div className="w-full aspect-square bg-white rounded-xl shadow-md border-2 border-gray-200 flex flex-col items-center justify-center hover:shadow-lg hover:border-blue-300 transition-all p-3">
             <div className="text-center">
-              <p className="text-xs font-medium text-gray-800 mb-1">{cat.name}</p>
-              <p className="text-[10px] text-gray-500">
+              <p className="text-base font-semibold text-gray-800 mb-1">{cat.name}</p>
+              <p className="text-sm text-blue-600">
                 {cat.productCount ? `${cat.productCount} รายการ` : '0 รายการ'}
               </p>
             </div>
