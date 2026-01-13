@@ -63,6 +63,7 @@ model ProductLocale {
   locale      String    // 'th' | 'en'
   name        String
   description String?
+  material    String?
   @@unique([productId, locale])
 }
 
