@@ -26,14 +26,10 @@ interface Order {
   line3?: string | null;
   city: string;
   postalCode?: string | null;
-  country: string;
+  country?: string | null;
   paymentMethod?: string | null;
   status: string;
   totalAmount: number;
-  distanceKm?: number | null;
-  deliveryFee?: number | null;
-  originProvince?: string | null;
-  destinationProvince?: string | null;
   items: OrderItem[];
   slipUrl?: string | null;
   createdAt: string;
@@ -161,9 +157,6 @@ const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
 
               <div className="text-right font-bold">
                 ยอดรวม: ฿{order.totalAmount}
-                {order.deliveryFee != null && (
-                  <div className="text-base">ค่าจัดส่ง: ฿{order.deliveryFee}</div>
-                )}
               </div>
               <div className="text-sm text-gray-500 mt-2">
                 วันที่สั่งซื้อ:{" "}
@@ -214,7 +207,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) =>
       totalAmount: o.totalAmount,
       slipUrl: o.slipUrl,
       createdAt: o.createdAt.toISOString(),
-      items: o.items.map((it: any) => ({
+      items: o.items.map((it) => ({
         id: it.id,
         quantity: it.quantity,
         priceAtPurchase: it.priceAtPurchase,
@@ -224,10 +217,6 @@ export const getServerSideProps: GetServerSideProps = async (ctx) =>
           imageUrl: it.product.imageUrl ?? null,
         },
       })),
-      distanceKm: o.distanceKm ?? null,
-      deliveryFee: o.deliveryFee ?? null,
-      originProvince: o.originProvince ?? null,
-      destinationProvince: o.destinationProvince ?? null,
     }));
 
     return { props: { orders } };

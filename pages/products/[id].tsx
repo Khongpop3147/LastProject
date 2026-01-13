@@ -65,6 +65,10 @@ export default function ProductPage({ product }: ProductPageProps) {
     );
   }
 
+  // Debug: Check material data
+  console.log("Product data:", product);
+  console.log("Material:", product.material);
+
   // Calculate discount
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const displayPrice = product.salePrice || product.price;
@@ -293,8 +297,8 @@ export default function ProductPage({ product }: ProductPageProps) {
                 <h4 className="text-base font-semibold text-gray-900 mb-2">วัสดุ</h4>
                 <div className="flex flex-wrap gap-2">
                   {product.material.split(',').map((mat, idx) => (
-                    <div key={idx} className="px-3 py-1.5 bg-pink-50 rounded-lg">
-                      <span className="text-sm text-gray-700">{mat.trim()}</span>
+                    <div key={idx} className="px-4 py-2 bg-pink-50 rounded-lg">
+                      <span className="text-sm font-medium text-gray-800">{mat.trim()}</span>
                     </div>
                   ))}
                 </div>
@@ -481,6 +485,15 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
   }
 
   const trans = raw.translations[0];
+  
+  // Debug: Check what's in the database
+  console.log("=== Server Side Debug ===");
+  console.log("Product ID:", raw.id);
+  console.log("Locale:", lang);
+  console.log("Translations found:", raw.translations.length);
+  console.log("Translation data:", trans);
+  console.log("Material from DB:", trans?.material);
+  
   return {
     props: {
       product: {
