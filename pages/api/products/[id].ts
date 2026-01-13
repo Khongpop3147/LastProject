@@ -103,8 +103,6 @@ export default async function handler(
       // Parse text fields
       const nameTh = fields.nameTh ?? "";
       const nameEn = fields.nameEn ?? "";
-      const materialTh = fields.materialTh ?? "";
-      const materialEn = fields.materialEn ?? "";
       const descTh = fields.descTh ?? "";
       const descEn = fields.descEn ?? "";
       const price = parseFloat(fields.price || "0");
@@ -138,23 +136,13 @@ export default async function handler(
         upsert: [
           {
             where: { productId_locale: { productId: id, locale: "th" } },
-            update: { name: nameTh, description: descTh, material: materialTh },
-            create: {
-              locale: "th",
-              name: nameTh,
-              description: descTh,
-              material: materialTh,
-            },
+            update: { name: nameTh, description: descTh },
+            create: { locale: "th", name: nameTh, description: descTh },
           },
           {
             where: { productId_locale: { productId: id, locale: "en" } },
-            update: { name: nameEn, description: descEn, material: materialEn },
-            create: {
-              locale: "en",
-              name: nameEn,
-              description: descEn,
-              material: materialEn,
-            },
+            update: { name: nameEn, description: descEn },
+            create: { locale: "en", name: nameEn, description: descEn },
           },
         ],
       };
