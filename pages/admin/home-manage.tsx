@@ -31,8 +31,6 @@ interface Product {
   nameEn: string;
   descTh?: string;
   descEn?: string;
-  materialTh?: string;
-  materialEn?: string;
   price: number;
   salePrice?: number | null;
   stock: number;
@@ -128,8 +126,6 @@ function CreateProductSection() {
     nameEn: "",
     descTh: "",
     descEn: "",
-    materialTh: "",
-    materialEn: "",
     price: "",
     salePrice: "",
     stock: "",
@@ -164,8 +160,6 @@ function CreateProductSection() {
       nameEn,
       descTh,
       descEn,
-      materialTh,
-      materialEn,
       price,
       salePrice,
       stock,
@@ -186,8 +180,6 @@ function CreateProductSection() {
     data.append("stock", stock);
     if (categoryId) data.append("categoryId", categoryId);
     if (file) data.append("image", file);
-    if (materialTh) data.append("materialTh", materialTh);
-    if (materialEn) data.append("materialEn", materialEn);
 
     const res = await fetch("/api/products", {
       method: "POST",
@@ -204,8 +196,6 @@ function CreateProductSection() {
         nameEn: "",
         descTh: "",
         descEn: "",
-        materialTh: "",
-        materialEn: "",
         price: "",
         salePrice: "",
         stock: "",
@@ -249,20 +239,6 @@ function CreateProductSection() {
           value={form.descEn}
           onChange={onChange}
           placeholder="Description (EN)"
-          className="w-full border rounded p-3"
-        />
-        <input
-          name="materialTh"
-          value={form.materialTh}
-          onChange={onChange}
-          placeholder="วัสดุ (ภาษาไทย)"
-          className="w-full border rounded p-3"
-        />
-        <input
-          name="materialEn"
-          value={form.materialEn}
-          onChange={onChange}
-          placeholder="Material (EN)"
           className="w-full border rounded p-3"
         />
         <input
@@ -336,8 +312,6 @@ function ManageProductSection() {
     nameEn: "",
     descTh: "",
     descEn: "",
-    materialTh: "",
-    materialEn: "",
     price: "",
     salePrice: "",
     stock: "",
@@ -396,8 +370,6 @@ function ManageProductSection() {
       nameEn: product.nameEn,
       descTh: product.descTh || "",
       descEn: product.descEn || "",
-      materialTh: product.materialTh || "",
-      materialEn: product.materialEn || "",
 
       price: product.price.toString(),
       salePrice: product.salePrice?.toString() || "",
@@ -434,8 +406,6 @@ function ManageProductSection() {
     // แทนที่ fd.append("description", editForm.description)
     fd.append("descTh", editForm.descTh);
     fd.append("descEn", editForm.descEn);
-    fd.append("materialTh", editForm.materialTh);
-    fd.append("materialEn", editForm.materialEn);
     fd.append("price", editForm.price);
     fd.append("salePrice", editForm.salePrice);
     fd.append("stock", editForm.stock);
@@ -592,26 +562,6 @@ function ManageProductSection() {
                 <textarea
                   name="descEn"
                   value={editForm.descEn}
-                  onChange={handleEditChange}
-                  className="w-full border rounded p-2 mt-1"
-                />
-              </label>
-              <label className="block">
-                วัสดุ (TH):
-                <input
-                  type="text"
-                  name="materialTh"
-                  value={editForm.materialTh}
-                  onChange={handleEditChange}
-                  className="w-full border rounded p-2 mt-1"
-                />
-              </label>
-              <label className="block">
-                Material (EN):
-                <input
-                  type="text"
-                  name="materialEn"
-                  value={editForm.materialEn}
                   onChange={handleEditChange}
                   className="w-full border rounded p-2 mt-1"
                 />
