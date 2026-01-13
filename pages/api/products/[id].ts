@@ -116,6 +116,15 @@ export default async function handler(
         if (!isNaN(sp)) salePrice = sp;
       }
 
+      // Validate limits (INT4 max: 2,147,483,647)
+      const MAX_INT = 2147483647;
+      if (stock > MAX_INT || stock < -MAX_INT) {
+        return res.status(400).json({ error: "Stock value is out of range" });
+      }
+      if (price > MAX_INT || (salePrice && salePrice > MAX_INT)) {
+        return res.status(400).json({ error: "Price value is too large" });
+      }
+
       // Build update data
       const updateData: any = { price, stock, salePrice };
 
