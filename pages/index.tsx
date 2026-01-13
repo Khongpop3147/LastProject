@@ -61,7 +61,7 @@ export default function HomePage({
       {/* Category Grid */}
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">หมวดหมู่สินค้า</h2>
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">หมวดหมู่สินค้า</h2>
           <a href="/categories" className="text-sm text-blue-600 hover:underline">
             ดูทั้งหมด →
           </a>
@@ -80,7 +80,7 @@ export default function HomePage({
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">Flash Sale</h2>
+            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Flash Sale</h2>
             <Clock className="w-4 h-4 text-red-500" />
             {/* Countdown Timer - Static for now */}
             <div className="flex items-center gap-1 text-white text-xs font-bold">
@@ -120,7 +120,7 @@ export default function HomePage({
 
       {/* Popular Products - สินค้ายอดนิยม */}
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">สินค้ายอดนิยม</h2>
+        <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4">สินค้ายอดนิยม</h2>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
           {bestSellers.slice(0, 5).map((product) => (
             <div key={product.id} className="flex-shrink-0">
@@ -139,7 +139,7 @@ export default function HomePage({
       {/* New Products - สินค้าใหม่ */}
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">สินค้าใหม่</h2>
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าใหม่</h2>
           <a href="/new" className="text-sm text-blue-600 hover:underline">
             ดูทั้งหมด →
           </a>
@@ -171,7 +171,7 @@ export default function HomePage({
       {/* Recommended Products - สินค้าแนะนำ */}
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">สินค้าแนะนำ</h2>
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าแนะนำ</h2>
           <a href="/recommended" className="text-sm text-blue-600 hover:underline">
             ดูทั้งหมด →
           </a>
@@ -202,7 +202,7 @@ export default function HomePage({
       {/* Special Offers - ได้รับความนิยมสูง */}
       <section className="px-4 md:px-6 lg:px-8 mb-20 md:mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900">ได้รับความนิยมสูง</h2>
+          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">ได้รับความนิยมสูง</h2>
           <a href="/popular" className="text-sm text-blue-600 hover:underline">
             ดูทั้งหมด →
           </a>

@@ -22,6 +22,7 @@ interface ProductPageProps {
     stock: number;
     imageUrl: string | null;
     categoryId: string | null;
+    material: string | null;
   } | null;
 }
 
@@ -283,23 +284,23 @@ export default function ProductPage({ product }: ProductPageProps) {
           </div>
 
           {/* Material Composition */}
-          <div className="mb-4">
-            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
-              รายละเอียด
-            </h3>
-            <div className="mb-3">
-              <h4 className="text-base font-semibold text-gray-900 mb-2">วัสดุ</h4>
-              <div className="flex gap-4">
-                <div className="px-3 py-1.5 bg-pink-50 rounded-lg">
-                  <span className="text-sm text-gray-700">ผ้าฝ้าย 95%</span>
-                </div>
-                <div className="px-3 py-1.5 bg-pink-50 rounded-lg">
-                  <span className="text-sm text-gray-700">ไนลอน 5%</span>
+          {product.material && (
+            <div className="mb-4">
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
+                รายละเอียด
+              </h3>
+              <div className="mb-3">
+                <h4 className="text-base font-semibold text-gray-900 mb-2">วัสดุ</h4>
+                <div className="flex flex-wrap gap-2">
+                  {product.material.split(',').map((mat, idx) => (
+                    <div key={idx} className="px-3 py-1.5 bg-pink-50 rounded-lg">
+                      <span className="text-sm text-gray-700">{mat.trim()}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-
-          </div>
+          )}
 
           {/* Shipping Options */}
           <div className="mb-4">
@@ -491,6 +492,7 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
         stock: raw.stock,
         imageUrl: raw.imageUrl,
         categoryId: raw.categoryId,
+        material: trans?.material ?? null,
       },
     },
   };
