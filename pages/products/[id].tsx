@@ -14,6 +14,7 @@ interface ProductPageProps {
     id: string;
     name: string;
     description: string;
+    material?: string | null;
     price: number;
     salePrice: number | null;
     stock: number;
@@ -110,6 +111,11 @@ export default function ProductPage({ product }: ProductPageProps) {
           <div className="flex-1">
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
             <p className="text-gray-600 mb-4">{product.description}</p>
+            {product.material && (
+              <p className="text-gray-700 mb-4">
+                {t("material")}: {product.material}
+              </p>
+            )}
             {product.salePrice != null ? (
               <div className="mb-4">
                 <span className="text-2xl text-red-600 font-bold mr-2">
@@ -192,6 +198,7 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
         id: raw.id,
         name: trans?.name ?? "",
         description: trans?.description ?? "",
+        material: trans?.material ?? "",
         price: raw.price,
         salePrice: raw.salePrice,
         stock: raw.stock,
