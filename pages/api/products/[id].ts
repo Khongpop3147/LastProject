@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { IncomingForm, File } from "formidable";
 import fs from "fs";
 import path from "path";
+import { Not } from "typeorm";
 
 export const config = {
   api: {
