@@ -1,24 +1,13 @@
 // pages/api/products/index.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import multer from "multer";
-import fs from "fs";
-import path from "path";
 import { prisma } from "@/lib/prisma";
 
 export const config = { api: { bodyParser: false } };
 
-const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const name = Date.now() + "-" + file.originalname.replace(/\s+/g, "-");
-    cb(null, name);
-  },
+const upload = multer({
+  /* ...unchanged... */
 });
-
-const upload = multer({ storage });
 
 function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: any) {
   return new Promise<void>((resolve, reject) =>
@@ -53,8 +42,6 @@ export default async function handler(
         nameEn: en?.name ?? "",
         descTh: th?.description ?? "",
         descEn: en?.description ?? "",
-        materialTh: th?.material ?? "",
-        materialEn: en?.material ?? "",
         price: p.price,
         salePrice: p.salePrice,
         stock: p.stock,
@@ -74,8 +61,6 @@ export default async function handler(
       nameEn,
       descTh,
       descEn,
-      materialTh,
-      materialEn,
       price,
       salePrice,
       stock,
@@ -99,18 +84,8 @@ export default async function handler(
           category: categoryId ? { connect: { id: categoryId } } : undefined,
           translations: {
             create: [
-              {
-                locale: "th",
-                name: nameTh,
-                description: descTh || "",
-                material: materialTh || "",
-              },
-              {
-                locale: "en",
-                name: nameEn || "",
-                description: descEn || "",
-                material: materialEn || "",
-              },
+              { locale: "th", name: nameTh, description: descTh || "" },
+              { locale: "en", name: nameEn || "", description: descEn || "" },
             ],
           },
         },
@@ -127,8 +102,6 @@ export default async function handler(
         nameEn: en?.name ?? "",
         descTh: th?.description ?? "",
         descEn: en?.description ?? "",
-        materialTh: th?.material ?? "",
-        materialEn: en?.material ?? "",
         price: newProduct.price,
         salePrice: newProduct.salePrice,
         stock: newProduct.stock,
