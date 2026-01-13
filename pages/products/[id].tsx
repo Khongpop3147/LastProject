@@ -1,6 +1,6 @@
 // pages/products/[id].tsx
 import { GetServerSideProps } from "next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { ArrowLeft, Heart, Share2, Star, Package, Check, ShoppingCart } from "lucide-react";
@@ -10,6 +10,7 @@ import QuantitySelector from "@/components/QuantitySelector";
 import ReviewCard from "@/components/ReviewCard";
 import { prisma } from "@/lib/prisma";
 import { useAuth } from "@/context/AuthContext";
+import { calculateDeliveryDate } from "@/lib/shippingUtils";
 
 interface ProductPageProps {
   product: {
@@ -35,6 +36,17 @@ export default function ProductPage({ product }: ProductPageProps) {
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState<string>("");
+  const [distanceKm, setDistanceKm] = useState<number>(100); // Default ~100km from Bangkok
+
+  // Calculate delivery date when shipping method changes
+  useEffect(() => {
+    const date = calculateDeliveryDate(
+      selectedShipping as "standard" | "express",
+      distanceKm
+    );
+    setDeliveryDate(date);
+  }, [selectedShipping, distanceKm]);
 
   if (!product) {
     return (
@@ -287,21 +299,6 @@ export default function ProductPage({ product }: ProductPageProps) {
               </div>
             </div>
 
-            <div className="mb-3">
-              <h4 className="text-base font-semibold text-gray-900 mb-2">ผลิตจาก</h4>
-              <div className="px-3 py-1.5 bg-gray-100 rounded-lg inline-block">
-                <span className="text-sm text-gray-700">EU</span>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <h4 className="text-base font-semibold text-gray-900">ผู้ผลิตมา</h4>
-                <button className="text-blue-600 text-sm font-semibold hover:underline">
-                  ดูทั้งหมด →
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Shipping Options */}
@@ -372,9 +369,11 @@ export default function ProductPage({ product }: ProductPageProps) {
               </div>
             </div>
 
-            <p className="text-xs text-gray-500 mb-3">
-              จะจัดส่งให้ท่านในวันจันทร์ที่ 25 เมษายน 2568
-            </p>
+            {deliveryDate && (
+              <p className="text-xs text-gray-500 mb-3">
+                จะจัดส่งให้ท่านใน{deliveryDate}
+              </p>
+            )}
 
             {/* Free Shipping Badge */}
             <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
