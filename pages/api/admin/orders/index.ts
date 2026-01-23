@@ -1,6 +1,7 @@
 // pages/api/orders/index.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import distanceService from "@/services/distanceService";
 import { getUserFromToken } from "@/lib/auth";
 import { IncomingForm, File } from "formidable";
 import fs from "fs";
@@ -21,14 +22,10 @@ export default async function handler(
   }
 
   const form = new IncomingForm({ multiples: false });
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error("Form parse error:", err);
-      return res.status(500).json({ error: "Cannot parse form data" });
-    }
 
+  async function processFields(fields: any, files: any) {
     try {
-      // ตรวจสอบสิทธิ์
+      // // // ตรวจสอบสิทธิ์
       const authHeader = req.headers.authorization;
       const user = await getUserFromToken(authHeader);
       if (!user) {
@@ -159,6 +156,22 @@ export default async function handler(
         slipUrl = fields.slipUrl;
       }
 
+      // เตรียมพิกัดต้นทาง/ปลายทาง (รองรับการส่ง province เป็นค่า fallback)
+      const originProvince = (fields.originProvince ?? null) as string | null;
+      const destinationProvince = (fields.destinationProvince ?? city) as string | null;
+
+      const warehouseProvince = process.env.WAREHOUSE_PROVINCE || "Bangkok";
+      const originCoords = await distanceService.ensureCoords(null, (getFirst(fields.originProvince) as string) || warehouseProvince);
+      const destinationCoords = await distanceService.ensureCoords(null, getFirst(fields.destinationProvince) as string || city);
+
+      let distanceKm: number | null = null;
+      let deliveryFee: number | null = null;
+      if (originCoords && destinationCoords) {
+        const d = distanceService.computeDistanceAndFee(originCoords, destinationCoords);
+        distanceKm = d.distanceKm;
+        deliveryFee = d.fee;
+      }
+
       // สร้าง order และอัปเดต stock ใน transaction
       const [newOrder] = await prisma.$transaction([
         prisma.order.create({
@@ -175,6 +188,10 @@ export default async function handler(
             slipUrl,
             totalAmount: totalAfterDiscount,
             couponId: couponId || undefined,
+            distanceKm: distanceKm ?? undefined,
+            deliveryFee: deliveryFee ?? undefined,
+            originProvince: getFirst(fields.originProvince) ?? warehouseProvince,
+            destinationProvince: getFirst(fields.destinationProvince) ?? city,
             items: {
               create: items.map((item) => ({
                 productId: item.productId,
@@ -226,5 +243,34 @@ export default async function handler(
         .status(500)
         .json({ error: "เกิดข้อผิดพลาดในการบันทึกคำสั่งซื้อ" });
     }
+  }
+
+  // If JSON was posted (credit card flow), parse it and process directly
+  const ct = req.headers["content-type"] || "";
+  if (typeof ct === "string" && ct.includes("application/json")) {
+    try {
+      const raw = await new Promise<string>((resolve, reject) => {
+        let data = "";
+        req.on("data", (chunk) => (data += chunk));
+        req.on("end", () => resolve(data));
+        req.on("error", reject);
+      });
+      const parsed = raw ? JSON.parse(raw) : {};
+      // when JSON, fields object should mimic formidable's output (strings)
+      await processFields(parsed, {});
+      return;
+    } catch (e) {
+      console.error("JSON parse error", e);
+      return res.status(400).json({ error: "Invalid JSON" });
+    }
+  }
+
+  // Fallback to formidable for multipart/form-data
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error("Form parse error:", err);
+      return res.status(500).json({ error: "Cannot parse form data" });
+    }
+    await processFields(fields, files);
   });
 }

@@ -74,6 +74,9 @@ export default function CheckoutPage() {
   const [couponCode, setCouponCode] = useState("");
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
+  const [deliveryLoading, setDeliveryLoading] = useState(false);
+  const [deliveryError, setDeliveryError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -89,6 +92,52 @@ export default function CheckoutPage() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [token, router]);
+
+  useEffect(() => {
+    // calculate delivery fee when city (province) selected or items change
+    let canceled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    if (!address.city) {
+      setDeliveryFee(null);
+      setDeliveryError(null);
+      setDeliveryLoading(false);
+      return;
+    }
+    setDeliveryLoading(true);
+    setDeliveryError(null);
+    // debounce to avoid rapid calls
+    timer = setTimeout(() => {
+      const originProvince = process.env.NEXT_PUBLIC_WAREHOUSE_PROVINCE || "Bangkok";
+      fetch("/api/shipping/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ originProvince, destinationProvince: address.city }),
+      })
+        .then(async (r) => {
+          if (!r.ok) throw new Error((await r.json()).error || "Failed to calculate");
+          return r.json();
+        })
+        .then((data) => {
+          if (canceled) return;
+          if (data && typeof data.deliveryFee === "number") setDeliveryFee(data.deliveryFee);
+          else setDeliveryFee(null);
+        })
+        .catch((err) => {
+          if (canceled) return;
+          console.warn("shipping calculate error", err);
+          setDeliveryFee(null);
+          setDeliveryError(err?.message || "Error calculating delivery");
+        })
+        .finally(() => {
+          if (!canceled) setDeliveryLoading(false);
+        });
+    }, 400);
+
+    return () => {
+      canceled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [address.city, items]);
 
   const updateQuantity = async (itemId: string, newQty: number) => {
     const item = items.find((i) => i.id === itemId);
@@ -119,6 +168,7 @@ export default function CheckoutPage() {
     return sum + unit * i.quantity;
   }, 0);
   const total = Math.max(subtotal - discountAmount, 0);
+  const grandTotal = total + (deliveryFee ?? 0);
 
   const applyCoupon = async () => {
     setCouponError(null);
@@ -152,6 +202,8 @@ export default function CheckoutPage() {
     }));
     const fd = new FormData();
     fd.append("items", JSON.stringify(orderItems));
+    fd.append("destinationProvince", address.city);
+    fd.append("deliveryFee", String(deliveryFee ?? 0));
     Object.entries(address).forEach(([k, v]) => fd.append(k, v));
     fd.append("paymentMethod", method);
     if (couponCode.trim()) fd.append("couponCode", couponCode.trim());
@@ -208,8 +260,23 @@ export default function CheckoutPage() {
           );
         })}
         <div className="text-right text-xl font-bold">
-          {t("checkout.subtotal")}: {subtotal} ฿
+          {t("checkout.subtotal")} : {subtotal} ฿
         </div>
+      </div>
+
+      <div className="mb-4 text-right">
+        {deliveryLoading ? (
+          <div className="text-sm text-gray-600">{t("checkout.calculatingDelivery") || "Calculating delivery..."}</div>
+        ) : deliveryError ? (
+          <div className="text-sm text-red-600">{deliveryError}</div>
+        ) : deliveryFee !== null ? (
+          <>
+            <div>{t("checkout.deliveryFee")}: {deliveryFee} ฿</div>
+            <div className="text-2xl font-bold">{t("checkout.grandTotal")}: {grandTotal} ฿</div>
+          </>
+        ) : (
+          <div className="text-sm text-gray-600">{t("checkout.deliveryUnknown") || "Delivery fee unavailable"}</div>
+        )}
       </div>
 
       {/* Coupon */}
@@ -361,17 +428,18 @@ export default function CheckoutPage() {
 
         {/* Credit card */}
         {paymentMethod === "credit_card" && (
-          <Elements stripe={stripePromise}>
-            <CreditCardForm
-              orderItems={items.map((i) => ({
-                productId: i.product.id,
-                quantity: i.quantity,
-                priceAtPurchase: i.product.salePrice ?? i.product.price,
-              }))}
-              address={address}
-              total={total}
-            />
-          </Elements>
+              <Elements stripe={stripePromise}>
+                  <CreditCardForm
+                    orderItems={items.map((i) => ({
+                      productId: i.product.id,
+                      quantity: i.quantity,
+                      priceAtPurchase: i.product.salePrice ?? i.product.price,
+                    }))}
+                    address={address}
+                    total={grandTotal}
+                    deliveryFee={deliveryFee}
+                  />
+                </Elements>
         )}
 
         {/* Cash on delivery */}
@@ -405,9 +473,10 @@ type PaymentFormProps = {
   orderItems: OrderItemPayload[];
   address: AddressPayload;
   total: number;
+  deliveryFee: number | null;
 };
 
-function CreditCardForm({ orderItems, address, total }: PaymentFormProps) {
+function CreditCardForm({ orderItems, address, total, deliveryFee }: PaymentFormProps) {
   const { t } = useTranslation("common");
   const stripe = useStripe();
   const elements = useElements();
@@ -429,7 +498,7 @@ function CreditCardForm({ orderItems, address, total }: PaymentFormProps) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ amount: total * 100 }),
+        body: JSON.stringify({ amount: Math.round(total * 100) }),
       }
     ).then((r) => r.json());
 
@@ -465,6 +534,8 @@ function CreditCardForm({ orderItems, address, total }: PaymentFormProps) {
         body: JSON.stringify({
           items: orderItems,
           ...address,
+          destinationProvince: address.city,
+          deliveryFee: deliveryFee ?? 0,
           paymentMethod: "credit_card",
           slipUrl: null,
         }),

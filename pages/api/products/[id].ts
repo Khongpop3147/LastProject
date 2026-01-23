@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { IncomingForm, File } from "formidable";
 import fs from "fs";
 import path from "path";
+import { Not } from "typeorm";
 
 export const config = {
   api: {
@@ -103,6 +104,8 @@ export default async function handler(
       // Parse text fields
       const nameTh = fields.nameTh ?? "";
       const nameEn = fields.nameEn ?? "";
+      const materialTh = fields.materialTh ?? "";
+      const materialEn = fields.materialEn ?? "";
       const descTh = fields.descTh ?? "";
       const descEn = fields.descEn ?? "";
       const price = parseFloat(fields.price || "0");
@@ -111,6 +114,15 @@ export default async function handler(
       if (fields.salePrice?.trim()) {
         const sp = parseFloat(fields.salePrice);
         if (!isNaN(sp)) salePrice = sp;
+      }
+
+      // Validate limits (INT4 max: 2,147,483,647)
+      const MAX_INT = 2147483647;
+      if (stock > MAX_INT || stock < -MAX_INT) {
+        return res.status(400).json({ error: "Stock value is out of range" });
+      }
+      if (price > MAX_INT || (salePrice && salePrice > MAX_INT)) {
+        return res.status(400).json({ error: "Price value is too large" });
       }
 
       // Build update data
@@ -136,13 +148,23 @@ export default async function handler(
         upsert: [
           {
             where: { productId_locale: { productId: id, locale: "th" } },
-            update: { name: nameTh, description: descTh },
-            create: { locale: "th", name: nameTh, description: descTh },
+            update: { name: nameTh, description: descTh, material: materialTh },
+            create: {
+              locale: "th",
+              name: nameTh,
+              description: descTh,
+              material: materialTh,
+            },
           },
           {
             where: { productId_locale: { productId: id, locale: "en" } },
-            update: { name: nameEn, description: descEn },
-            create: { locale: "en", name: nameEn, description: descEn },
+            update: { name: nameEn, description: descEn, material: materialEn },
+            create: {
+              locale: "en",
+              name: nameEn,
+              description: descEn,
+              material: materialEn,
+            },
           },
         ],
       };

@@ -47,7 +47,9 @@ const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
     const res = await fetch(`/api/admin/orders/${orderId}`, {
       method: "PATCH",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ status: newStatus }),
     });
     if (res.ok) {
