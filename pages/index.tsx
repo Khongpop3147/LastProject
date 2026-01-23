@@ -12,6 +12,7 @@ import SubBannerCarousel from "@/components/SubBannerCarousel";
 import ProductCard from "@/components/ProductCard";
 import { prisma } from "@/lib/prisma";
 import { Category, Product } from "@/types/product";
+import { Clock } from "lucide-react";
 
 interface HomeProps {
   banners: BannerSlide[];       // Hero banners
@@ -39,6 +40,7 @@ export default function HomePage({
   subBannerData,
 }: HomeProps) {
   const { t } = useTranslation("common");
+  
   return (
     <Layout title={t("siteTitle")}>
       {/* Mobile Header - ร้านค้า + Search */}
@@ -74,10 +76,46 @@ export default function HomePage({
         </section>
       )}
 
-      {/* Special Offers */}
-      <section className="container py-6">
-        <h2 className="text-xl font-semibold mb-4">{t("specialOffers")}</h2>
-        <Banner slides={subBanners} isPromotion />
+      {/* Flash Sale */}
+      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Flash Sale</h2>
+            <Clock className="w-4 h-4 text-red-500" />
+            {/* Countdown Timer - Static for now */}
+            <div className="flex items-center gap-1 text-white text-xs font-bold">
+              <span className="bg-black px-1.5 py-0.5 rounded">02</span>
+              <span className="bg-black px-1.5 py-0.5 rounded">36</span>
+              <span className="bg-black px-1.5 py-0.5 rounded">00</span>
+            </div>
+          </div>
+          <a href="/sale" className="text-sm text-blue-600 hover:underline">
+            ดูทั้งหมด →
+          </a>
+        </div>
+        
+        {/* Flash Sale Products - Responsive Grid */}
+        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
+          {onSale.slice(0, 10).map((product, idx) => {
+            const bgColors = [
+              "bg-gradient-to-br from-orange-400 to-orange-500",
+              "bg-gradient-to-br from-yellow-400 to-yellow-500",
+              "bg-gradient-to-br from-pink-400 to-pink-500",
+              "bg-gradient-to-br from-blue-400 to-blue-500",
+              "bg-gradient-to-br from-purple-400 to-purple-500"
+            ];
+            return (
+              <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
+                <ProductCard 
+                  product={product} 
+                  backgroundColor={bgColors[idx % bgColors.length]}
+                  showBadge="sale"
+                  salePercent={25 + (idx * 5)}
+                />
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {/* Popular Products - สินค้ายอดนิยม */}
@@ -97,14 +135,6 @@ export default function HomePage({
           ))}
         </div>
       </section>
-
-      {/* Coupons */}
-    <section className="container py-10">
-      <h2 className="text-xl font-semibold mb-4">
-        {t("coupons")}
-      </h2>
-      <CouponsCarousel />
-    </section>
 
       {/* New Products - สินค้าใหม่ */}
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
