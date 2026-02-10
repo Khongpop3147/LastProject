@@ -12,7 +12,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   // Convert slug array to path string
   const slugPath = (slug as string[]).join(path.sep);
-  const filePath = path.join(process.cwd(), "public", "uploads", slugPath);
+  let filePath = path.join(process.cwd(), "public", "uploads", slugPath);
 
   // Security: ป้องกัน path traversal
   const uploadDir = path.join(process.cwd(), "public", "uploads");
@@ -21,6 +21,14 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
+    // ถ้าไฟล์ไม่พบ พยายามหา product subdirectory
+    if (!fs.existsSync(filePath)) {
+      const productsPath = path.join(uploadDir, "products", slugPath);
+      if (fs.existsSync(productsPath)) {
+        filePath = productsPath;
+      }
+    }
+
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: "File not found" });
     }
