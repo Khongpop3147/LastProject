@@ -42,7 +42,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     const fileItem = Array.isArray(fileField) ? fileField[0] : fileField;
     const oldPath = fileItem.filepath; // v2+ ใช้ filepath
     const fileName = path.basename(oldPath);
-    const url = `/uploads/${fileName}`;
+    const url = `/api/file/${fileName}`;
 
     return res.status(200).json({ url });
   });

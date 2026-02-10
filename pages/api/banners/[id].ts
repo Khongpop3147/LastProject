@@ -84,7 +84,7 @@ export default async function handler(
         const file = Array.isArray(files.image) ? files.image[0] : files.image;
         const tmpPath = (file.filepath || (file as any).path) as string;
         const fileName = path.basename(tmpPath);
-        imageUrl = `/uploads/banners/${fileName}`;
+        imageUrl = `/api/file/banners/${fileName}`;
       }
 
       // locale-specific fields
