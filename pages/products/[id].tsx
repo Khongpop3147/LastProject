@@ -198,12 +198,13 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
         id: raw.id,
         name: trans?.name ?? "",
         description: trans?.description ?? "",
-        material: trans?.material ?? "",
+        material: trans?.material ?? null,
         price: raw.price,
         salePrice: raw.salePrice,
         stock: raw.stock,
         imageUrl: raw.imageUrl,
       },
     },
+    revalidate: 60,
   };
 };
