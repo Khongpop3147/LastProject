@@ -192,18 +192,20 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
   }
 
   const trans = raw.translations[0];
+  const product = trans ? {
+    id: raw.id,
+    name: trans.name,
+    description: trans.description ?? "",
+    material: trans.material ?? null,
+    price: raw.price,
+    salePrice: raw.salePrice,
+    stock: raw.stock,
+    imageUrl: raw.imageUrl,
+  } : null;
+
   return {
     props: {
-      product: {
-        id: raw.id,
-        name: trans?.name ?? "",
-        description: trans?.description ?? "",
-        material: trans?.material ?? null,
-        price: raw.price,
-        salePrice: raw.salePrice,
-        stock: raw.stock,
-        imageUrl: raw.imageUrl,
-      },
+      product,
     },
     revalidate: 60,
   };
