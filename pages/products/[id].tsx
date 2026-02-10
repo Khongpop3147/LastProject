@@ -6,6 +6,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Product as ProductType } from "@/types/product";
 import { useAuth } from "@/context/AuthContext";
+import type { ProductLocale } from "@prisma/client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
@@ -191,7 +192,7 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
     return { props: { product: null } };
   }
 
-  const trans = raw.translations[0];
+  const trans = raw.translations[0] as ProductLocale | undefined;
   const product = trans ? {
     id: raw.id,
     name: trans.name,
