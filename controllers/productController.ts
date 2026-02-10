@@ -29,17 +29,24 @@ export async function createProduct(
     res.setHeader("Allow", ["POST"]);
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
-  const { name, description, price, stock, categoryId, imageUrl } = req.body;
+  const { name, description, price, stock, categoryId, imageUrl, locale = "th" } = req.body;
   try {
     const product = await prisma.product.create({
       data: {
-        name,
-        description,
         price: parseFloat(price),
         stock: parseInt(stock, 10),
-        // ถ้าไม่มีหมวดหมู่หรือรูป ให้ตัดสองบรรทัดนี้ออก
         categoryId: categoryId || undefined,
         imageUrl: imageUrl || undefined,
+        translations: {
+          create: {
+            locale,
+            name,
+            description: description || "",
+          },
+        },
+      },
+      include: {
+        translations: true,
       },
     });
     res.status(201).json(product);
