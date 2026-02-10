@@ -21,11 +21,41 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   try {
-    // ถ้าไฟล์ไม่พบ พยายามหา product subdirectory
+    // ถ้าไฟล์ไม่พบ ให้ลองหาใน subfolders ยอดนิยม และสุดท้ายค้นหาโดย basename
     if (!fs.existsSync(filePath)) {
-      const productsPath = path.join(uploadDir, "products", slugPath);
-      if (fs.existsSync(productsPath)) {
-        filePath = productsPath;
+      const candidates = [
+        path.join(uploadDir, "products", slugPath),
+        path.join(uploadDir, "Products", slugPath),
+        path.join(uploadDir, "banners", slugPath),
+        path.join(uploadDir, "slips", slugPath),
+      ];
+
+      let found = false;
+      for (const c of candidates) {
+        if (fs.existsSync(c)) {
+          filePath = c;
+          found = true;
+          break;
+        }
+      }
+
+      // fallback: ค้นหาไฟล์โดย basename ทั่วทั้ง uploadDir (recursive)
+      if (!found) {
+        const base = path.basename(slugPath);
+        const stack = [uploadDir];
+        while (stack.length && !found) {
+          const dir = stack.pop()!;
+          const entries = fs.readdirSync(dir, { withFileTypes: true });
+          for (const e of entries) {
+            const p = path.join(dir, e.name);
+            if (e.isFile() && e.name === base) {
+              filePath = p;
+              found = true;
+              break;
+            }
+            if (e.isDirectory()) stack.push(p);
+          }
+        }
       }
     }
 
