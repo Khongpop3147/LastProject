@@ -72,6 +72,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               src={product.imageUrl ?? "/images/placeholder.png"}
               alt={product.name}
               fill
+              unoptimized
               className="object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
@@ -105,6 +106,7 @@ export default function ProductCard({ product }: ProductCardProps) {
               src={product.imageUrl ?? "/images/placeholder.png"}
               alt={product.name}
               fill
+              unoptimized
               className="object-cover transition-transform duration-300"
             />
             <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-lg text-red-600 font-bold">
