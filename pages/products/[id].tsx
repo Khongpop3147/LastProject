@@ -4,7 +4,7 @@ import useTranslation from "next-translate/useTranslation";
 import Layout from "@/components/Layout";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Product as ProductType } from "@/types/product";
+// import { Product as ProductType } from "@/types/product"; // unused
 import { useAuth } from "@/context/AuthContext";
 import type { ProductLocale } from "@prisma/client";
 import { useState, useEffect } from "react";
@@ -208,6 +208,5 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
     props: {
       product,
     },
-    revalidate: 60,
   };
 };
