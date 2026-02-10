@@ -10,7 +10,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(400).json({ error: "Invalid path" });
   }
 
-  const filePath = path.join(process.cwd(), "public", "uploads", ...slug);
+  // Convert slug array to path string
+  const slugPath = (slug as string[]).join(path.sep);
+  const filePath = path.join(process.cwd(), "public", "uploads", slugPath);
 
   // Security: ป้องกัน path traversal
   const uploadDir = path.join(process.cwd(), "public", "uploads");
