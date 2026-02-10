@@ -6,7 +6,7 @@ import path from "path";
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   const { slug } = req.query;
 
-  if (!slug || Array.isArray(slug) === false) {
+  if (!slug || !Array.isArray(slug) || slug.length === 0) {
     return res.status(400).json({ error: "Invalid path" });
   }
 
