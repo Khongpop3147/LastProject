@@ -7,20 +7,23 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Truck, ShoppingCart, Menu, X } from "lucide-react";
+import useTranslation from "next-translate/useTranslation";
+
 export default function Navbar() {
+  const { t, lang } = useTranslation("common");
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
-    { label: "หน้าแรก", href: "/" },
-    { label: "สินค้า", href: "/all-products" },
-    { label: "เกี่ยวกับเรา", href: "/contact" },
-    { label: "Q/A", href: "/qa" },
+    { key: "nav.home", href: "/" },
+    { key: "nav.products", href: "/all-products" },
+    { key: "nav.about", href: "/contact" },
+    { key: "nav.qa", href: "/qa" },
   ];
 
   return (
-    <nav className="bg-white shadow relative">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 md:h-24">
           {/* Left: Hamburger + Logo */}
@@ -44,15 +47,15 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile: Orders & Cart Icons directly on bar */}
+          {/* Mobile: Orders & Cart Icons */}
           <div className="flex items-center space-x-4 md:hidden">
-            <Link href="/orders" aria-label="Orders">
+            <Link href="/orders" aria-label={t("orders")}>
               <Truck
                 size={24}
                 className="text-gray-600 hover:text-green-600 transition"
               />
             </Link>
-            <Link href="/cart" aria-label="Cart">
+            <Link href="/cart" aria-label={t("cart")}>
               <ShoppingCart
                 size={24}
                 className="text-gray-600 hover:text-green-600 transition"
@@ -63,42 +66,46 @@ export default function Navbar() {
           {/* Center (desktop): Nav Links + Language */}
           <div className="hidden md:flex items-center space-x-8">
             <ul className="flex items-center space-x-6">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
+              {navItems.map(({ key, href }) => {
+                const isActive = pathname === href;
                 return (
-                  <li key={item.href}>
+                  <li key={href}>
                     <Link
-                      href={item.href}
+                      href={href}
                       className={`px-3 py-1 text-base font-medium rounded-md transition-colors ${
                         isActive
                           ? "bg-green-600 text-white"
                           : "text-gray-700 hover:text-green-600"
                       }`}
                     >
-                      {item.label}
+                      {t(key)}
                     </Link>
                   </li>
                 );
               })}
             </ul>
+
+            {/* Language Switcher */}
             <div className="flex items-center space-x-2 text-sm font-medium">
               <Link
-                href="/?lang=th"
-                className={`px-2 py-1 rounded transition-colors ${
-                  pathname.includes("lang=th")
-                    ? "bg-green-600 text-white"
-                    : "text-gray-700 hover:bg-gray-200"
-                }`}
+                href={pathname}
+                locale="th"
+                className={
+                  lang === "th"
+                    ? "bg-green-600 text-white px-2 py-1 rounded"
+                    : "text-gray-700 hover:bg-gray-200 px-2 py-1 rounded"
+                }
               >
                 TH
               </Link>
               <Link
-                href="/?lang=en"
-                className={`px-2 py-1 rounded transition-colors ${
-                  pathname.includes("lang=en")
-                    ? "bg-green-600 text-white"
-                    : "text-gray-700 hover:bg-gray-200"
-                }`}
+                href={pathname}
+                locale="en"
+                className={
+                  lang === "en"
+                    ? "bg-green-600 text-white px-2 py-1 rounded"
+                    : "text-gray-700 hover:bg-gray-200 px-2 py-1 rounded"
+                }
               >
                 EN
               </Link>
@@ -121,12 +128,14 @@ export default function Navbar() {
             </Link>
             {user ? (
               <>
-                <span className="text-gray-700">สวัสดี, {user.name}</span>
+                <span className="text-gray-700">
+                  {t("hello")}, {user.name}
+                </span>
                 <button
                   onClick={logout}
                   className="px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition"
                 >
-                  Logout
+                  {t("logout")}
                 </button>
               </>
             ) : (
@@ -135,13 +144,13 @@ export default function Navbar() {
                   href="/login"
                   className="px-3 py-1 text-sm text-gray-700 rounded-md hover:text-green-600 transition"
                 >
-                  เข้าสู่ระบบ
+                  {t("login")}
                 </Link>
                 <Link
                   href="/register"
                   className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
                 >
-                  สมัครสมาชิก
+                  {t("signup")}
                 </Link>
               </>
             )}
@@ -152,30 +161,30 @@ export default function Navbar() {
         {mobileOpen && (
           <div className="md:hidden bg-white border-t shadow-sm">
             <ul className="flex flex-col divide-y">
-              {navItems.map((item) => {
-                const isActive = pathname === item.href;
+              {navItems.map(({ key, href }) => {
+                const isActive = pathname === href;
                 return (
-                  <li key={item.href}>
+                  <li key={href}>
                     <Link
-                      href={item.href}
+                      href={href}
                       className={`block px-4 py-3 text-gray-700 hover:bg-green-50 transition-colors ${
                         isActive ? "bg-green-600 text-white" : ""
                       }`}
                       onClick={() => setMobileOpen(false)}
                     >
-                      {item.label}
+                      {t(key)}
                     </Link>
                   </li>
                 );
               })}
             </ul>
-
             <div className="flex flex-col space-y-2 p-4 border-t">
               <div className="flex items-center space-x-2">
                 <Link
-                  href="/?lang=th"
+                  href={pathname}
+                  locale="th"
                   className={`px-2 py-1 rounded transition-colors ${
-                    pathname.includes("lang=th")
+                    lang === "th"
                       ? "bg-green-600 text-white"
                       : "text-gray-700 hover:bg-gray-200"
                   }`}
@@ -184,9 +193,10 @@ export default function Navbar() {
                   TH
                 </Link>
                 <Link
-                  href="/?lang=en"
+                  href={pathname}
+                  locale="en"
                   className={`px-2 py-1 rounded transition-colors ${
-                    pathname.includes("lang=en")
+                    lang === "en"
                       ? "bg-green-600 text-white"
                       : "text-gray-700 hover:bg-gray-200"
                   }`}
@@ -197,7 +207,9 @@ export default function Navbar() {
               </div>
               {user ? (
                 <>
-                  <span className="text-gray-700">สวัสดี, {user.name}</span>
+                  <span className="text-gray-700">
+                    {t("hello")}, {user.name}
+                  </span>
                   <button
                     onClick={() => {
                       logout();
@@ -205,7 +217,7 @@ export default function Navbar() {
                     }}
                     className="text-red-500 hover:underline text-left"
                   >
-                    Logout
+                    {t("logout")}
                   </button>
                 </>
               ) : (
@@ -215,14 +227,14 @@ export default function Navbar() {
                     className="block text-gray-700 hover:bg-green-50 px-4 py-2 rounded transition-colors"
                     onClick={() => setMobileOpen(false)}
                   >
-                    เข้าสู่ระบบ
+                    {t("login")}
                   </Link>
                   <Link
                     href="/register"
                     className="block text-green-600 hover:bg-green-50 px-4 py-2 rounded transition-colors"
                     onClick={() => setMobileOpen(false)}
                   >
-                    สมัครสมาชิก
+                    {t("signup")}
                   </Link>
                 </>
               )}

@@ -17,12 +17,13 @@ interface JwtPayload {
 
 /**
  * ตรวจสอบและถอดรหัส JWT token
- * คืนค่า payload หรือ null ถ้าไม่ถูกต้อง
  */
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    // ถ้ามี prefix “Bearer ” ให้ strip ออกก่อน
-    const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
+    const raw = token.startsWith("Bearer ")
+      ? token.slice(7)
+      : token;
+
     const payload = jwt.verify(raw, JWT_SECRET) as JwtPayload;
     return payload;
   } catch (err) {
@@ -32,19 +33,20 @@ export function verifyToken(token: string): JwtPayload | null {
 }
 
 /**
- * ดึง user จาก Authorization header แบบ Bearer token
- * คืนค่า User หรือ null ถ้าไม่พบ หรือ token ไม่ถูกต้อง
+ * ดึง user จาก token (รองรับ cookie / bearer)
+ * @param token string | undefined
  */
 export async function getUserFromToken(
-  authHeader: string | undefined
+  token: string | undefined
 ): Promise<User | null> {
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.substring("Bearer ".length);
+  if (!token) return null;
+
   const payload = verifyToken(token);
   if (!payload?.userId) return null;
 
   const user = await prisma.user.findUnique({
     where: { id: payload.userId },
   });
+
   return user;
 }

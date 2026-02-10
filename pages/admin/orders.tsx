@@ -5,14 +5,14 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { adminGuard } from "@/lib/adminGuard";
 import { useState } from "react";
-import { useAuth } from "@/context/AuthContext"; // นำเข้าบริบท Auth
+import { useAuth } from "@/context/AuthContext";
 
 interface OrderItem {
   id: string;
   product: {
     id: string;
-    name: string;
-    imageUrl?: string | null;
+    name: string | null;
+    imageUrl: string | null;
   };
   quantity: number;
   priceAtPurchase: number;
@@ -23,16 +23,20 @@ interface Order {
   recipient: string;
   line1: string;
   line2?: string | null;
-  line3?: string | null; // เพิ่ม field line3
+  line3?: string | null;
   city: string;
   postalCode?: string | null;
-  country?: string | null;
+  country: string;
   paymentMethod?: string | null;
   status: string;
   totalAmount: number;
+  distanceKm?: number | null;
+  deliveryFee?: number | null;
+  originProvince?: string | null;
+  destinationProvince?: string | null;
   items: OrderItem[];
-  createdAt: string;
   slipUrl?: string | null;
+  createdAt: string;
 }
 
 interface Props {
@@ -40,15 +44,16 @@ interface Props {
 }
 
 const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
-  const { token } = useAuth(); // ดึง token จาก context
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const { token } = useAuth();
+  const [orders, setOrders] = useState(initialOrders);
 
-  // ฟังก์ชันเปลี่ยนสถานะออเดอร์
   const updateStatus = async (orderId: string, newStatus: string) => {
     const res = await fetch(`/api/admin/orders/${orderId}`, {
       method: "PATCH",
-      credentials: "include", // ← ให้ส่ง cookie ไปด้วย
-      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ status: newStatus }),
     });
     if (res.ok) {
@@ -60,12 +65,11 @@ const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
     }
   };
 
-  // ฟังก์ชันลบคำสั่งซื้อ
   const deleteOrder = async (orderId: string) => {
     if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการลบคำสั่งซื้อนี้?")) return;
     const res = await fetch(`/api/admin/orders/${orderId}`, {
       method: "DELETE",
-      credentials: "include", // ← ส่ง cookie ไปด้วย
+      credentials: "include",
     });
     if (res.status === 204) {
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
@@ -89,11 +93,19 @@ const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
             <div key={order.id} className="border p-4 rounded">
               <div className="flex justify-between mb-2">
                 <div>
-                  <strong>ผู้รับ:</strong> {order.recipient} <br />
-                  <strong>ที่อยู่:</strong> {order.line1}{" "}
-                  {order.line2 && order.line2 + " "}
-                  {order.line3 && order.line3 + " "}
-                  {order.city} {order.postalCode} {order.country}
+                  <strong>ผู้รับ:</strong> {order.recipient}
+                  <br />
+                  <strong>ที่อยู่:</strong>{" "}
+                  {[
+                    order.line1,
+                    order.line2,
+                    order.line3,
+                    order.city,
+                    order.postalCode,
+                    order.country,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                 </div>
                 <div className="flex items-center space-x-2">
                   <strong>สถานะ:</strong>
@@ -124,12 +136,12 @@ const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
                     <li key={item.id} className="flex items-center space-x-4">
                       <img
                         src={item.product.imageUrl || "/images/placeholder.png"}
-                        alt={item.product.name}
+                        alt={item.product.name ?? ""}
                         className="w-12 h-12 object-cover rounded"
                       />
                       <span>
-                        {item.product.name} x {item.quantity} -{" "}
-                        {item.priceAtPurchase * item.quantity} ฿
+                        {item.product.name ?? "(No title)"} x {item.quantity} —{" "}
+                        ฿{item.priceAtPurchase * item.quantity}
                       </span>
                     </li>
                   ))}
@@ -148,7 +160,10 @@ const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
               )}
 
               <div className="text-right font-bold">
-                ยอดรวม: {order.totalAmount} ฿
+                ยอดรวม: ฿{order.totalAmount}
+                {order.deliveryFee != null && (
+                  <div className="text-base">ค่าจัดส่ง: ฿{order.deliveryFee}</div>
+                )}
               </div>
               <div className="text-sm text-gray-500 mt-2">
                 วันที่สั่งซื้อ:{" "}
@@ -164,19 +179,33 @@ const AdminOrdersPage: NextPage<Props> = ({ orders: initialOrders }) => {
 
 export const getServerSideProps: GetServerSideProps = async (ctx) =>
   adminGuard(ctx, async () => {
+    // 1) Fetch orders, include items → products → one translation
     const rawOrders = await prisma.order.findMany({
-      include: {
-        items: { include: { product: true } },
-      },
       orderBy: { createdAt: "desc" },
+      include: {
+        items: {
+          include: {
+            product: {
+              include: {
+                translations: {
+                  where: { locale: "th" }, // or ctx.locale
+                  take: 1,
+                  select: { name: true },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
-    const orders = rawOrders.map((o) => ({
+    // 2) Map to serializable shape
+    const orders: Order[] = rawOrders.map((o) => ({
       id: o.id,
       recipient: o.recipient,
       line1: o.line1,
       line2: o.line2,
-      line3: o.line3, // แม็ปค่าจาก DB มาใช้
+      line3: o.line3,
       city: o.city,
       postalCode: o.postalCode,
       country: o.country,
@@ -184,17 +213,21 @@ export const getServerSideProps: GetServerSideProps = async (ctx) =>
       status: o.status,
       totalAmount: o.totalAmount,
       slipUrl: o.slipUrl,
-      items: o.items.map((i) => ({
-        id: i.id,
-        product: {
-          id: i.product.id,
-          name: i.product.name,
-          imageUrl: i.product.imageUrl,
-        },
-        quantity: i.quantity,
-        priceAtPurchase: i.priceAtPurchase,
-      })),
       createdAt: o.createdAt.toISOString(),
+      items: o.items.map((it: any) => ({
+        id: it.id,
+        quantity: it.quantity,
+        priceAtPurchase: it.priceAtPurchase,
+        product: {
+          id: it.product.id,
+          name: it.product.translations[0]?.name ?? null,
+          imageUrl: it.product.imageUrl ?? null,
+        },
+      })),
+      distanceKm: o.distanceKm ?? null,
+      deliveryFee: o.deliveryFee ?? null,
+      originProvince: o.originProvince ?? null,
+      destinationProvince: o.destinationProvince ?? null,
     }));
 
     return { props: { orders } };

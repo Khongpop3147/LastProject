@@ -14,18 +14,25 @@ interface Category {
 
 interface Banner {
   id: string;
-  title: string;
-  sub: string | null;
+  titleTh: string;
+  titleEn: string;
+  subTh: string | null;
+  subEn: string | null;
   imageUrl: string;
   order: number;
   position: string;
-  description: string | null;
+  descriptionTh: string | null;
+  descriptionEn: string | null;
 }
 
 interface Product {
   id: string;
-  name: string;
-  description?: string;
+  nameTh: string;
+  nameEn: string;
+  descTh?: string;
+  descEn?: string;
+  materialTh?: string;
+  materialEn?: string;
   price: number;
   salePrice?: number | null;
   stock: number;
@@ -34,13 +41,27 @@ interface Product {
   isFeatured: boolean;
 }
 
+interface SubBannerForm {
+  // title สองภาษา
+  titleTh: string;
+  titleEn: string;
+  // description สองภาษา
+  descriptionTh: string;
+  descriptionEn: string;
+  // buttonText สองภาษา
+  buttonTextTh: string;
+  buttonTextEn: string;
+  buttonLink: string;
+  imageUrl: string;
+}
+
 export const getServerSideProps: GetServerSideProps = async (ctx) =>
   adminGuard(ctx, async () => ({ props: {} }));
 
 export default function HomeManagePage() {
   const [tab, setTab] = useState<
     "product" | "category" | "banner" | "subbanner"
-  >("banner");
+  >("product");
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -103,8 +124,12 @@ function CreateProductSection() {
   // ... ใช้โค้ดเดิมของคุณ
   // เพิ่ม div ห่อ form ด้วย className="max-w-xl"
   const [form, setForm] = useState({
-    name: "",
-    description: "",
+    nameTh: "",
+    nameEn: "",
+    descTh: "",
+    descEn: "",
+    materialTh: "",
+    materialEn: "",
     price: "",
     salePrice: "",
     stock: "",
@@ -114,39 +139,73 @@ function CreateProductSection() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
-    fetch("/api/categories")
+    // ดึงหมวดหมู่ภาษาไทย (หรือใช้ locale param ตามต้องการ)
+    fetch("/api/categories?locale=th")
       .then((r) => r.json())
-      .then((data) => setCategories(data.items || data))
+      .then((data) => setCategories(data))
       .catch(console.error);
   }, []);
 
   const onChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, files } = e.target as any;
-    if (name === "image" && files) setFile(files[0]);
-    else setForm((f) => ({ ...f, [name]: value }));
+    if (name === "image" && files) {
+      setFile(files[0]);
+    } else {
+      setForm((f) => ({ ...f, [name]: value }));
+    }
   };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const data = new FormData();
-    data.append("name", form.name);
-    data.append("description", form.description);
-    data.append("price", form.price);
-    if (form.salePrice) data.append("salePrice", form.salePrice);
-    data.append("stock", form.stock);
-    if (form.categoryId) data.append("categoryId", form.categoryId);
-    if (file) data.append("image", file);
+    const {
+      nameTh,
+      nameEn,
+      descTh,
+      descEn,
+      materialTh,
+      materialEn,
+      price,
+      salePrice,
+      stock,
+      categoryId,
+    } = form;
 
-    const res = await fetch("/api/products", { method: "POST", body: data });
+    if (!nameTh.trim() || !nameEn.trim()) {
+      return alert("กรุณากรอกชื่อสินค้า ทั้งสองภาษา");
+    }
+
+    const data = new FormData();
+    data.append("nameTh", nameTh);
+    data.append("nameEn", nameEn);
+    data.append("descTh", descTh);
+    data.append("descEn", descEn);
+    data.append("price", price);
+    if (salePrice) data.append("salePrice", salePrice);
+    data.append("stock", stock);
+    if (categoryId) data.append("categoryId", categoryId);
+    if (file) data.append("image", file);
+    if (materialTh) data.append("materialTh", materialTh);
+    if (materialEn) data.append("materialEn", materialEn);
+
+    const res = await fetch("/api/products", {
+      method: "POST",
+      body: data,
+    });
+
     if (!res.ok) {
-      alert("Error creating product");
+      const err = await res.json();
+      alert(err.error || "Error creating product");
     } else {
       alert("Created!");
       setForm({
-        name: "",
-        description: "",
+        nameTh: "",
+        nameEn: "",
+        descTh: "",
+        descEn: "",
+        materialTh: "",
+        materialEn: "",
         price: "",
         salePrice: "",
         stock: "",
@@ -158,21 +217,52 @@ function CreateProductSection() {
 
   return (
     <div className="max-w-xl">
-      <h2 className="text-2xl font-semibold mb-6">สร้างสินค้าใหม่</h2>
-      <form onSubmit={onSubmit} className="space-y-5">
+      <h2 className="text-2xl font-semibold mb-6">
+        สร้างสินค้าใหม่ / Create New Product
+      </h2>
+      <form onSubmit={onSubmit} className="space-y-4">
         <input
-          name="name"
-          value={form.name}
+          name="nameTh"
+          value={form.nameTh}
           onChange={onChange}
-          placeholder="ชื่อสินค้า"
+          placeholder="ชื่อสินค้า (ภาษาไทย)"
+          required
+          className="w-full border rounded p-3"
+        />
+        <input
+          name="nameEn"
+          value={form.nameEn}
+          onChange={onChange}
+          placeholder="Product Name (EN)"
           required
           className="w-full border rounded p-3"
         />
         <textarea
-          name="description"
-          value={form.description}
+          name="descTh"
+          value={form.descTh}
           onChange={onChange}
-          placeholder="รายละเอียด"
+          placeholder="รายละเอียด (ภาษาไทย)"
+          className="w-full border rounded p-3"
+        />
+        <textarea
+          name="descEn"
+          value={form.descEn}
+          onChange={onChange}
+          placeholder="Description (EN)"
+          className="w-full border rounded p-3"
+        />
+        <input
+          name="materialTh"
+          value={form.materialTh}
+          onChange={onChange}
+          placeholder="วัสดุ (ภาษาไทย)"
+          className="w-full border rounded p-3"
+        />
+        <input
+          name="materialEn"
+          value={form.materialEn}
+          onChange={onChange}
+          placeholder="Material (EN)"
           className="w-full border rounded p-3"
         />
         <input
@@ -189,7 +279,7 @@ function CreateProductSection() {
           type="number"
           value={form.salePrice}
           onChange={onChange}
-          placeholder="ราคาลด (ไม่บังคับ)"
+          placeholder="ราคาลด (ถ้ามี)"
           className="w-full border rounded p-3"
         />
         <input
@@ -225,13 +315,12 @@ function CreateProductSection() {
           type="submit"
           className="bg-green-600 text-white rounded px-5 py-3 hover:bg-green-700 transition"
         >
-          บันทึก
+          บันทึก / Save
         </button>
       </form>
     </div>
   );
 }
-
 // --- Manage Product Section ---
 
 function ManageProductSection() {
@@ -243,8 +332,12 @@ function ManageProductSection() {
   // popup แก้ไข
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editForm, setEditForm] = useState({
-    name: "",
-    description: "",
+    nameTh: "",
+    nameEn: "",
+    descTh: "",
+    descEn: "",
+    materialTh: "",
+    materialEn: "",
     price: "",
     salePrice: "",
     stock: "",
@@ -298,12 +391,18 @@ function ManageProductSection() {
   const openEditModal = (product: Product) => {
     setEditProduct(product);
     setEditForm({
-      name: product.name,
-      description: product.description || "",
+      // แทนที่ name/description เดิมด้วย nameTh/nameEn/descTh/descEn
+      nameTh: product.nameTh,
+      nameEn: product.nameEn,
+      descTh: product.descTh || "",
+      descEn: product.descEn || "",
+      materialTh: product.materialTh || "",
+      materialEn: product.materialEn || "",
+
       price: product.price.toString(),
       salePrice: product.salePrice?.toString() || "",
       stock: product.stock.toString(),
-      categoryId: product.categoryId || "", // กำหนดค่าเริ่มต้น
+      categoryId: product.categoryId || "",
     });
     setEditFile(null);
   };
@@ -329,8 +428,14 @@ function ManageProductSection() {
     if (!editProduct) return;
 
     const fd = new FormData();
-    fd.append("name", editForm.name);
-    fd.append("description", editForm.description);
+    // แทนที่ fd.append("name", editForm.name)
+    fd.append("nameTh", editForm.nameTh);
+    fd.append("nameEn", editForm.nameEn);
+    // แทนที่ fd.append("description", editForm.description)
+    fd.append("descTh", editForm.descTh);
+    fd.append("descEn", editForm.descEn);
+    fd.append("materialTh", editForm.materialTh);
+    fd.append("materialEn", editForm.materialEn);
     fd.append("price", editForm.price);
     fd.append("salePrice", editForm.salePrice);
     fd.append("stock", editForm.stock);
@@ -365,8 +470,10 @@ function ManageProductSection() {
           <thead>
             <tr className="bg-gray-100 text-left text-gray-700">
               <th className="border px-6 py-3 w-12">#</th>
-              <th className="border px-6 py-3">Name</th>
-              <th className="border px-6 py-3">รายละเอียด</th>
+              <th className="border px-6 py-3">ชื่อสินค้า (TH)</th>
+              <th className="border px-6 py-3">Product Name (EN)</th>
+              <th className="border px-6 py-3">รายละเอียด (TH)</th>
+              <th className="border px-6 py-3">Description (EN)</th>
               <th className="border px-6 py-3">ราคา</th>
               <th className="border px-6 py-3">Stock</th>
               <th className="border px-6 py-3 text-center">แนะนำ</th>
@@ -378,8 +485,10 @@ function ManageProductSection() {
             {products.map((p, i) => (
               <tr key={p.id} className="border hover:bg-gray-50">
                 <td className="border px-6 py-3">{i + 1}</td>
-                <td className="border px-6 py-3">{p.name}</td>
-                <td className="border px-6 py-3">{p.description || "-"}</td>
+                <td className="border px-6 py-3">{p.nameTh}</td>
+                <td className="border px-6 py-3">{p.nameEn}</td>
+                <td className="border px-6 py-3">{p.descTh || "-"}</td>
+                <td className="border px-6 py-3">{p.descEn || "-"}</td>
                 <td className="border px-6 py-3">
                   {p.salePrice != null ? (
                     <>
@@ -406,7 +515,7 @@ function ManageProductSection() {
                 <td className="border px-6 py-3 text-center">
                   <img
                     src={p.imageUrl || "/images/placeholder.png"}
-                    alt={p.name}
+                    alt={p.nameTh}
                     className="h-12 w-12 object-cover rounded"
                   />
                 </td>
@@ -448,21 +557,61 @@ function ManageProductSection() {
                 />
               </label>
               <label className="block">
-                ชื่อสินค้า:
+                ชื่อสินค้า (TH):
                 <input
                   type="text"
-                  name="name"
-                  value={editForm.name}
+                  name="nameTh"
+                  value={editForm.nameTh}
                   onChange={handleEditChange}
                   required
                   className="w-full border rounded p-2 mt-1"
                 />
               </label>
               <label className="block">
-                รายละเอียด:
+                Product Name (EN):
+                <input
+                  type="text"
+                  name="nameEn"
+                  value={editForm.nameEn}
+                  onChange={handleEditChange}
+                  required
+                  className="w-full border rounded p-2 mt-1"
+                />
+              </label>
+              <label className="block">
+                รายละเอียด (TH):
                 <textarea
-                  name="description"
-                  value={editForm.description}
+                  name="descTh"
+                  value={editForm.descTh}
+                  onChange={handleEditChange}
+                  className="w-full border rounded p-2 mt-1"
+                />
+              </label>
+              <label className="block">
+                Description (EN):
+                <textarea
+                  name="descEn"
+                  value={editForm.descEn}
+                  onChange={handleEditChange}
+                  className="w-full border rounded p-2 mt-1"
+                />
+              </label>
+              <label className="block">
+                วัสดุ (TH):
+                <input
+                  type="text"
+                  name="materialTh"
+                  value={editForm.materialTh}
+                  onChange={handleEditChange}
+                  className="w-full border rounded p-2 mt-1"
+                />
+              </label>
+              <label className="block">
+                Material (EN):
+                <input
+                  type="text"
+                  name="materialEn"
+                  value={editForm.materialEn}
                   onChange={handleEditChange}
                   className="w-full border rounded p-2 mt-1"
                 />
@@ -538,127 +687,284 @@ function ManageProductSection() {
   );
 }
 
-// --- Manage Category Section ---
 function ManageCategorySection() {
   const [cats, setCats] = useState<Category[]>([]);
-  const [newName, setNewName] = useState("");
+  const [newNameTh, setNewNameTh] = useState("");
+  const [newNameEn, setNewNameEn] = useState("");
+  const [locale, setLocale] = useState<"th" | "en">("th");
 
   useEffect(() => {
-    fetch("/api/categories")
+    fetch(`/api/categories?locale=${locale}`)
       .then((r) => r.json())
-      .then((data) => setCats(data.items || data))
+      .then((data: Category[]) => setCats(data))
       .catch(console.error);
-  }, []);
+  }, [locale]);
 
   const add = async (e: FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return alert("กรุณากรอกชื่อหมวดหมู่");
+    if (!newNameTh.trim() || !newNameEn.trim()) {
+      return alert(
+        locale === "th"
+          ? "กรุณากรอกชื่อทั้งสองภาษา"
+          : "Please enter both Thai and English names"
+      );
+    }
+
     const res = await fetch("/api/categories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName }),
+      body: JSON.stringify({ nameTh: newNameTh, nameEn: newNameEn }),
     });
+
     if (res.ok) {
-      const cat = await res.json();
-      setCats((c) => [...c, cat]);
-      setNewName("");
+      const { id, nameTh, nameEn } = (await res.json()) as {
+        id: string;
+        nameTh: string;
+        nameEn: string;
+      };
+      const name = locale === "th" ? nameTh : nameEn;
+      setCats((prev) => [...prev, { id, name }]);
+      setNewNameTh("");
+      setNewNameEn("");
+    } else {
+      const { error } = await res.json();
+      alert(error || (locale === "th" ? "เกิดข้อผิดพลาด" : "Error occurred"));
     }
   };
 
   const remove = async (id: string) => {
-    if (!confirm("ลบไหม?")) return;
+    if (!confirm(locale === "th" ? "ลบไหม?" : "Are you sure?")) return;
     const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
-    if (res.status === 204) setCats((c) => c.filter((x) => x.id !== id));
+    if (res.status === 204) {
+      setCats((c) => c.filter((x) => x.id !== id));
+    }
   };
 
   return (
     <div className="max-w-xl">
-      <h2 className="text-2xl font-semibold mb-6">จัดการหมวดหมู่</h2>
-      <form onSubmit={add} className="flex gap-3 mb-6">
+      {/* Language selector */}
+      <div className="mb-4 flex items-center gap-2">
+        <label className="font-medium">
+          {locale === "th" ? "ภาษา:" : "Language:"}
+        </label>
+        <select
+          value={locale}
+          onChange={(e) => setLocale(e.target.value as "th" | "en")}
+          className="border rounded p-2"
+        >
+          <option value="th">ไทย</option>
+          <option value="en">EN</option>
+        </select>
+      </div>
+
+      <h2 className="text-2xl font-semibold mb-6">
+        {locale === "th" ? "จัดการหมวดหมู่" : "Manage Categories"}
+      </h2>
+
+      {/* Add form with two inputs */}
+      <form onSubmit={add} className="flex flex-col gap-3 mb-6">
         <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="ชื่อหมวดหมู่ใหม่"
-          className="border p-3 rounded flex-1"
+          value={newNameTh}
+          onChange={(e) => setNewNameTh(e.target.value)}
+          placeholder={
+            locale === "th" ? "ชื่อหมวดหมู่ (ภาษาไทย)" : "Category Name (TH)"
+          }
+          className="border p-3 rounded"
+        />
+        <input
+          value={newNameEn}
+          onChange={(e) => setNewNameEn(e.target.value)}
+          placeholder={
+            locale === "th" ? "ชื่อหมวดหมู่ (ภาษาอังกฤษ)" : "Category Name (EN)"
+          }
+          className="border p-3 rounded"
         />
         <button
           type="submit"
           className="bg-green-600 text-white rounded px-6 py-3 hover:bg-green-700"
         >
-          เพิ่ม
+          {locale === "th" ? "เพิ่ม" : "Add"}
         </button>
       </form>
-      <ul className="space-y-3">
-        {cats.map((c) => (
-          <li
-            key={c.id}
-            className="flex justify-between items-center p-3 border rounded"
-          >
-            {c.name}
-            <button
-              onClick={() => remove(c.id)}
-              className="text-red-600 hover:underline"
-            >
-              ลบ
-            </button>
-          </li>
-        ))}
-      </ul>
+
+      {/* Categories table */}
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className="border p-2 text-left">
+              {locale === "th" ? "ชื่อหมวดหมู่" : "Category Name"}
+            </th>
+            <th className="border p-2 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {cats.map((c) => (
+            <tr key={c.id}>
+              <td className="border p-2">{c.name}</td>
+              <td className="border p-2 text-center">
+                <button
+                  onClick={() => remove(c.id)}
+                  className="text-red-600 hover:underline"
+                >
+                  {locale === "th" ? "ลบ" : "Delete"}
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
+
 function ManageSubBannerSection() {
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    buttonText: "",
+  const [form, setForm] = useState<SubBannerForm>({
+    titleTh: "",
+    titleEn: "",
+    descriptionTh: "",
+    descriptionEn: "",
+    buttonTextTh: "",
+    buttonTextEn: "",
     buttonLink: "",
+    imageUrl: "",
   });
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+
+  // โหลดข้อมูลเริ่มต้นพร้อมตั้ง previewUrl
   useEffect(() => {
     fetch("/api/subbanner")
       .then((r) => r.json())
-      .then((data) => setForm(data));
+      .then((data) => {
+        setForm({
+          titleTh: data.titleTh || "",
+          titleEn: data.titleEn || "",
+          descriptionTh: data.descriptionTh || "",
+          descriptionEn: data.descriptionEn || "",
+          buttonTextTh: data.buttonTextTh || "",
+          buttonTextEn: data.buttonTextEn || "",
+          buttonLink: data.buttonLink || "",
+          imageUrl: data.imageUrl || "",
+        });
+        if (data.imageUrl) setPreviewUrl(data.imageUrl);
+      })
+      .catch(console.error);
   }, []);
 
   const onChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+  };
+
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
   };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await fetch("/api/subbanner", {
+    let imageUrl = form.imageUrl;
+
+    // ถ้ามีไฟล์ ให้ upload แล้วรับ URL มา
+    if (file) {
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadData,
+      });
+      if (uploadRes.ok) {
+        const { url } = await uploadRes.json();
+        imageUrl = url;
+      } else {
+        console.error("Upload failed");
+      }
+    }
+
+    // อัปเดต SubBanner
+    const res = await fetch("/api/subbanner", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, imageUrl }),
     });
-    alert("อัปเดต Sub-Banner เรียบร้อย");
+
+    if (res.ok) {
+      alert("อัปเดต Sub-Banner เรียบร้อย");
+    } else {
+      console.error(await res.text());
+      alert("เกิดข้อผิดพลาดในการอัปเดต");
+    }
   };
 
   return (
     <div className="max-w-xl">
       <h2 className="text-2xl font-semibold mb-4">แก้ไข Sub-Banner</h2>
+
+      {/* Preview */}
+      <div className="mb-6">
+        <div className="text-sm font-medium mb-1">Preview Background</div>
+        <div
+          className="w-full h-32 rounded-xl bg-center bg-cover border"
+          style={{
+            backgroundImage: previewUrl ? `url(${previewUrl})` : undefined,
+          }}
+        />
+      </div>
+
       <form onSubmit={onSubmit} className="space-y-4">
+        {/* Title */}
         <input
-          name="title"
-          value={form.title}
+          name="titleTh"
+          value={form.titleTh}
           onChange={onChange}
-          placeholder="Title"
+          placeholder="Title (TH)"
+          className="w-full border p-2 rounded"
+        />
+        <input
+          name="titleEn"
+          value={form.titleEn}
+          onChange={onChange}
+          placeholder="Title (EN)"
+          className="w-full border p-2 rounded"
+        />
+
+        {/* Description */}
+        <textarea
+          name="descriptionTh"
+          value={form.descriptionTh}
+          onChange={onChange}
+          placeholder="Description (TH)"
           className="w-full border p-2 rounded"
         />
         <textarea
-          name="description"
-          value={form.description}
+          name="descriptionEn"
+          value={form.descriptionEn}
           onChange={onChange}
-          placeholder="Description"
+          placeholder="Description (EN)"
+          className="w-full border p-2 rounded"
+        />
+
+        {/* Button Text */}
+        <input
+          name="buttonTextTh"
+          value={form.buttonTextTh}
+          onChange={onChange}
+          placeholder="Button Text (TH)"
           className="w-full border p-2 rounded"
         />
         <input
-          name="buttonText"
-          value={form.buttonText}
+          name="buttonTextEn"
+          value={form.buttonTextEn}
           onChange={onChange}
-          placeholder="Button Text"
+          placeholder="Button Text (EN)"
           className="w-full border p-2 rounded"
         />
+
+        {/* Button Link (single) */}
         <input
           name="buttonLink"
           value={form.buttonLink}
@@ -666,9 +972,23 @@ function ManageSubBannerSection() {
           placeholder="Button Link"
           className="w-full border p-2 rounded"
         />
+
+        {/* Image upload */}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            เลือกรูปภาพพื้นหลัง
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={onFileChange}
+            className="w-full"
+          />
+        </div>
+
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
         >
           บันทึก
         </button>
@@ -682,21 +1002,45 @@ export function ManageBannerSection() {
   const [items, setItems] = useState<Banner[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [form, setForm] = useState<{
-    title: string;
-    sub: string;
-    description: string;
+    titleTh: string;
+    titleEn: string;
+    subTh: string;
+    subEn: string;
+    descriptionTh: string;
+    descriptionEn: string;
     order: number;
     position: string;
-  }>({ title: "", sub: "", description: "", order: 0, position: "hero" });
+  }>({
+    titleTh: "",
+    titleEn: "",
+    subTh: "",
+    subEn: "",
+    descriptionTh: "",
+    descriptionEn: "",
+    order: 0,
+    position: "hero",
+  });
 
   const [editBanner, setEditBanner] = useState<Banner | null>(null);
   const [editForm, setEditForm] = useState<{
-    title: string;
-    sub: string;
-    description: string;
+    titleTh: string;
+    titleEn: string;
+    subTh: string;
+    subEn: string;
+    descriptionTh: string;
+    descriptionEn: string;
     order: number;
     position: string;
-  }>({ title: "", sub: "", description: "", order: 0, position: "hero" });
+  }>({
+    titleTh: "",
+    titleEn: "",
+    subTh: "",
+    subEn: "",
+    descriptionTh: "",
+    descriptionEn: "",
+    order: 0,
+    position: "hero",
+  });
   const [editFile, setEditFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -725,9 +1069,13 @@ export function ManageBannerSection() {
     if (!file) return alert("กรุณาเลือกไฟล์รูปก่อน");
 
     const fd = new FormData();
-    if (form.title.trim()) fd.append("title", form.title);
-    if (form.sub.trim()) fd.append("sub", form.sub);
-    if (form.description.trim()) fd.append("description", form.description);
+    // แก้ตรงนี้ → append สองภาษา
+    fd.append("titleTh", form.titleTh);
+    fd.append("titleEn", form.titleEn);
+    fd.append("subTh", form.subTh);
+    fd.append("subEn", form.subEn);
+    fd.append("descriptionTh", form.descriptionTh);
+    fd.append("descriptionEn", form.descriptionEn);
     fd.append("order", String(form.order));
     fd.append("position", form.position);
     fd.append("image", file);
@@ -736,16 +1084,21 @@ export function ManageBannerSection() {
     if (res.ok) {
       const newBanner: Banner = await res.json();
       setItems((prev) => [...prev, newBanner]);
+      // เคลียร์ form ให้ตรงกับฟิลด์ใหม่
       setForm({
-        title: "",
-        sub: "",
-        description: "",
+        titleTh: "",
+        titleEn: "",
+        subTh: "",
+        subEn: "",
+        descriptionTh: "",
+        descriptionEn: "",
         order: 0,
         position: "hero",
       });
       setFile(null);
     } else {
-      alert("Error creating banner");
+      const err = await res.json();
+      alert(err.error || "Error creating banner");
     }
   };
 
@@ -762,9 +1115,12 @@ export function ManageBannerSection() {
   const openEditModal = (b: Banner) => {
     setEditBanner(b);
     setEditForm({
-      title: b.title || "",
-      sub: b.sub || "",
-      description: b.description || "",
+      titleTh: b.titleTh,
+      titleEn: b.titleEn,
+      subTh: b.subTh ?? "",
+      subEn: b.subEn ?? "",
+      descriptionTh: b.descriptionTh ?? "",
+      descriptionEn: b.descriptionEn ?? "",
       order: b.order,
       position: b.position,
     });
@@ -792,9 +1148,13 @@ export function ManageBannerSection() {
     if (!editBanner) return;
 
     const fd = new FormData();
-    fd.append("title", editForm.title);
-    fd.append("sub", editForm.sub);
-    fd.append("description", editForm.description);
+    // ส่งข้อมูลภาษาไทย–อังกฤษ แทน title/sub/description เดิม
+    fd.append("titleTh", editForm.titleTh);
+    fd.append("titleEn", editForm.titleEn);
+    fd.append("subTh", editForm.subTh);
+    fd.append("subEn", editForm.subEn);
+    fd.append("descriptionTh", editForm.descriptionTh);
+    fd.append("descriptionEn", editForm.descriptionEn);
     fd.append("order", String(editForm.order));
     fd.append("position", editForm.position);
     if (editFile) fd.append("image", editFile);
@@ -820,24 +1180,45 @@ export function ManageBannerSection() {
 
       <form onSubmit={onSubmit} className="space-y-5 mb-6 max-w-xl">
         <input
-          name="title"
-          value={form.title}
+          name="titleTh"
+          value={form.titleTh}
           onChange={onChange}
-          placeholder="Title (ไม่บังคับ)"
+          placeholder="Title (TH)"
           className="w-full border rounded p-3"
         />
         <input
-          name="sub"
-          value={form.sub}
+          name="titleEn"
+          value={form.titleEn}
           onChange={onChange}
-          placeholder="Sub (ไม่บังคับ)"
+          placeholder="Title (EN)"
+          className="w-full border rounded p-3"
+        />
+        <input
+          name="subTh"
+          value={form.subTh}
+          onChange={onChange}
+          placeholder="Sub (TH)"
+          className="w-full border rounded p-3"
+        />
+        <input
+          name="subEn"
+          value={form.subEn}
+          onChange={onChange}
+          placeholder="Sub (EN)"
           className="w-full border rounded p-3"
         />
         <textarea
-          name="description"
-          value={form.description}
+          name="descriptionTh"
+          value={form.descriptionTh}
           onChange={onChange}
-          placeholder="Description (ไม่บังคับ)"
+          placeholder="Description (TH)"
+          className="w-full border rounded p-3 h-24"
+        />
+        <textarea
+          name="descriptionEn"
+          value={form.descriptionEn}
+          onChange={onChange}
+          placeholder="Description (EN)"
           className="w-full border rounded p-3 h-24"
         />
         <input
@@ -879,9 +1260,12 @@ export function ManageBannerSection() {
         <thead>
           <tr className="bg-gray-100 text-left">
             <th className="border px-4 py-3 w-12">#</th>
-            <th className="border px-4 py-3">Title</th>
-            <th className="border px-4 py-3">Sub</th>
-            <th className="border px-4 py-3">Description</th>
+            <th className="border px-4 py-3">Title (TH)</th>
+            <th className="border px-4 py-3">Title (EN)</th>
+            <th className="border px-4 py-3">Sub (TH)</th>
+            <th className="border px-4 py-3">Sub (EN)</th>
+            <th className="border px-4 py-3">Description (TH)</th>
+            <th className="border px-4 py-3">Description (EN)</th>
             <th className="border px-4 py-3">Banner</th>
             <th className="border px-4 py-3">Position</th>
             <th className="border px-4 py-3 w-40 text-center">การจัดการ</th>
@@ -891,13 +1275,16 @@ export function ManageBannerSection() {
           {items.map((b, i) => (
             <tr key={b.id} className="border hover:bg-gray-50">
               <td className="border px-4 py-4">{i + 1}</td>
-              <td className="border px-4 py-4">{b.title || "-"}</td>
-              <td className="border px-4 py-4">{b.sub || "-"}</td>
-              <td className="border px-4 py-4">{b.description || "-"}</td>
+              <td className="border px-4 py-4">{b.titleTh || "-"}</td>
+              <td className="border px-4 py-4">{b.titleEn || "-"}</td>
+              <td className="border px-4 py-4">{b.subTh || "-"}</td>
+              <td className="border px-4 py-4">{b.subEn || "-"}</td>
+              <td className="border px-4 py-4">{b.descriptionTh || "-"}</td>
+              <td className="border px-4 py-4">{b.descriptionEn || "-"}</td>
               <td className="border px-4 py-2">
                 <img
                   src={b.imageUrl}
-                  alt={b.title || ""}
+                  alt={b.titleTh || ""}
                   className="h-16 rounded object-cover"
                 />
               </td>
@@ -924,31 +1311,60 @@ export function ManageBannerSection() {
       {editBanner && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6">
-            <h3 className="text-xl font-semibold mb-4">แก้ไขแบนเนอร์</h3>
+            <h3 className="text-xl font-semibold mb-4">
+              แก้ไขแบนเนอร์ / Edit Banner
+            </h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <label className="block">
-                Title:
+                Title (TH):
                 <input
-                  name="title"
-                  value={editForm.title}
+                  name="titleTh"
+                  value={editForm.titleTh}
                   onChange={handleEditChange}
                   className="w-full border rounded p-2 mt-1"
                 />
               </label>
               <label className="block">
-                Sub:
+                Title (EN):
                 <input
-                  name="sub"
-                  value={editForm.sub}
+                  name="titleEn"
+                  value={editForm.titleEn}
                   onChange={handleEditChange}
                   className="w-full border rounded p-2 mt-1"
                 />
               </label>
               <label className="block">
-                Description:
+                Sub (TH):
+                <input
+                  name="subTh"
+                  value={editForm.subTh}
+                  onChange={handleEditChange}
+                  className="w-full border rounded p-2 mt-1"
+                />
+              </label>
+              <label className="block">
+                Sub (EN):
+                <input
+                  name="subEn"
+                  value={editForm.subEn}
+                  onChange={handleEditChange}
+                  className="w-full border rounded p-2 mt-1"
+                />
+              </label>
+              <label className="block">
+                Description (TH):
                 <textarea
-                  name="description"
-                  value={editForm.description}
+                  name="descriptionTh"
+                  value={editForm.descriptionTh}
+                  onChange={handleEditChange}
+                  className="w-full border rounded p-2 mt-1 h-24"
+                />
+              </label>
+              <label className="block">
+                Description (EN):
+                <textarea
+                  name="descriptionEn"
+                  value={editForm.descriptionEn}
                   onChange={handleEditChange}
                   className="w-full border rounded p-2 mt-1 h-24"
                 />
@@ -997,7 +1413,7 @@ export function ManageBannerSection() {
                   type="submit"
                   className="px-6 py-2 rounded bg-green-600 text-white hover:bg-green-700"
                 >
-                  บันทึก
+                  บันทึก / Save
                 </button>
               </div>
             </form>

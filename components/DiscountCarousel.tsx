@@ -80,10 +80,22 @@ export default function DiscountCarousel({ items }: Props) {
   };
 
   return (
-    <div className="container relative rounded-2xl px-4 sm:px-6 lg:px-8 py-8 my-8 bg-gradient-to-r from-orange-200 via-orange-300 to-orange-400 border-2 border-orange-500">
-      <h2 className="absolute -top-4 left-4 sm:-top-3 sm:left-8 bg-white px-2 text-sm sm:text-lg font-semibold text-red-600 shadow-md rounded-full">
-        สินค้าลดราคา
-      </h2>
+    <div className="container relative rounded-2xl px-4 sm:px-6 lg:px-8 py-8 my-8 bg-gradient-to-r from-orange-200 via-orange-300 to-orange-400">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🔥</span>
+          <span className="text-xl sm:text-2xl font-bold text-gray-800">
+            สินค้าลดราคา
+          </span>
+        </div>
+        <button
+          onClick={() => router.push("/all-products?discount=1")}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded transition flex items-center gap-1 font-medium"
+        >
+          ดูทั้งหมด
+          <ChevronRight size={18} />
+        </button>
+      </div>
 
       <button
         onClick={prev}

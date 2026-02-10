@@ -8,21 +8,23 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
+import useTranslation from "next-translate/useTranslation";
 
 interface CartItem {
   id: string;
   quantity: number;
   product: {
     id: string;
-    name: string;
+    name: string; // ฝั่ง API ควรดึงแปลตาม locale มาให้
     price: number;
     salePrice?: number | null;
     imageUrl?: string | null;
-    stock: number; // เพิ่ม stock เข้ามาใน type
+    stock: number;
   };
 }
 
 export default function CartPage() {
+  const { t, lang } = useTranslation("common");
   const router = useRouter();
   const { token } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
@@ -32,7 +34,7 @@ export default function CartPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch("/api/cart", {
+      const res = await fetch(`/api/cart?locale=${lang}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -44,7 +46,6 @@ export default function CartPage() {
     }
   };
 
-  // อัพเดตจำนวนสินค้าในตะกร้า พร้อมตรวจสอบ stock ไม่ให้เกิน
   const updateQuantity = async (itemId: string, quantity: number) => {
     if (!token) return;
     if (quantity < 1) return;
@@ -53,71 +54,61 @@ export default function CartPage() {
     if (!item) return;
 
     if (quantity > item.product.stock) {
-      alert(`จำนวนเกิน stock ที่มี (สูงสุด ${item.product.stock})`);
+      alert(t("cart.exceedStock", { stock: item.product.stock }));
       return;
     }
 
-    try {
-      const res = await fetch("/api/cart", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ itemId, quantity }),
-      });
-      if (res.ok) {
-        setItems((prevItems) =>
-          prevItems.map((item) =>
-            item.id === itemId ? { ...item, quantity } : item
-          )
-        );
-      } else {
-        const err = await res.json();
-        alert("Error: " + err.error);
-      }
-    } catch (error) {
-      console.error(error);
+    const res = await fetch("/api/cart", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ itemId, quantity }),
+    });
+    if (res.ok) {
+      setItems((prev) =>
+        prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
+      );
+    } else {
+      const err = await res.json();
+      alert(t("cart.error") + ": " + err.error);
     }
   };
 
   const removeItem = async (itemId: string) => {
     if (!token) return;
-    try {
-      await fetch("/api/cart", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ itemId }),
-      });
-      loadCart();
-    } catch (error) {
-      console.error(error);
-    }
+    await fetch("/api/cart", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ itemId }),
+    });
+    loadCart();
   };
 
   useEffect(() => {
     loadCart();
-  }, [token]);
+  }, [token, lang]);
 
   const total = items.reduce((sum, item) => {
     const unit = item.product.salePrice ?? item.product.price;
     return sum + unit * item.quantity;
   }, 0);
 
+  // ถ้ายังไม่ล็อกอิน
   if (!token) {
     return (
-      <Layout title="ตะกร้าสินค้า">
+      <Layout title={t("cart.title")}>
         <div className="py-20 text-center">
           <ShoppingCart size={48} className="mx-auto text-gray-400 mb-4" />
           <p className="mb-4">
-            กรุณา&nbsp;
+            {t("cart.loginPrompt")}{" "}
             <Link href="/login" className="text-green-600 hover:underline">
-              Login
+              {t("cart.login")}
             </Link>
-            &nbsp;ก่อนดูตะกร้า
           </p>
         </div>
       </Layout>
@@ -125,20 +116,20 @@ export default function CartPage() {
   }
 
   return (
-    <Layout title="ตะกร้าสินค้า">
-      <h1 className="text-3xl font-bold mb-6">ตะกร้าสินค้า</h1>
+    <Layout title={t("cart.title")}>
+      <h1 className="text-3xl font-bold mb-6">{t("cart.title")}</h1>
 
       {loading ? (
-        <p>กำลังโหลด...</p>
+        <p>{t("cart.loading")}</p>
       ) : items.length === 0 ? (
         <div className="py-20 text-center">
           <ShoppingCart size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="mb-4">ตะกร้าว่างเปล่า</p>
+          <p className="mb-4">{t("cart.empty")}</p>
           <Link
             href="/all-products"
             className="inline-block btn bg-green-600 hover:bg-green-700 text-white"
           >
-            ดูสินค้าเพิ่มเติม
+            {t("cart.browse")}
           </Link>
         </div>
       ) : (
@@ -167,7 +158,7 @@ export default function CartPage() {
                       {item.product.name}
                     </Link>
                     <p className="text-gray-500 text-sm mt-1">
-                      ราคาต่อหน่วย: ฿{unit}
+                      {t("cart.unitPrice", { price: unit })}
                     </p>
                     <div className="flex items-center mt-2 space-x-2">
                       <button
@@ -183,16 +174,16 @@ export default function CartPage() {
                         className="w-12 border text-center rounded"
                         value={item.quantity}
                         min={1}
-                        max={item.product.stock} // กำหนด max จาก stock
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          if (val >= 1 && val <= item.product.stock)
-                            updateQuantity(item.id, val);
-                          else if (val > item.product.stock)
-                            alert(
-                              `จำนวนเกิน stock ที่มี (สูงสุด ${item.product.stock})`
-                            );
-                        }}
+                        max={item.product.stock}
+                        onChange={(e) =>
+                          updateQuantity(
+                            item.id,
+                            Math.min(
+                              Math.max(1, +e.target.value),
+                              item.product.stock
+                            )
+                          )
+                        }
                       />
                       <button
                         onClick={() =>
@@ -206,13 +197,15 @@ export default function CartPage() {
                   </div>
                   <div className="text-right">
                     <p className="font-semibold">
-                      รวม: ฿{unit * item.quantity}
+                      {t("cart.lineTotal", {
+                        total: unit * item.quantity,
+                      })}
                     </p>
                     <button
                       onClick={() => removeItem(item.id)}
                       className="mt-2 text-red-600 hover:underline"
                     >
-                      ลบ
+                      {t("cart.remove")}
                     </button>
                   </div>
                 </div>
@@ -221,8 +214,10 @@ export default function CartPage() {
           </div>
 
           <div className="flex justify-between items-center p-4 border-t">
-            <span className="text-xl font-bold">ยอดรวมทั้งหมด:</span>
-            <span className="text-2xl font-bold text-green-700">{total} ฿</span>
+            <span className="text-xl font-bold">{t("cart.subtotal")}</span>
+            <span className="text-2xl font-bold text-green-700">
+              {t("cart.currency", { amount: total })}
+            </span>
           </div>
 
           <div className="text-right mt-6">
@@ -230,7 +225,7 @@ export default function CartPage() {
               onClick={() => router.push("/checkout")}
               className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              ดำเนินการชำระเงิน
+              {t("cart.checkout")}
             </button>
           </div>
         </>

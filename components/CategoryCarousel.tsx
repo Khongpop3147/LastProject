@@ -1,3 +1,4 @@
+// components/CategoryCarousel.tsx
 "use client";
 
 import { useRef } from "react";
@@ -6,12 +7,11 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { Category } from "@/types/product";
 
 interface CategoryCarouselProps {
-  /** หมวดหมู่ อาจมา undefined ได้ ให้ default เป็น [] */
   categories?: Category[];
 }
 
 export default function CategoryCarousel({
-  categories = [], // ใส่ default ให้ไม่พัง
+  categories = [],
 }: CategoryCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -21,11 +21,11 @@ export default function CategoryCarousel({
   };
 
   return (
-    <div className="relative py-3 bg-green-50">
+    <div className="relative py-3 bg-white">
       {/* ปุ่มเลื่อนซ้าย */}
       <button
         onClick={() => scroll(-200)}
-        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white p-3 sm:p-2 rounded-full shadow-md hover:shadow-lg transition-shadow z-10"
+        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:shadow-lg transition z-10"
         aria-label="Scroll categories left"
       >
         <ChevronLeft size={20} className="text-gray-700" />
@@ -35,13 +35,23 @@ export default function CategoryCarousel({
       <div
         ref={containerRef}
         className="flex space-x-3 overflow-x-auto px-4 sm:px-8 scrollbar-hide"
-        style={{ paddingBottom: 8 }} // กันไม่ให้ตกขอบล่าง
+        style={{ paddingBottom: 8 }}
       >
         {categories.map((cat) => (
           <Link
             key={cat.id}
             href={`/all-products?category=${cat.id}`}
-            className="flex-shrink-0 bg-white rounded-lg shadow-sm px-4 sm:px-5 py-2 sm:py-3 hover:bg-green-100 transition-colors select-none cursor-pointer"
+            className="
+              flex-shrink-0
+              bg-white
+              rounded-lg
+              shadow-md              /* เงาหลัก */
+              px-4 sm:px-5 py-2 sm:py-3
+              hover:shadow-xl         /* เงาชัดขึ้นตอนโฮเวอร์ */
+              transition-shadow
+              select-none
+              cursor-pointer
+            "
           >
             <span className="text-sm font-medium text-gray-800 whitespace-nowrap">
               {cat.name}
@@ -53,7 +63,7 @@ export default function CategoryCarousel({
       {/* ปุ่มเลื่อนขวา */}
       <button
         onClick={() => scroll(200)}
-        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white p-3 sm:p-2 rounded-full shadow-md hover:shadow-lg transition-shadow z-10"
+        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:shadow-lg transition z-10"
         aria-label="Scroll categories right"
       >
         <ChevronRight size={20} className="text-gray-700" />
