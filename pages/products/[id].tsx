@@ -15,7 +15,7 @@ interface ProductPageProps {
     id: string;
     name: string;
     description: string;
-    material?: string | null;
+    material: string | null;
     price: number;
     salePrice: number | null;
     stock: number;
