@@ -28,29 +28,31 @@ export default function QuantitySelector({
       <button
         onClick={onDecrease}
         disabled={!canDecrease}
-        className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all ${
+        aria-label="ลดจำนวนสินค้า"
+        className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
           canDecrease
             ? "border-blue-600 text-blue-600 hover:bg-blue-50"
             : "border-gray-300 text-gray-300 cursor-not-allowed"
         }`}
       >
-        <Minus className="w-5 h-5" />
+        <Minus className="h-5 w-5" />
       </button>
 
-      <span className="text-2xl md:text-3xl font-bold text-gray-900 min-w-[60px] text-center">
+      <span className="min-w-[64px] text-center text-[24px] font-bold text-gray-900">
         {quantity}
       </span>
 
       <button
         onClick={onIncrease}
         disabled={!canIncrease}
-        className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 flex items-center justify-center transition-all ${
+        aria-label="เพิ่มจำนวนสินค้า"
+        className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
           canIncrease
             ? "border-blue-600 text-blue-600 hover:bg-blue-50"
             : "border-gray-300 text-gray-300 cursor-not-allowed"
         }`}
       >
-        <Plus className="w-5 h-5" />
+        <Plus className="h-5 w-5" />
       </button>
     </div>
   );

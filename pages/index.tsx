@@ -356,14 +356,22 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
   const categories: Category[] = await Promise.all(
     rawCats.map(async ({ category, name }) => {
       // นับจำนวนสินค้าในแต่ละหมวดหมู่
-      const productCount = await prisma.product.count({
-        where: { categoryId: category.id },
-      });
+      const [productCount, coverProduct] = await Promise.all([
+        prisma.product.count({
+          where: { categoryId: category.id },
+        }),
+        prisma.product.findFirst({
+          where: { categoryId: category.id, imageUrl: { not: null } },
+          orderBy: { updatedAt: "desc" },
+          select: { imageUrl: true },
+        }),
+      ]);
       
       return {
         id: category.id,
         name,
         productCount,
+        imageUrl: coverProduct?.imageUrl ?? null,
       };
     })
   );

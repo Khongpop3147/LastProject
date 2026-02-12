@@ -26,14 +26,18 @@ export default async function handler(
   async function processFields(fields: any, files: any) {
     try {
       // // // ตรวจสอบสิทธิ์
-      const authHeader = req.headers.authorization;
+      const authHeader =
+        req.headers.authorization ||
+        (typeof req.cookies.token === "string" && req.cookies.token.length > 0
+          ? `Bearer ${req.cookies.token}`
+          : undefined);
       const user = await getUserFromToken(authHeader);
       if (!user) {
         return res.status(401).json({ error: "Unauthorized" });
       }
 
       // helper ดึงค่าแรกจาก string | string[]
-      const getFirst = (val: any): string | null =>
+      const getFirst = (val: any): any =>
         Array.isArray(val) ? val[0] ?? null : val ?? null;
 
       // normalize ฟิลด์ข้อความ
@@ -60,16 +64,48 @@ export default async function handler(
         priceAtPurchase: number;
       }[];
       const rawItems = fields.items;
-      const itemsStr =
-        typeof rawItems === "string"
-          ? rawItems
-          : Array.isArray(rawItems) && typeof rawItems[0] === "string"
-          ? rawItems[0]
-          : null;
-      if (!itemsStr) {
+      if (typeof rawItems === "string") {
+        items = JSON.parse(rawItems);
+      } else if (Array.isArray(rawItems)) {
+        if (rawItems.length === 0) {
+          return res.status(400).json({ error: "Missing order items" });
+        }
+        if (typeof rawItems[0] === "string") {
+          items = JSON.parse(rawItems[0]);
+        } else {
+          items = rawItems as {
+            productId: string;
+            quantity: number;
+            priceAtPurchase: number;
+          }[];
+        }
+      } else if (rawItems && typeof rawItems === "object") {
+        items = rawItems as {
+          productId: string;
+          quantity: number;
+          priceAtPurchase: number;
+        }[];
+      } else {
         return res.status(400).json({ error: "Missing order items" });
       }
-      items = JSON.parse(itemsStr);
+
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Missing order items" });
+      }
+
+      for (const item of items) {
+        if (
+          !item ||
+          typeof item.productId !== "string" ||
+          !item.productId ||
+          typeof item.quantity !== "number" ||
+          item.quantity < 1 ||
+          typeof item.priceAtPurchase !== "number" ||
+          item.priceAtPurchase < 0
+        ) {
+          return res.status(400).json({ error: "Invalid order item payload" });
+        }
+      }
 
       // ดึง locale จาก query string ถ้ามี (default "th")
       const locale =
@@ -170,6 +206,11 @@ export default async function handler(
         const d = distanceService.computeDistanceAndFee(originCoords, destinationCoords);
         distanceKm = d.distanceKm;
         deliveryFee = d.fee;
+      }
+
+      const requestedDeliveryFee = Number(getFirst(fields.deliveryFee));
+      if (Number.isFinite(requestedDeliveryFee) && requestedDeliveryFee >= 0) {
+        deliveryFee = requestedDeliveryFee;
       }
 
       // สร้าง order และอัปเดต stock ใน transaction

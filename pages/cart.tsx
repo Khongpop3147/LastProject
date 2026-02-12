@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   ChevronRight,
   Loader2,
-  MessageCircle,
   ShoppingCart,
   Store,
   Ticket,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import useTranslation from "next-translate/useTranslation";
 import { useAuth } from "@/context/AuthContext";
+import MobileShopBottomNav from "@/components/MobileShopBottomNav";
 import { goBackOrPush } from "@/lib/navigation";
 
 type ProductTranslation = {
@@ -59,6 +59,7 @@ export default function CartPage() {
   const { token } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
     new Set()
   );
@@ -164,6 +165,41 @@ export default function CartPage() {
     }
   };
 
+  const removeSelectedItems = async () => {
+    if (!token) return;
+
+    const idsToRemove = items
+      .filter((item) => selectedItemIds.has(item.id))
+      .map((item) => item.id);
+
+    if (idsToRemove.length === 0) return;
+
+    const removeSet = new Set(idsToRemove);
+    setItems((prev) => prev.filter((item) => !removeSet.has(item.id)));
+    setSelectedItemIds(new Set());
+
+    try {
+      await Promise.all(
+        idsToRemove.map(async (itemId) => {
+          const res = await fetch("/api/cart", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ itemId }),
+          });
+          if (!res.ok) {
+            throw new Error("Failed to remove selected item");
+          }
+        })
+      );
+    } catch (error) {
+      console.error("Failed to remove selected cart items", error);
+      await loadCart();
+    }
+  };
+
   useEffect(() => {
     if (!selectionInitialized) {
       if (items.length === 0) return;
@@ -257,6 +293,17 @@ export default function CartPage() {
     });
   };
 
+  const handleToggleEdit = () => {
+    if (isEditing) {
+      // Exit edit mode and default back to selecting all items for checkout.
+      setIsEditing(false);
+      setSelectedItemIds(new Set(items.map((item) => item.id)));
+      return;
+    }
+
+    setIsEditing(true);
+  };
+
   // ถ้ายังไม่ล็อกอิน
   if (!token) {
     return (
@@ -296,7 +343,7 @@ export default function CartPage() {
                   ไม่มีสินค้า
                 </h2>
                 <p className="mt-1 text-[15px] text-[#6b7280]">
-                  ไม่ยอบนึงกันเลย
+                  ไม่มีสินค้าในตะกร้า
                 </p>
                 <Link
                   href="/login"
@@ -308,6 +355,7 @@ export default function CartPage() {
             </main>
           </div>
 
+          <MobileShopBottomNav activePath="/cart" />
         </div>
       </>
     );
@@ -338,20 +386,10 @@ export default function CartPage() {
 
               <button
                 type="button"
+                onClick={handleToggleEdit}
                 className="ml-auto text-[20px] text-[#2f2f2f]"
               >
-                แก้ไข
-              </button>
-
-              <button
-                type="button"
-                aria-label="แชท"
-                className="relative ml-3 text-[#f25d3d]"
-              >
-                <MessageCircle className="h-8 w-8" strokeWidth={2.2} />
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#f25d3d] text-[11px] font-bold text-white">
-                  6
-                </span>
+                {isEditing ? "เสร็จสิ้น" : "แก้ไข"}
               </button>
             </div>
           </header>
@@ -373,7 +411,7 @@ export default function CartPage() {
                   ไม่มีสินค้า
                 </h2>
                 <p className="mt-1 text-[15px] text-[#6b7280]">
-                  ไม่ยอบนึงกันเลย
+                  ไม่มีสินค้าในตะกร้า
                 </p>
                 <Link
                   href="/all-products"
@@ -391,23 +429,19 @@ export default function CartPage() {
                       className="overflow-hidden rounded-[20px] border border-[#dddddd] bg-white shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
                     >
                       <div className="flex items-center gap-2 border-b border-[#efefef] px-3 py-3">
-                        <input
-                          type="checkbox"
-                          checked={group.allSelected}
-                          onChange={() => toggleSellerSelected(group.sellerName)}
-                          className="h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
-                        />
+                        {isEditing ? (
+                          <input
+                            type="checkbox"
+                            checked={group.allSelected}
+                            onChange={() => toggleSellerSelected(group.sellerName)}
+                            className="h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
+                          />
+                        ) : null}
                         <Store className="h-4 w-4 flex-shrink-0 text-[#666]" />
                         <div className="min-w-0 flex flex-1 items-center text-[17px] font-semibold text-[#252525]">
                           <span className="truncate">{group.sellerName}</span>
                           <ChevronRight className="ml-1 h-4 w-4 flex-shrink-0 text-[#8b8b8b]" />
                         </div>
-                        <button
-                          type="button"
-                          className="ml-auto flex-shrink-0 text-[15px] text-[#6b7280]"
-                        >
-                          แก้ไข
-                        </button>
                       </div>
 
                       <div className="space-y-3 px-3 py-3">
@@ -422,13 +456,15 @@ export default function CartPage() {
                             item.product.salePrice < item.product.price;
 
                           return (
-                            <div key={item.id} className="flex items-start gap-2">
-                              <input
-                                type="checkbox"
-                                checked={selectedItemIds.has(item.id)}
-                                onChange={() => toggleItemSelected(item.id)}
-                                className="mt-9 h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
-                              />
+                            <div key={item.id} className={`flex items-start ${isEditing ? "gap-2" : "gap-3"}`}>
+                              {isEditing ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedItemIds.has(item.id)}
+                                  onChange={() => toggleItemSelected(item.id)}
+                                  className="mt-9 h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
+                                />
+                              ) : null}
 
                               <div className="relative mt-1 h-[96px] w-[96px] flex-shrink-0 overflow-hidden rounded-[12px] border border-[#e7e7e7]">
                                 <img
@@ -444,16 +480,17 @@ export default function CartPage() {
                               <div className="min-w-0 flex-1">
                                 <Link
                                   href={`/products/${item.product.id}`}
-                                  className="line-clamp-2 text-[16px] font-medium leading-snug text-[#2f2f2f]"
+                                  onClick={(event) => {
+                                    if (isEditing) event.preventDefault();
+                                  }}
+                                  className={`line-clamp-2 text-[16px] font-medium leading-snug text-[#2f2f2f] ${
+                                    isEditing ? "pointer-events-none" : ""
+                                  }`}
                                 >
                                   {productName}
                                 </Link>
 
                                 <div className="mt-2 space-y-2">
-                                  <p className="max-w-full truncate rounded-[10px] border border-[#e5e5e5] bg-[#f7f7f7] px-2 py-1 text-[14px] text-[#6b7280]">
-                                    สี: ครีม | ไซส์: L
-                                  </p>
-
                                   <div className="flex items-center justify-end gap-1">
                                     <button
                                       type="button"
@@ -499,7 +536,9 @@ export default function CartPage() {
                                     type="button"
                                     aria-label="ลบออกจากตะกร้า"
                                     onClick={() => removeItem(item.id)}
-                                    className="ml-1 flex-shrink-0 rounded-full p-1 hover:bg-[#fff1ef]"
+                                    className={`ml-1 flex-shrink-0 rounded-full p-1 hover:bg-[#fff1ef] ${
+                                      isEditing ? "" : "hidden"
+                                    }`}
                                   >
                                     <Trash2
                                       className="h-6 w-6 text-[#ff5858]"
@@ -515,6 +554,7 @@ export default function CartPage() {
 
                       <button
                         type="button"
+                        onClick={() => router.push("/coupons")}
                         className="flex w-full items-center gap-2 border-t border-[#efefef] px-3 py-3 text-left text-[18px] text-[#666]"
                       >
                         <Ticket className="h-5 w-5 text-[#f25d3d]" />
@@ -536,33 +576,58 @@ export default function CartPage() {
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
           >
             <div className="mx-auto w-full max-w-[440px] px-4 pb-2 pt-1.5">
-              <div className="space-y-0.5">
-                <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
-                  <span>ราคาสินค้า</span>
-                  <span className="text-[#4b5563]">{toCurrency(selectedTotal)}</span>
-                </div>
-                <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
-                  <span>ค่าจัดส่ง</span>
-                  <span className="font-medium text-[#27b05f]">ฟรี</span>
-                </div>
-                <div className="flex items-center justify-between pt-0.5">
-                  <span className="text-[17px] font-extrabold text-[#2f2f2f]">รวมทั้งหมด</span>
-                  <span className="text-[24px] font-extrabold text-[#2f6ef4]">
-                    {toCurrency(selectedTotal)}
-                  </span>
-                </div>
-              </div>
+              {isEditing ? (
+                <>
+                  <div className="mb-2 flex items-center justify-between text-[15px] text-[#6b7280]">
+                    <span>เลือกแล้ว {selectedItemsCount} รายการ</span>
+                    <span className="font-semibold text-[#f05a2b]">
+                      {toCurrency(selectedTotal)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={selectedItemsCount === 0}
+                    onClick={removeSelectedItems}
+                    className="w-full rounded-2xl bg-[#ff5858] py-2.5 text-[18px] font-medium leading-none text-white hover:bg-[#e94949] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    ลบสินค้าที่เลือก
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
+                      <span>ราคาสินค้า</span>
+                      <span className="text-[#4b5563]">{toCurrency(selectedTotal)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
+                      <span>ค่าจัดส่ง</span>
+                      <span className="font-medium text-[#27b05f]">ฟรี</span>
+                    </div>
+                    <div className="flex items-center justify-between pt-0.5">
+                      <span className="text-[17px] font-extrabold text-[#2f2f2f]">รวมทั้งหมด</span>
+                      <span className="text-[24px] font-extrabold text-[#2f6ef4]">
+                        {toCurrency(selectedTotal)}
+                      </span>
+                    </div>
+                  </div>
 
-              <button
-                type="button"
-                disabled={selectedItemsCount === 0}
-                onClick={() => router.push("/checkout")}
-                className="mt-2 w-full rounded-2xl bg-[#2f6ef4] py-2.5 text-[18px] font-medium leading-none text-white hover:bg-[#2558c7] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                สั่งสินค้า
-              </button>
+                  <button
+                    type="button"
+                    disabled={selectedItemsCount === 0}
+                    onClick={() => router.push("/checkout")}
+                    className="mt-2 w-full rounded-2xl bg-[#2f6ef4] py-2.5 text-[18px] font-medium leading-none text-white hover:bg-[#2558c7] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    สั่งสินค้า
+                  </button>
+                </>
+              )}
             </div>
           </div>
+        )}
+
+        {(loading || items.length === 0) && (
+          <MobileShopBottomNav activePath="/cart" />
         )}
       </div>
     </>

@@ -4,11 +4,12 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import PromoModal from "./PromoModal";
 import CookieConsent from "./CookieConsent";
-import BottomNavigation from "./BottomNavigation";
+import MobileShopBottomNav from "./MobileShopBottomNav";
 import type { ReactNode } from "react";
 
 interface LayoutProps {
@@ -22,6 +23,7 @@ export default function Layout({
   title = "ICN_FREEZE",
   hideBottomNav = false,
 }: LayoutProps) {
+  const router = useRouter();
   const [showPromo, setShowPromo] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
 
@@ -88,7 +90,11 @@ export default function Layout({
       <Footer />
 
       {/* Bottom Navigation - Mobile Only */}
-      {!hideBottomNav && <BottomNavigation cartCount={0} />}
+      {!hideBottomNav && (
+        <MobileShopBottomNav
+          activePath={router.pathname === "/all-products" ? "/all-products" : router.pathname}
+        />
+      )}
     </div>
   );
 }

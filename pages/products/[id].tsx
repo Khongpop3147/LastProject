@@ -7,15 +7,12 @@ import {
   ArrowLeft,
   Heart,
   Share2,
-  Star,
   Package,
   Check,
-  ShoppingCart,
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import ProductOptions, { ProductOption } from "@/components/ProductOptions";
 import QuantitySelector from "@/components/QuantitySelector";
-import ReviewCard from "@/components/ReviewCard";
 import { prisma } from "@/lib/prisma";
 import { useAuth } from "@/context/AuthContext";
 import { calculateDeliveryDate } from "@/lib/shippingUtils";
@@ -41,11 +38,12 @@ export default function ProductPage({ product }: ProductPageProps) {
   const { token } = useAuth();
 
   // State management
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [selectedSize, setSelectedSize] = useState<string | null>("EU");
+  const [selectedOption, setSelectedOption] = useState<string | null>("pink");
+  const [selectedSize, setSelectedSize] = useState<string | null>("M");
   const [selectedShipping, setSelectedShipping] = useState<string>("standard");
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState<string>("");
   const [distanceKm, setDistanceKm] = useState<number>(100); // Default ~100km from Bangkok
@@ -79,52 +77,51 @@ export default function ProductPage({ product }: ProductPageProps) {
     );
   }
 
-  // Debug: Check material data
-  console.log("Product data:", product);
-  console.log("Material:", product.material);
-
   // Calculate discount
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const displayPrice = product.salePrice || product.price;
   const discountPercent = hasDiscount
     ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
     : 0;
+  const isOutOfStock = product.stock === 0;
 
-  // Mock data
-  const mockRating = 4.9;
-  const mockReviewCount = 219;
-
-  // Mock reviews - แสดงเป็นการ์ด
-  const mockReviewCards = [
-    {
-      id: "1",
-      userName: "สมศรี มีเงินแสง",
-      rating: 5,
-      comment:
-        "สินค้าคุณภาพดีมาก ใช้งานได้เป็นอย่างดีมากๆ ขอบคุณร้านค้ามากนะคะ ทั้งผู้ขายอุบายน่ารักมาก",
-      timeAgo: "2 วันก่อน",
-      avatar: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    },
-    {
-      id: "2",
-      userName: "สมศรี มีเงินแสง",
-      rating: 4,
-      comment: "ราคาคุ้มค่า แพคเกจดี ใช้ได้ทุกวัน",
-      timeAgo: "2 วันก่อน",
-      avatar: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    },
-  ];
+  const normalizedDescription = (product.description || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const descriptionLines = normalizedDescription
+    .split(/[.!?]+|ๆ/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const fallbackLines =
+    descriptionLines.length > 0
+      ? descriptionLines
+      : (
+          normalizedDescription.match(/.{1,70}(?:\s|$)/g)?.map((line) => line.trim()) || []
+        ).filter(Boolean);
+  const finalDescriptionLines =
+    fallbackLines.length > 0 ? fallbackLines : ["รายละเอียดสินค้ายังไม่ถูกระบุ"];
+  const hasMoreDescriptionLines = finalDescriptionLines.length > 3;
+  const visibleDescriptionLines = isDescriptionExpanded
+    ? finalDescriptionLines
+    : finalDescriptionLines.slice(0, 3);
 
   // Product options
   const productOptions: ProductOption[] = [
-    { id: "1", label: "แดง", value: "red", color: "#EF4444" },
-    { id: "2", label: "เหลือง", value: "yellow", color: "#F59E0B" },
-    { id: "3", label: "แดงเข้ม", value: "dark-red", color: "#991B1B" },
-    { id: "4", label: "ม่วง", value: "purple", color: "#9333EA" },
+    { id: "1", label: "ชมพู", value: "pink", color: "#f78090" },
+    { id: "2", label: "เหลือง", value: "yellow", color: "#f4c542" },
+    { id: "3", label: "แดง", value: "red", color: "#d0011b" },
+    { id: "4", label: "ม่วง", value: "purple", color: "#9b59b6" },
   ];
 
   // Size options
-  const sizeOptions: ProductOption[] = [{ id: "eu", label: "EU", value: "EU" }];
+  const sizeOptions: ProductOption[] = [
+    { id: "s", label: "S", value: "S" },
+    { id: "m", label: "M", value: "M" },
+    { id: "l", label: "L", value: "L" },
+    { id: "xl", label: "XL", value: "XL" },
+    { id: "xxl", label: "XXL", value: "XXL", disabled: true },
+    { id: "xxxl", label: "XXXL", value: "XXXL", disabled: true },
+  ];
 
   // Handlers
   const handleWishlist = () => {
@@ -175,316 +172,297 @@ export default function ProductPage({ product }: ProductPageProps) {
   };
 
   return (
-    <Layout title={product.name} hideBottomNav={true}>
-      <div className="min-h-screen bg-white pb-40">
-        {/* Header */}
-        <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={handleBack}
-            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
-          >
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
-          </button>
-          <div className="flex gap-2">
+    <Layout title={product.name}>
+      <div className="min-h-screen bg-[#f3f3f4] pb-[186px]">
+        <div className="mx-auto w-full max-w-[440px]">
+          <header className="sticky top-0 z-50 border-b border-[#d5d8de] bg-[#f3f3f4]">
+            <div className="flex h-[78px] items-center px-4">
+              <button
+                onClick={handleBack}
+                aria-label="ย้อนกลับ"
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#3f4756]"
+              >
+                <ArrowLeft className="h-7 w-7" />
+              </button>
+
+              <div className="ml-auto flex items-center gap-2">
+                <button
+                  onClick={handleWishlist}
+                  aria-label="เพิ่มในรายการโปรด"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#5f6775]"
+                >
+                  <Heart
+                    className={`h-7 w-7 ${
+                      isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : ""
+                    }`}
+                  />
+                </button>
+                <button
+                  onClick={handleShare}
+                  aria-label="แชร์สินค้า"
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#5f6775]"
+                >
+                  <Share2 className="h-7 w-7" />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <div className="relative h-[300px] w-full bg-gradient-to-br from-yellow-400 to-yellow-500 sm:h-[340px]">
+            <Image
+              src={product.imageUrl || "/images/placeholder.png"}
+              alt={product.name}
+              fill
+              className="object-cover"
+              priority
+            />
+            {hasDiscount && (
+              <div className="absolute right-4 top-4 rounded-2xl bg-gradient-to-r from-[#f05a2b] to-[#ec3ea8] px-4 py-2 text-[20px] font-bold text-white shadow-md">
+                ลด {discountPercent}%
+              </div>
+            )}
+          </div>
+
+          <main className="space-y-5 px-4 py-4">
+            <section>
+              <div className="mb-2 flex items-end gap-3">
+                <span className="text-[36px] font-extrabold leading-none text-[#2f6ef4]">
+                  ฿{displayPrice.toLocaleString("th-TH")}
+                </span>
+                {hasDiscount ? (
+                  <span className="pb-1 text-[24px] text-[#9ca3af] line-through">
+                    ฿{product.price.toLocaleString("th-TH")}
+                  </span>
+                ) : null}
+              </div>
+
+              <h1 className="text-[28px] font-extrabold leading-tight text-[#111827]">
+                {product.name}
+              </h1>
+            </section>
+
+            <section className="rounded-2xl border border-[#d8dde8] bg-white p-4">
+              <h2 className="mb-2 text-[24px] font-extrabold text-[#111827]">
+                รายละเอียดสินค้า
+              </h2>
+
+              <ul className="space-y-2">
+                {visibleDescriptionLines.map((line, idx) => (
+                  <li key={`${line}-${idx}`} className="flex items-start gap-2 text-[18px] leading-relaxed text-[#374151]">
+                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#9ca3af]" />
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {hasMoreDescriptionLines ? (
+                <button
+                  type="button"
+                  onClick={() => setIsDescriptionExpanded((prev) => !prev)}
+                  className="mt-3 text-[16px] font-semibold text-[#2f6ef4]"
+                >
+                  {isDescriptionExpanded ? "ย่อรายละเอียด" : "ดูรายละเอียดเพิ่มเติม"}
+                </button>
+              ) : null}
+            </section>
+
+            <section>
+              <ProductOptions
+                title="เลือก สี"
+                options={productOptions}
+                selectedValue={selectedOption}
+                onSelect={setSelectedOption}
+                type="color"
+              />
+
+              <ProductOptions
+                title="ไซซ์"
+                options={sizeOptions}
+                selectedValue={selectedSize}
+                onSelect={setSelectedSize}
+                type="text"
+              />
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">ข้อมูลเพิ่มเติม</h2>
+
+              {product.material ? (
+                <div className="mb-3">
+                  <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">วัสดุ</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {product.material.split(",").map((mat, idx) => (
+                      <span
+                        key={idx}
+                        className="rounded-lg bg-[#f2dfe2] px-3 py-1.5 text-[16px] font-medium text-[#374151]"
+                      >
+                        {mat.trim()}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mb-3">
+                <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">ผลิตจาก</h3>
+                <span className="inline-flex rounded-lg bg-[#dfe7f8] px-3 py-1.5 text-[16px] font-medium text-[#374151]">
+                  EU
+                </span>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">วิธีจัดส่ง</h2>
+
+              <button
+                type="button"
+                onClick={() => setSelectedShipping("standard")}
+                className={`mb-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left ${
+                  selectedShipping === "standard"
+                    ? "border-[#2f6ef4] bg-[#e9f0ff]"
+                    : "border-[#d1d5db] bg-white"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+                      selectedShipping === "standard"
+                        ? "border-[#2f6ef4] bg-[#2f6ef4]"
+                        : "border-[#d1d5db]"
+                    }`}
+                  >
+                    {selectedShipping === "standard" ? (
+                      <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                    ) : null}
+                  </span>
+                  <span className="text-[19px] font-semibold text-[#111827]">จัดส่งปกติ</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
+                    5-7 วัน
+                  </span>
+                  <span className="text-[19px] font-bold text-[#27b05f]">ฟรี</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedShipping("express")}
+                className={`mb-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left ${
+                  selectedShipping === "express"
+                    ? "border-[#2f6ef4] bg-[#e9f0ff]"
+                    : "border-[#d1d5db] bg-white"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
+                      selectedShipping === "express"
+                        ? "border-[#2f6ef4] bg-[#2f6ef4]"
+                        : "border-[#d1d5db]"
+                    }`}
+                  >
+                    {selectedShipping === "express" ? (
+                      <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                    ) : null}
+                  </span>
+                  <span className="text-[19px] font-semibold text-[#111827]">จัดส่งด่วน</span>
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
+                    1-2 วัน
+                  </span>
+                  <span className="text-[19px] font-bold text-[#111827]">฿50</span>
+                </span>
+              </button>
+
+              {deliveryDate ? (
+                <p className="mb-3 text-[15px] text-[#6b7280]">
+                  จะจัดส่งถึงภายใน{deliveryDate}
+                </p>
+              ) : null}
+
+              <div className="flex items-center gap-3 rounded-xl bg-[#e3f3ea] px-3 py-3">
+                <Package className="h-7 w-7 text-[#27b05f]" />
+                <div>
+                  <p className="text-[18px] font-semibold text-[#177245]">จัดส่งฟรี</p>
+                  <p className="text-[14px] text-[#2f855a]">สำหรับคำสั่งซื้อ 500 บาทขึ้นไป</p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">จำนวน</h2>
+              <QuantitySelector
+                quantity={quantity}
+                onDecrease={() => setQuantity(Math.max(1, quantity - 1))}
+                onIncrease={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                max={product.stock}
+                disabled={isOutOfStock}
+              />
+            </section>
+          </main>
+        </div>
+
+        <div
+          className="fixed left-0 right-0 z-50 border-t border-[#d5d8de] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+          style={{ bottom: "calc(84px + env(safe-area-inset-bottom))" }}
+        >
+          <div className="mx-auto flex w-full max-w-[440px] items-center gap-3 px-4 py-3">
             <button
               onClick={handleWishlist}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
+              aria-label="เพิ่มในรายการโปรด"
+              className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border-2 border-[#d1d5db]"
             >
               <Heart
-                className={`w-6 h-6 ${
-                  isWishlisted ? "fill-red-500 text-red-500" : "text-gray-700"
+                className={`h-7 w-7 ${
+                  isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : "text-[#9ca3af]"
                 }`}
               />
             </button>
-            <button
-              onClick={() => router.push("/cart")}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
-            >
-              <ShoppingCart className="w-6 h-6 text-gray-700" />
-            </button>
-            <button
-              onClick={handleShare}
-              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
-            >
-              <Share2 className="w-6 h-6 text-gray-700" />
-            </button>
-          </div>
-        </div>
 
-        {/* Product Image */}
-        <div className="relative w-full aspect-square bg-gradient-to-br from-yellow-400 to-yellow-500">
-          <Image
-            src={product.imageUrl || "/images/placeholder.png"}
-            alt={product.name}
-            fill
-            className="object-cover"
-            priority
-          />
-          {hasDiscount && (
-            <div className="absolute top-4 right-4 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded-lg shadow-md">
-              ลด {discountPercent}%
-            </div>
-          )}
-        </div>
-
-        {/* Product Info */}
-        <div className="px-4 py-5">
-          {/* Price */}
-          <div className="mb-3">
-            {hasDiscount ? (
-              <div className="flex items-baseline gap-2">
-                <span className="text-3xl md:text-4xl font-bold text-blue-600">
-                  ฿{displayPrice.toLocaleString()}
-                </span>
-                <span className="text-xl text-gray-400 line-through">
-                  ฿{product.price.toLocaleString()}
-                </span>
-              </div>
-            ) : (
-              <span className="text-3xl md:text-4xl font-bold text-blue-600">
-                ฿{displayPrice.toLocaleString()}
-              </span>
-            )}
-          </div>
-
-          {/* Product Name */}
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-3">
-            {product.name}
-          </h1>
-
-          {/* Rating */}
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg mb-4">
-            <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-            <span className="text-lg font-semibold text-gray-900">
-              {mockRating}
-            </span>
-            <span className="text-base text-gray-500">
-              ({mockReviewCount} รีวิว)
-            </span>
-          </div>
-
-          {/* Description */}
-          <div className="mb-4">
-            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
-              รายละเอียดสินค้า
-            </h3>
-            <p className="text-base text-gray-700 leading-relaxed">
-              {product.description}
-            </p>
-          </div>
-
-          {/* Reviews Section */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">
-                รีวิวลูกค้า
-              </h3>
-              <button className="text-blue-600 text-base font-semibold hover:underline">
-                เพิ่มรีวิว
-              </button>
-            </div>
-
-            {mockReviewCards.map((review) => (
-              <ReviewCard
-                key={review.id}
-                userName={review.userName}
-                rating={review.rating}
-                comment={review.comment}
-                timeAgo={review.timeAgo}
-                userAvatar={review.avatar}
-              />
-            ))}
-
-            <button className="w-full py-3 border-2 border-blue-600 text-blue-600 rounded-xl font-semibold text-base hover:bg-blue-50 transition-colors">
-              ดูรีวิวทั้งหมด
-            </button>
-          </div>
-
-          {/* Material Composition */}
-          {product.material && (
-            <div className="mb-4">
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
-                รายละเอียด
-              </h3>
-              <div className="mb-3">
-                <h4 className="text-base font-semibold text-gray-900 mb-2">
-                  วัสดุ
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {product.material.split(",").map((mat, idx) => (
-                    <div key={idx} className="px-4 py-2 bg-pink-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-800">
-                        {mat.trim()}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Shipping Options */}
-          <div className="mb-4">
-            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
-              วิธีจัดส่ง
-            </h3>
-
-            {/* Standard Shipping */}
-            <div
-              onClick={() => setSelectedShipping("standard")}
-              className={`p-4 rounded-xl border-2 mb-3 cursor-pointer transition-colors ${
-                selectedShipping === "standard"
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedShipping === "standard"
-                        ? "border-blue-600 bg-blue-600"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {selectedShipping === "standard" && (
-                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                    )}
-                  </div>
-                  <span className="font-semibold text-gray-900">
-                    จัดส่งปกติ
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">5-7 วัน</span>
-                  <span className="font-bold text-green-600">ฟรี</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Express Shipping */}
-            <div
-              onClick={() => setSelectedShipping("express")}
-              className={`p-4 rounded-xl border-2 mb-3 cursor-pointer transition-colors ${
-                selectedShipping === "express"
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      selectedShipping === "express"
-                        ? "border-blue-600 bg-blue-600"
-                        : "border-gray-300"
-                    }`}
-                  >
-                    {selectedShipping === "express" && (
-                      <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                    )}
-                  </div>
-                  <span className="font-semibold text-gray-900">
-                    จัดส่งด่วน
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">1-2 วัน</span>
-                  <span className="font-bold text-gray-900">฿50</span>
-                </div>
-              </div>
-            </div>
-
-            {deliveryDate && (
-              <p className="text-xs text-gray-500 mb-3">
-                จะจัดส่งให้ท่านใน{deliveryDate}
-              </p>
-            )}
-
-            {/* Free Shipping Badge */}
-            <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-              <Package className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="font-semibold text-green-700">จัดส่งฟรี</p>
-                <p className="text-xs text-green-600">
-                  สำหรับสั่งซื้อตั้งแต่ 500 บาทขึ้นไป
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Quantity */}
-          <div className="mb-6">
-            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">
-              จำนวน
-            </h3>
-            <QuantitySelector
-              quantity={quantity}
-              onDecrease={() => setQuantity(Math.max(1, quantity - 1))}
-              onIncrease={() =>
-                setQuantity(Math.min(product.stock, quantity + 1))
-              }
-              max={product.stock}
-              disabled={product.stock === 0}
-            />
-          </div>
-        </div>
-
-        {/* Bottom Actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex gap-3 z-50">
-          <button
-            onClick={handleWishlist}
-            className="flex-shrink-0 w-14 h-14 flex items-center justify-center rounded-xl border-2 border-gray-300 hover:border-gray-400 transition-colors"
-          >
-            <Heart
-              className={`w-6 h-6 ${
-                isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"
-              }`}
-            />
-          </button>
-          <button
-            onClick={async () => {
-              if (!token) {
-                router.push("/login");
-                return;
-              }
-              if (product.stock === 0) return;
-
-              try {
-                const res = await fetch("/api/cart", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                  },
-                  body: JSON.stringify({ productId: product.id, quantity }),
-                });
-                if (res.ok) {
-                  alert("เพิ่มสินค้าลงตะกร้าแล้ว");
+              <button
+                onClick={async () => {
+                if (!token) {
+                  router.push("/login");
+                  return;
                 }
-              } catch (error) {
-                console.error(error);
-              }
-            }}
-            className="flex-1 h-14 rounded-xl font-bold text-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-50 transition-colors"
-          >
-            เพิ่มลงตะกร้า
-          </button>
-          <button
-            onClick={handleAddToCart}
-            disabled={loading || product.stock === 0}
-            className={`flex-1 h-14 rounded-xl font-bold text-lg transition-colors ${
-              product.stock === 0
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            {product.stock === 0
-              ? "สินค้าหมด"
-              : loading
-                ? "กำลังเพิ่ม..."
-                : "ซื้อเลย"}
-          </button>
+                if (isOutOfStock) return;
+
+                try {
+                  const res = await fetch("/api/cart", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ productId: product.id, quantity }),
+                  });
+                  if (res.ok) {
+                    alert("เพิ่มสินค้าลงตะกร้าแล้ว");
+                  }
+                } catch (error) {
+                  console.error(error);
+                }
+              }}
+              disabled={isOutOfStock}
+              className="flex-1 rounded-2xl border-2 border-[#2f6ef4] py-3 text-[18px] font-bold text-[#2f6ef4] disabled:opacity-40"
+            >
+              เพิ่มลงตะกร้า
+            </button>
+
+            <button
+              onClick={handleAddToCart}
+              disabled={loading || isOutOfStock}
+              className={`flex-1 rounded-2xl py-3 text-[18px] font-bold ${
+                isOutOfStock
+                  ? "bg-[#d1d5db] text-[#6b7280]"
+                  : "bg-[#2f6ef4] text-white"
+              }`}
+            >
+              {isOutOfStock ? "สินค้าหมด" : loading ? "กำลังเพิ่ม..." : "ซื้อเลย"}
+            </button>
+          </div>
         </div>
       </div>
     </Layout>

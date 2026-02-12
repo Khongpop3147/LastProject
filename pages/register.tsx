@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { User, Mail, Lock } from "lucide-react";
 import Layout from "@/components/Layout";
 import Image from "next/image";

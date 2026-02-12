@@ -4,7 +4,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { Truck, ShoppingCart, Menu, X } from "lucide-react";
 import useTranslation from "next-translate/useTranslation";
@@ -12,7 +12,8 @@ import useTranslation from "next-translate/useTranslation";
 export default function Navbar() {
   const { t, lang } = useTranslation("common");
   const { user, logout } = useAuth();
-  const pathname = usePathname();
+  const router = useRouter();
+  const pathname = router.asPath.split("?")[0].split("#")[0] || "/";
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [

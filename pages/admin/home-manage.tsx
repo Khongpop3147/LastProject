@@ -3,7 +3,7 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import Layout from "@/components/AdminLayout"; // ใช้ layout ที่คุณมี
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import type { GetServerSideProps } from "next";
 import { adminGuard } from "@/lib/adminGuard";
 

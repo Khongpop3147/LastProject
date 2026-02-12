@@ -13,17 +13,25 @@ export default function CategoryCarousel({ categories = [] }: CategoryCarouselPr
   const displayCategories = categories.slice(0, 16);
 
   return (
-    <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 md:gap-4">
+    <div className="grid grid-cols-4 gap-3 md:grid-cols-6 md:gap-4 lg:grid-cols-8">
       {displayCategories.map((cat) => (
         <Link
           key={cat.id}
           href={`/all-products?category=${cat.id}`}
           className="flex flex-col items-center"
         >
-          <div className="w-full aspect-square bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center hover:shadow-md transition-shadow p-2">
+          <div className="w-full rounded-xl border border-gray-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md">
+            <div className="mx-auto mb-1.5 h-11 w-11 overflow-hidden rounded-full border border-gray-100 bg-gray-100">
+              <img
+                src={cat.imageUrl ?? "/images/placeholder.png"}
+                alt={cat.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+
             <div className="text-center">
-              <p className="text-xs font-medium text-gray-800 mb-1">{cat.name}</p>
-              <p className="text-[10px] text-gray-500">
+              <p className="line-clamp-1 text-[12px] font-semibold text-gray-800">{cat.name}</p>
+              <p className="mt-0.5 text-[10px] text-gray-500">
                 {cat.productCount ? `${cat.productCount} รายการ` : '0 รายการ'}
               </p>
             </div>

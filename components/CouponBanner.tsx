@@ -1,23 +1,39 @@
 // components/CouponBanner.tsx
 "use client";
 
-import { Tag, ArrowRight } from "lucide-react";
+import { ChevronRight, Ticket } from "lucide-react";
 import Link from "next/link";
 
 export default function CouponBanner() {
   return (
-    <Link href="/coupons">
-      <div className="mx-4 md:mx-6 lg:mx-8 mb-4 md:mb-6 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-4 md:p-5 flex items-center justify-between shadow-md hover:shadow-lg transition-shadow cursor-pointer">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm"> 
-            <Tag className="w-6 h-6 text-white" />
+    <Link
+      href="/coupons"
+      aria-label="ไปยังหน้าคูปองส่วนลด"
+      className="mx-4 mb-4 block rounded-2xl border border-[#cfd7e6] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition-colors hover:border-[#c1cce1]"
+    >
+      <div className="relative overflow-hidden rounded-2xl px-4 py-4">
+        <div className="pointer-events-none absolute left-0 top-0 h-full w-2 bg-[#2f6ef4]" />
+
+        <div className="ml-2 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3.5">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-[#edf3ff] text-[#2f6ef4]">
+              <Ticket className="h-6 w-6" />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-[22px] font-bold leading-tight text-[#111827]">
+                คูปองส่วนลด
+              </h3>
+              <p className="text-[15px] font-medium text-[#4b5563]">
+                เลือกคูปองก่อนชำระเงิน
+              </p>
+            </div>
           </div>
-          <div className="text-white">
-            <h3 className="font-bold text-base md:text-lg">คูปองส่วนลด</h3>
-            <p className="text-xs md:text-sm text-white/90">เก็บคูปองส่วนลดพิเศษ!</p>
+
+          <div className="flex h-10 flex-shrink-0 items-center gap-0.5 rounded-xl bg-[#2f6ef4] px-3 text-white">
+            <span className="text-[14px] font-semibold">ดูคูปอง</span>
+            <ChevronRight className="h-4 w-4" />
           </div>
         </div>
-        <ArrowRight className="w-6 h-6 text-white flex-shrink-0" />
       </div>
     </Link>
   );

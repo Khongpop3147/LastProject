@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import {
   Menu,
@@ -21,7 +21,7 @@ export default function AdminSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { adminLogout } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = router.asPath.split("?")[0].split("#")[0] || "/";
 
   const navItems = [
     {

@@ -28,7 +28,7 @@ export default function ProductOptions({
 }: ProductOptionsProps) {
   return (
     <div className="mb-6">
-      <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-3">{title}</h3>
+      <h3 className="mb-3 text-[22px] font-extrabold text-[#111827]">{title}</h3>
       
       <div className="flex flex-wrap gap-3">
         {options.map((option) => {
@@ -42,19 +42,20 @@ export default function ProductOptions({
                 key={option.id}
                 onClick={() => !isDisabled && onSelect(option.value)}
                 disabled={isDisabled}
-                className={`relative w-14 h-14 rounded-lg border-2 transition-all ${
+                className={`relative h-[56px] w-[56px] rounded-xl border-2 transition-all ${
                   isSelected
-                    ? "border-blue-600 scale-110"
+                    ? "border-[#2f6ef4]"
                     : isDisabled
                     ? "border-gray-200 opacity-40 cursor-not-allowed"
                     : "border-gray-300 hover:border-gray-400"
                 }`}
                 style={{ backgroundColor: option.color || "#ccc" }}
                 title={option.label}
+                aria-label={`เลือกสี ${option.label}`}
               >
                 {isSelected && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Check className="w-6 h-6 text-white drop-shadow-md" strokeWidth={3} />
+                  <div className="absolute bottom-1 left-1 flex h-6 w-6 items-center justify-center rounded-full border border-white bg-[#2f6ef4] shadow">
+                    <Check className="h-4 w-4 text-white" strokeWidth={3} />
                   </div>
                 )}
               </button>
@@ -67,17 +68,18 @@ export default function ProductOptions({
               key={option.id}
               onClick={() => !isDisabled && onSelect(option.value)}
               disabled={isDisabled}
-              className={`relative px-5 py-3 rounded-lg border-2 font-semibold text-base transition-all ${
+              className={`relative min-w-[50px] rounded-xl border-2 px-3 py-2 text-[16px] font-semibold leading-none transition-all ${
                 isSelected
-                  ? "border-blue-600 bg-blue-50 text-blue-600"
+                  ? "border-[#2f6ef4] bg-[#e9f0ff] text-[#2f6ef4]"
                   : isDisabled
                   ? "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                  : "border-[#d1d5db] bg-white text-[#1f2937] hover:border-gray-400"
               }`}
+              aria-label={`เลือกขนาด ${option.label}`}
             >
               {option.label}
               {isSelected && (
-                <Check className="absolute top-1 right-1 w-4 h-4 text-blue-600" />
+                <Check className="absolute right-1 top-1 h-4 w-4 text-[#2f6ef4]" />
               )}
             </button>
           );

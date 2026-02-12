@@ -2,10 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Star } from "lucide-react";
+import { Heart } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import type { Product } from "@/types/product";
 
@@ -78,9 +78,6 @@ export default function ProductCard({
   // Use calculated discount if available, otherwise use prop
   const discountPercent = hasDiscount ? calculatedDiscountPercent : salePercent;
 
-  const rating = 4.9; // Mock rating
-  const reviewCount = 219; // Mock review count
-
   return (
     <Link href={`/products/${product.id}`}>
       <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
@@ -145,13 +142,6 @@ export default function ProductCard({
                 ฿{product.price.toLocaleString()}
               </span>
             )}
-          </div>
-
-          {/* Rating Section */}
-          <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium text-gray-700">{rating}</span>
-            <span className="text-xs text-gray-400">({reviewCount}รีวิว)</span>
           </div>
         </div>
       </div>

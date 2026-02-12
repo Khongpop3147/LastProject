@@ -1,20 +1,15 @@
 import type { GetServerSideProps } from "next";
 import Link from "next/link";
 import Head from "next/head";
-import { useMemo } from "react";
 import { useRouter } from "next/router";
 import { prisma } from "@/lib/prisma";
 import { goBackOrPush } from "@/lib/navigation";
+import MobileShopBottomNav from "@/components/MobileShopBottomNav";
 import {
   ArrowLeft,
   ChevronRight,
   Heart,
-  House,
-  Search,
   Settings,
-  ShoppingCart,
-  Star,
-  UserRound,
 } from "lucide-react";
 
 type CategoryProduct = {
@@ -44,17 +39,6 @@ function toCurrency(value: number) {
 
 export default function CategoriesPage({ sections }: CategoriesPageProps) {
   const router = useRouter();
-
-  const tabs = useMemo(
-    () => [
-      { href: "/", label: "หน้าหลัก", icon: House },
-      { href: "/wishlist", label: "ถูกใจ", icon: Heart },
-      { href: "/all-products", label: "ค้นหา", icon: Search },
-      { href: "/cart", label: "ตะกร้า", icon: ShoppingCart },
-      { href: "/account", label: "บัญชี", icon: UserRound },
-    ],
-    []
-  );
 
   const handleBack = () => {
     goBackOrPush(router, "/");
@@ -86,6 +70,7 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
               <button
                 type="button"
                 aria-label="ตั้งค่า"
+                onClick={() => router.push("/all-products?advanced=1")}
                 className="ml-auto rounded-full p-1 text-[#4b5563]"
               >
                 <Settings className="h-8 w-8" />
@@ -182,11 +167,6 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                               )}
                             </div>
 
-                            <div className="mt-1 flex items-center gap-1">
-                              <Star className="h-3.5 w-3.5 fill-[#fbbf24] text-[#fbbf24]" />
-                              <span className="text-[13px] text-[#374151]">4.9</span>
-                              <span className="text-[11px] text-[#b2b2b2]">(219 รีวิว)</span>
-                            </div>
                           </div>
                         </Link>
                       );
@@ -198,33 +178,7 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
           </main>
         </div>
 
-        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#cfcfd2] bg-[#f8f8f8] md:hidden">
-          <div
-            className="mx-auto grid h-[84px] w-full max-w-[440px] grid-cols-5 px-2"
-            style={{ paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}
-          >
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = router.pathname === tab.href;
-
-              return (
-                <Link
-                  key={tab.href}
-                  href={tab.href}
-                  className={`flex flex-col items-center justify-center gap-1 ${
-                    isActive ? "text-[#2f6ef4]" : "text-[#6b7280]"
-                  }`}
-                >
-                  <Icon
-                    className={`h-8 w-8 ${isActive ? "" : "stroke-[1.9]"}`}
-                    strokeWidth={isActive ? 2.3 : 2}
-                  />
-                  <span className="text-[14px] leading-none">{tab.label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+        <MobileShopBottomNav activePath="/all-products" />
       </div>
     </>
   );

@@ -1,11 +1,15 @@
 "use client";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const token =
+    typeof router.query.token === "string"
+      ? router.query.token
+      : Array.isArray(router.query.token)
+      ? router.query.token[0] || ""
+      : "";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
