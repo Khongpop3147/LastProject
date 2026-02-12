@@ -140,7 +140,7 @@ export default async function handler(
         const file = Array.isArray(files.image) ? files.image[0] : files.image;
         const tmpPath = (file.filepath || (file as any).path) as string;
         const fileName = path.basename(tmpPath);
-        updateData.imageUrl = `/uploads/${fileName}`;
+        updateData.imageUrl = `/api/file/${fileName}`;
       }
 
       // Upsert translations for th & en

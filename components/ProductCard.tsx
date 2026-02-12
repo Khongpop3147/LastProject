@@ -16,11 +16,11 @@ interface ProductCardProps {
   salePercent?: number;
 }
 
-export default function ProductCard({ 
-  product, 
+export default function ProductCard({
+  product,
   backgroundColor = "bg-gradient-to-br from-orange-400 to-orange-500",
   showBadge = null,
-  salePercent = 25
+  salePercent = 25,
 }: ProductCardProps) {
   const { token } = useAuth();
   const router = useRouter();
@@ -29,27 +29,27 @@ export default function ProductCard({
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!token) {
       router.push("/login");
       return;
     }
-    
+
     setIsWishlisted(!isWishlisted);
     // TODO: Add API call to add/remove from wishlist
   };
 
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const displayPrice = product.salePrice || product.price;
-  
+
   // Calculate real discount percentage from prices
-  const calculatedDiscountPercent = hasDiscount 
+  const calculatedDiscountPercent = hasDiscount
     ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
     : 0;
-  
+
   // Use calculated discount if available, otherwise use prop
   const discountPercent = hasDiscount ? calculatedDiscountPercent : salePercent;
-  
+
   const rating = 4.9; // Mock rating
   const reviewCount = 219; // Mock review count
 
@@ -57,7 +57,9 @@ export default function ProductCard({
     <Link href={`/products/${product.id}`}>
       <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
         {/* Image Section with Background Color */}
-        <div className={`relative ${backgroundColor} aspect-square overflow-hidden`}>
+        <div
+          className={`relative ${backgroundColor} aspect-square overflow-hidden`}
+        >
           {/* Badge */}
           {showBadge === "sale" && (
             <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10">
@@ -77,6 +79,13 @@ export default function ProductCard({
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-300"
           />
+
+          {/* Out of Stock Overlay */}
+          {product.stock === 0 && (
+            <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center rounded-lg text-red-600 font-bold z-20">
+              สินค้าหมด
+            </div>
+          )}
 
           {/* Wishlist Button */}
           <button

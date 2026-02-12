@@ -3,7 +3,15 @@ import { GetServerSideProps } from "next";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { ArrowLeft, Heart, Share2, Star, Package, Check, ShoppingCart } from "lucide-react";
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  Star,
+  Package,
+  Check,
+  ShoppingCart,
+} from "lucide-react";
 import Layout from "@/components/Layout";
 import ProductOptions, { ProductOption } from "@/components/ProductOptions";
 import QuantitySelector from "@/components/QuantitySelector";
@@ -11,18 +19,19 @@ import ReviewCard from "@/components/ReviewCard";
 import { prisma } from "@/lib/prisma";
 import { useAuth } from "@/context/AuthContext";
 import { calculateDeliveryDate } from "@/lib/shippingUtils";
+import type { ProductLocale } from "@prisma/client";
 
 interface ProductPageProps {
   product: {
     id: string;
     name: string;
     description: string;
+    material: string | null;
     price: number;
     salePrice: number | null;
     stock: number;
     imageUrl: string | null;
     categoryId: string | null;
-    material: string | null;
   } | null;
 }
 
@@ -44,7 +53,7 @@ export default function ProductPage({ product }: ProductPageProps) {
   useEffect(() => {
     const date = calculateDeliveryDate(
       selectedShipping as "standard" | "express",
-      distanceKm
+      distanceKm,
     );
     setDeliveryDate(date);
   }, [selectedShipping, distanceKm]);
@@ -86,9 +95,10 @@ export default function ProductPage({ product }: ProductPageProps) {
       id: "1",
       userName: "สมศรี มีเงินแสง",
       rating: 5,
-      comment: "สินค้าคุณภาพดีมาก ใช้งานได้เป็นอย่างดีมากๆ ขอบคุณร้านค้ามากนะคะ ทั้งผู้ขายอุบายน่ารักมาก",
+      comment:
+        "สินค้าคุณภาพดีมาก ใช้งานได้เป็นอย่างดีมากๆ ขอบคุณร้านค้ามากนะคะ ทั้งผู้ขายอุบายน่ารักมาก",
       timeAgo: "2 วันก่อน",
-      avatar: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+      avatar: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
     },
     {
       id: "2",
@@ -96,8 +106,8 @@ export default function ProductPage({ product }: ProductPageProps) {
       rating: 4,
       comment: "ราคาคุ้มค่า แพคเกจดี ใช้ได้ทุกวัน",
       timeAgo: "2 วันก่อน",
-      avatar: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-    }
+      avatar: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    },
   ];
 
   // Product options
@@ -109,9 +119,7 @@ export default function ProductPage({ product }: ProductPageProps) {
   ];
 
   // Size options
-  const sizeOptions: ProductOption[] = [
-    { id: "eu", label: "EU", value: "EU" },
-  ];
+  const sizeOptions: ProductOption[] = [{ id: "eu", label: "EU", value: "EU" }];
 
   // Handlers
   const handleWishlist = () => {
@@ -294,11 +302,15 @@ export default function ProductPage({ product }: ProductPageProps) {
                 รายละเอียด
               </h3>
               <div className="mb-3">
-                <h4 className="text-base font-semibold text-gray-900 mb-2">วัสดุ</h4>
+                <h4 className="text-base font-semibold text-gray-900 mb-2">
+                  วัสดุ
+                </h4>
                 <div className="flex flex-wrap gap-2">
-                  {product.material.split(',').map((mat, idx) => (
+                  {product.material.split(",").map((mat, idx) => (
                     <div key={idx} className="px-4 py-2 bg-pink-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-800">{mat.trim()}</span>
+                      <span className="text-sm font-medium text-gray-800">
+                        {mat.trim()}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -334,7 +346,9 @@ export default function ProductPage({ product }: ProductPageProps) {
                       <Check className="w-3 h-3 text-white" strokeWidth={3} />
                     )}
                   </div>
-                  <span className="font-semibold text-gray-900">จัดส่งปกติ</span>
+                  <span className="font-semibold text-gray-900">
+                    จัดส่งปกติ
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">5-7 วัน</span>
@@ -365,7 +379,9 @@ export default function ProductPage({ product }: ProductPageProps) {
                       <Check className="w-3 h-3 text-white" strokeWidth={3} />
                     )}
                   </div>
-                  <span className="font-semibold text-gray-900">จัดส่งด่วน</span>
+                  <span className="font-semibold text-gray-900">
+                    จัดส่งด่วน
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">1-2 วัน</span>
@@ -385,7 +401,9 @@ export default function ProductPage({ product }: ProductPageProps) {
               <Package className="w-5 h-5 text-green-600" />
               <div>
                 <p className="font-semibold text-green-700">จัดส่งฟรี</p>
-                <p className="text-xs text-green-600">สำหรับสั่งซื้อตั้งแต่ 500 บาทขึ้นไป</p>
+                <p className="text-xs text-green-600">
+                  สำหรับสั่งซื้อตั้งแต่ 500 บาทขึ้นไป
+                </p>
               </div>
             </div>
           </div>
@@ -398,7 +416,9 @@ export default function ProductPage({ product }: ProductPageProps) {
             <QuantitySelector
               quantity={quantity}
               onDecrease={() => setQuantity(Math.max(1, quantity - 1))}
-              onIncrease={() => setQuantity(Math.min(product.stock, quantity + 1))}
+              onIncrease={() =>
+                setQuantity(Math.min(product.stock, quantity + 1))
+              }
               max={product.stock}
               disabled={product.stock === 0}
             />
@@ -424,7 +444,7 @@ export default function ProductPage({ product }: ProductPageProps) {
                 return;
               }
               if (product.stock === 0) return;
-              
+
               try {
                 const res = await fetch("/api/cart", {
                   method: "POST",
@@ -457,8 +477,8 @@ export default function ProductPage({ product }: ProductPageProps) {
             {product.stock === 0
               ? "สินค้าหมด"
               : loading
-              ? "กำลังเพิ่ม..."
-              : "ซื้อเลย"}
+                ? "กำลังเพิ่ม..."
+                : "ซื้อเลย"}
           </button>
         </div>
       </div>
@@ -484,29 +504,24 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
     return { props: { product: null } };
   }
 
-  const trans = raw.translations[0];
-  
-  // Debug: Check what's in the database
-  console.log("=== Server Side Debug ===");
-  console.log("Product ID:", raw.id);
-  console.log("Locale:", lang);
-  console.log("Translations found:", raw.translations.length);
-  console.log("Translation data:", trans);
-  console.log("Material from DB:", trans?.material);
-  
-  return {
-    props: {
-      product: {
+  const trans = raw.translations[0] as ProductLocale | undefined;
+  const product = trans
+    ? {
         id: raw.id,
-        name: trans?.name ?? "",
-        description: trans?.description ?? "",
+        name: trans.name,
+        description: trans.description ?? "",
+        material: trans.material ?? null,
         price: raw.price,
         salePrice: raw.salePrice,
         stock: raw.stock,
         imageUrl: raw.imageUrl,
         categoryId: raw.categoryId,
-        material: trans?.material ?? null,
-      },
+      }
+    : null;
+
+  return {
+    props: {
+      product,
     },
   };
 };

@@ -150,7 +150,7 @@ export default async function handler(
           .slice(2)}${ext}`;
         const dest = path.join(uploadDir, filename);
         await fs.promises.rename((rawFile as any).filepath, dest);
-        slipUrl = `/uploads/slips/${filename}`;
+        slipUrl = `/api/file/slips/${filename}`;
       }
       if (!slipUrl && typeof fields.slipUrl === "string") {
         slipUrl = fields.slipUrl;
