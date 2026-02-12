@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import MobileShopBottomNav from "@/components/MobileShopBottomNav";
 import { prisma } from "@/lib/prisma";
+import { mapToProduct } from "@/lib/productMapping";
 import { goBackOrPush } from "@/lib/navigation";
 import type { Product } from "@/types/product";
 
@@ -38,20 +39,6 @@ const filterTabs: Array<{ key: DiscountFilter; label: string }> = [
   { key: 40, label: "40%" },
   { key: 50, label: "50%" },
 ];
-
-function toProduct(raw: any): Product {
-  return {
-    id: raw.id,
-    name: raw.translations[0]?.name ?? "สินค้า",
-    description: raw.translations[0]?.description ?? "",
-    price: raw.price,
-    imageUrl: raw.imageUrl,
-    stock: raw.stock,
-    salePrice: raw.salePrice ?? null,
-    categoryId: raw.categoryId ?? undefined,
-    isFeatured: raw.isFeatured,
-  };
-}
 
 function getDiscountBucket(discountPercent: number): DiscountFilter | 0 {
   if (discountPercent >= 50) return 50;
@@ -236,7 +223,7 @@ export const getServerSideProps: GetServerSideProps<SalePageProps> = async ({
       );
 
       return {
-        ...toProduct(p),
+        ...mapToProduct(p),
         discountPercent,
         discountBucket: getDiscountBucket(discountPercent),
       };

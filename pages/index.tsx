@@ -1,17 +1,18 @@
 // pages/index.tsx
 import { GetServerSideProps } from "next";
+import type { Prisma } from "@prisma/client";
 import useTranslation from "next-translate/useTranslation";
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import Layout from "@/components/Layout";
 import MobileHeader from "@/components/MobileHeader";
 import Banner, { BannerSlide } from "@/components/Banner";
 import CouponBanner from "@/components/CouponBanner";
 import CategoryCarousel from "@/components/CategoryCarousel";
-import DiscountCarousel from "@/components/DiscountCarousel";
-import SubBanner from "@/components/SubBanner";
 import SubBannerCarousel from "@/components/SubBannerCarousel";
 import ProductCard from "@/components/ProductCard";
 import { prisma } from "@/lib/prisma";
+import { mapToProduct } from "@/lib/productMapping";
 import { Category, Product } from "@/types/product";
 import { Clock } from "lucide-react";
 
@@ -24,13 +25,6 @@ interface HomeProps {
   categories: Category[];
   flashEndAt: string;
   serverNowTs: number;
-  subBannerData: {
-    title: string;
-    description: string;
-    buttonText: string;
-    buttonLink: string;
-    img: string;
-  } | null;
 }
 
 export default function HomePage({
@@ -42,7 +36,6 @@ export default function HomePage({
   categories,
   flashEndAt,
   serverNowTs,
-  subBannerData,
 }: HomeProps) {
   const { t } = useTranslation("common");
   const [nowTs, setNowTs] = useState<number>(serverNowTs);
@@ -64,6 +57,62 @@ export default function HomePage({
   const hours = Math.min(Math.floor(remainingMs / 3_600_000), 99);
   const minutes = Math.floor((remainingMs % 3_600_000) / 60_000);
   const seconds = Math.floor((remainingMs % 60_000) / 1_000);
+  const commonSectionClass = "px-4 md:px-6 lg:px-8 mb-6 md:mb-8";
+  const actionLinkClass =
+    "px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors";
+  const productGridClass =
+    "flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2";
+  const flashColors = [
+    "bg-gradient-to-br from-orange-400 to-orange-500",
+    "bg-gradient-to-br from-yellow-400 to-yellow-500",
+    "bg-gradient-to-br from-pink-400 to-pink-500",
+    "bg-gradient-to-br from-blue-400 to-blue-500",
+    "bg-gradient-to-br from-purple-400 to-purple-500",
+  ];
+  const homeSections = [
+    {
+      title: "สินค้าใหม่",
+      href: "/new",
+      products: featured,
+      colors: [
+        "bg-gradient-to-br from-cyan-400 to-cyan-500",
+        "bg-gradient-to-br from-red-400 to-red-500",
+        "bg-gradient-to-br from-blue-400 to-blue-500",
+        "bg-gradient-to-br from-green-400 to-green-500",
+        "bg-gradient-to-br from-indigo-400 to-indigo-500",
+      ],
+      badge: "new" as const,
+      wrapperClass: commonSectionClass,
+    },
+    {
+      title: "สินค้าแนะนำ",
+      href: "/recommended",
+      products: featured,
+      colors: [
+        "bg-gradient-to-br from-teal-400 to-teal-500",
+        "bg-gradient-to-br from-amber-400 to-amber-500",
+        "bg-gradient-to-br from-rose-400 to-rose-500",
+        "bg-gradient-to-br from-violet-400 to-violet-500",
+        "bg-gradient-to-br from-lime-400 to-lime-500",
+      ],
+      badge: null,
+      wrapperClass: commonSectionClass,
+    },
+    {
+      title: "ได้รับความนิยมสูง",
+      href: "/popular",
+      products: bestSellers,
+      colors: [
+        "bg-gradient-to-br from-fuchsia-400 to-fuchsia-500",
+        "bg-gradient-to-br from-sky-400 to-sky-500",
+        "bg-gradient-to-br from-emerald-400 to-emerald-500",
+        "bg-gradient-to-br from-orange-400 to-orange-500",
+        "bg-gradient-to-br from-pink-400 to-pink-500",
+      ],
+      badge: null,
+      wrapperClass: "px-4 md:px-6 lg:px-8 mb-20 md:mb-8",
+    },
+  ];
 
   const format2 = (value: number) => String(Math.max(0, value)).padStart(2, "0");
   
@@ -85,12 +134,12 @@ export default function HomePage({
       </section>
 
       {/* Category Grid */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
+      <section className={commonSectionClass}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">หมวดหมู่สินค้า</h2>
-          <a href="/categories" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
+          <Link href="/categories" className={actionLinkClass}>
             ดูทั้งหมด →
-          </a>
+          </Link>
         </div>
         <CategoryCarousel categories={categories} />
       </section>
@@ -103,7 +152,7 @@ export default function HomePage({
       )}
 
       {/* Flash Sale */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
+      <section className={commonSectionClass}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Flash Sale</h2>
@@ -114,32 +163,23 @@ export default function HomePage({
               <span className="bg-black px-1.5 py-0.5 rounded">{format2(seconds)}</span>
             </div>
           </div>
-          <a href="/sale" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
+          <Link href="/sale" className={actionLinkClass}>
             ดูทั้งหมด →
-          </a>
+          </Link>
         </div>
         
         {/* Flash Sale Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {onSale.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-orange-400 to-orange-500",
-              "bg-gradient-to-br from-yellow-400 to-yellow-500",
-              "bg-gradient-to-br from-pink-400 to-pink-500",
-              "bg-gradient-to-br from-blue-400 to-blue-500",
-              "bg-gradient-to-br from-purple-400 to-purple-500"
-            ];
-            return (
-              <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
-                  showBadge="sale"
-                  salePercent={25 + (idx * 5)}
-                />
-              </div>
-            );
-          })}
+        <div className={productGridClass}>
+          {onSale.slice(0, 10).map((product, idx) => (
+            <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
+              <ProductCard 
+                product={product} 
+                backgroundColor={flashColors[idx % flashColors.length]}
+                showBadge="sale"
+                salePercent={25 + (idx * 5)}
+              />
+            </div>
+          ))}
         </div>
       </section>
 
@@ -161,99 +201,28 @@ export default function HomePage({
         </div>
       </section>
 
-      {/* New Products - สินค้าใหม่ */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าใหม่</h2>
-          <a href="/new" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        
-        {/* New Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {featured.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-cyan-400 to-cyan-500",
-              "bg-gradient-to-br from-red-400 to-red-500",
-              "bg-gradient-to-br from-blue-400 to-blue-500",
-              "bg-gradient-to-br from-green-400 to-green-500",
-              "bg-gradient-to-br from-indigo-400 to-indigo-500"
-            ];
-            return (
-              <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
-                  showBadge="new"
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      {homeSections.map((section) => (
+        <section key={section.title} className={section.wrapperClass}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">{section.title}</h2>
+            <Link href={section.href} className={actionLinkClass}>
+              ดูทั้งหมด →
+            </Link>
+          </div>
 
-      {/* Recommended Products - สินค้าแนะนำ */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าแนะนำ</h2>
-          <a href="/recommended" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        
-        {/* Recommended Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {featured.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-teal-400 to-teal-500",
-              "bg-gradient-to-br from-amber-400 to-amber-500",
-              "bg-gradient-to-br from-rose-400 to-rose-500",
-              "bg-gradient-to-br from-violet-400 to-violet-500",
-              "bg-gradient-to-br from-lime-400 to-lime-500"
-            ];
-            return (
-              <div key={product.id} className="flex-shrink-0 w-40">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Special Offers - ได้รับความนิยมสูง */}
-      <section className="px-4 md:px-6 lg:px-8 mb-20 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">ได้รับความนิยมสูง</h2>
-          <a href="/popular" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        
-        {/* Popular Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {bestSellers.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-fuchsia-400 to-fuchsia-500",
-              "bg-gradient-to-br from-sky-400 to-sky-500",
-              "bg-gradient-to-br from-emerald-400 to-emerald-500",
-              "bg-gradient-to-br from-orange-400 to-orange-500",
-              "bg-gradient-to-br from-pink-400 to-pink-500"
-            ];
-            return (
+          <div className={productGridClass}>
+            {section.products.slice(0, 10).map((product, idx) => (
               <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
+                <ProductCard
+                  product={product}
+                  backgroundColor={section.colors[idx % section.colors.length]}
+                  showBadge={section.badge}
                 />
               </div>
-            );
-          })}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      ))}
     </Layout>
   );
 }
@@ -295,23 +264,14 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
   }));
 
   // helper: fetch localized products
-  async function getProducts(where: any, take?: number) {
+  async function getProducts(where: Prisma.ProductWhereInput, take?: number) {
     const raw = await prisma.product.findMany({
       where,
       take,
       orderBy: { updatedAt: "desc" },
       include: { translations: { where: { locale: lang }, take: 1 } },
     });
-    return raw.map((p) => ({
-      id: p.id,
-      name: p.translations[0]?.name ?? "",
-      description: p.translations[0]?.description ?? "",
-      price: p.price,
-      imageUrl: p.imageUrl,
-      stock: p.stock,
-      salePrice: p.salePrice ?? null,
-      isFeatured: p.isFeatured,
-    }));
+    return raw.map(mapToProduct);
   }
 
   // 3. Featured
@@ -327,24 +287,16 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
     orderBy: { _sum: { quantity: "desc" } },
     take: 8,
   });
-  const bestSellers: Product[] = await Promise.all(
-    top.map(async ({ productId }) => {
-      const p = await prisma.product.findUnique({
-        where: { id: productId },
-        include: { translations: { where: { locale: lang }, take: 1 } },
-      });
-      return {
-        id: p!.id,
-        name: p!.translations[0]?.name ?? "",
-        description: p!.translations[0]?.description ?? "",
-        price: p!.price,
-        imageUrl: p!.imageUrl,
-        stock: p!.stock,
-        salePrice: p!.salePrice ?? null,
-        isFeatured: p!.isFeatured,
-      };
-    })
-  );
+  const bestSellerIds = top.map((item) => item.productId);
+  const bestSellersRaw = await prisma.product.findMany({
+    where: { id: { in: bestSellerIds } },
+    include: { translations: { where: { locale: lang }, take: 1 } },
+  });
+  const bestById = new Map(bestSellersRaw.map((item) => [item.id, item]));
+  const bestSellers: Product[] = bestSellerIds
+    .map((id) => bestById.get(id))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item))
+    .map(mapToProduct);
 
   // 6. Categories with product count
   const rawCats = await prisma.categoryLocale.findMany({
@@ -376,21 +328,6 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
     })
   );
 
-  // 7. Legacy SubBanner
-  const rawSub = await prisma.subBannerLocale.findFirst({
-    where: { locale: lang },
-    include: { subBanner: true },
-  });
-  const subBannerData = rawSub
-    ? {
-        title: rawSub.title,
-        description: rawSub.description,
-        buttonText: rawSub.buttonText,
-        buttonLink: rawSub.subBanner.buttonLink,
-        img: rawSub.subBanner.imageUrl ?? "",
-      }
-    : null;
-
   const now = new Date();
   const configuredEnd = process.env.FLASH_SALE_END_AT;
   let flashEndDate = new Date(now.getTime() + 3 * 60 * 60 * 1000);
@@ -412,7 +349,6 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
       categories,
       flashEndAt: flashEndDate.toISOString(),
       serverNowTs: now.getTime(),
-      subBannerData,
     },
   };
 };

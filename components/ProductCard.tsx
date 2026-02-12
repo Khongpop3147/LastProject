@@ -42,9 +42,10 @@ export default function ProductCard({
     setIsWishlisted(nextState); // Optimistic update
 
     try {
+      let res: Response;
       if (nextState) {
         // Add to wishlist
-        await fetch("/api/wishlist", {
+        res = await fetch("/api/wishlist", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -54,12 +55,15 @@ export default function ProductCard({
         });
       } else {
         // Remove from wishlist
-        await fetch(`/api/wishlist/${product.id}`, {
+        res = await fetch(`/api/wishlist/${product.id}`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+      }
+      if (!res.ok) {
+        throw new Error(`Wishlist request failed with status ${res.status}`);
       }
     } catch (error) {
       console.error("Failed to update wishlist", error);
@@ -67,8 +71,11 @@ export default function ProductCard({
     }
   };
 
-  const hasDiscount = product.salePrice && product.salePrice < product.price;
-  const displayPrice = product.salePrice || product.price;
+  const hasDiscount =
+    typeof product.salePrice === "number" && product.salePrice < product.price;
+  const displayPrice: number = hasDiscount
+    ? (product.salePrice as number)
+    : product.price;
 
   // Calculate real discount percentage from prices
   const calculatedDiscountPercent = hasDiscount

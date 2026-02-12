@@ -1,25 +1,12 @@
 import type { GetServerSideProps } from "next";
 import { prisma } from "@/lib/prisma";
+import { mapToProduct } from "@/lib/productMapping";
 import type { Product } from "@/types/product";
 import SimpleCollectionPage from "@/components/SimpleCollectionPage";
 
 type PopularPageProps = {
   products: Product[];
 };
-
-function toProduct(raw: any): Product {
-  return {
-    id: raw.id,
-    name: raw.translations[0]?.name ?? "สินค้า",
-    description: raw.translations[0]?.description ?? "",
-    price: raw.price,
-    imageUrl: raw.imageUrl,
-    stock: raw.stock,
-    salePrice: raw.salePrice ?? null,
-    categoryId: raw.categoryId ?? undefined,
-    isFeatured: raw.isFeatured,
-  };
-}
 
 export default function PopularPage({ products }: PopularPageProps) {
   return (
@@ -59,7 +46,7 @@ export const getServerSideProps: GetServerSideProps<PopularPageProps> = async ({
     products = ids
       .map((id) => byId.get(id))
       .filter((p): p is NonNullable<typeof p> => Boolean(p))
-      .map(toProduct);
+      .map(mapToProduct);
   } else {
     const fallback = await prisma.product.findMany({
       orderBy: { updatedAt: "desc" },
@@ -68,7 +55,7 @@ export const getServerSideProps: GetServerSideProps<PopularPageProps> = async ({
         translations: { where: { locale: lang }, take: 1 },
       },
     });
-    products = fallback.map(toProduct);
+    products = fallback.map(mapToProduct);
   }
 
   return {
