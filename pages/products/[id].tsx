@@ -19,6 +19,7 @@ import ReviewCard from "@/components/ReviewCard";
 import { prisma } from "@/lib/prisma";
 import { useAuth } from "@/context/AuthContext";
 import { calculateDeliveryDate } from "@/lib/shippingUtils";
+import { goBackOrPush } from "@/lib/navigation";
 import type { ProductLocale } from "@prisma/client";
 
 interface ProductPageProps {
@@ -48,6 +49,10 @@ export default function ProductPage({ product }: ProductPageProps) {
   const [loading, setLoading] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState<string>("");
   const [distanceKm, setDistanceKm] = useState<number>(100); // Default ~100km from Bangkok
+
+  const handleBack = () => {
+    goBackOrPush(router, "/");
+  };
 
   // Calculate delivery date when shipping method changes
   useEffect(() => {
@@ -175,7 +180,7 @@ export default function ProductPage({ product }: ProductPageProps) {
         {/* Header */}
         <div className="sticky top-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
           <button
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-100"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />

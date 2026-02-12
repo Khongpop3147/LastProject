@@ -26,7 +26,10 @@ export default function ProductCard({
   const router = useRouter();
   const [isWishlisted, setIsWishlisted] = useState(false);
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  // Check if initially wishlisted (could be improved with global state)
+  // For now, we rely on local state or parent prop if we add one later.
+
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -35,8 +38,33 @@ export default function ProductCard({
       return;
     }
 
-    setIsWishlisted(!isWishlisted);
-    // TODO: Add API call to add/remove from wishlist
+    const nextState = !isWishlisted;
+    setIsWishlisted(nextState); // Optimistic update
+
+    try {
+      if (nextState) {
+        // Add to wishlist
+        await fetch("/api/wishlist", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ productId: product.id }),
+        });
+      } else {
+        // Remove from wishlist
+        await fetch(`/api/wishlist/${product.id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update wishlist", error);
+      setIsWishlisted(!nextState); // Revert on error
+    }
   };
 
   const hasDiscount = product.salePrice && product.salePrice < product.price;

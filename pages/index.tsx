@@ -1,6 +1,7 @@
 // pages/index.tsx
 import { GetServerSideProps } from "next";
 import useTranslation from "next-translate/useTranslation";
+import { useEffect, useMemo, useState } from "react";
 import Layout from "@/components/Layout";
 import MobileHeader from "@/components/MobileHeader";
 import Banner, { BannerSlide } from "@/components/Banner";
@@ -21,6 +22,8 @@ interface HomeProps {
   onSale: Product[];
   bestSellers: Product[];
   categories: Category[];
+  flashEndAt: string;
+  serverNowTs: number;
   subBannerData: {
     title: string;
     description: string;
@@ -37,9 +40,32 @@ export default function HomePage({
   onSale,
   bestSellers,
   categories,
+  flashEndAt,
+  serverNowTs,
   subBannerData,
 }: HomeProps) {
   const { t } = useTranslation("common");
+  const [nowTs, setNowTs] = useState<number>(serverNowTs);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setNowTs(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const endAtMs = useMemo(() => {
+    const parsed = new Date(flashEndAt).getTime();
+    return Number.isFinite(parsed) ? parsed : Date.now();
+  }, [flashEndAt]);
+
+  const remainingMs = Math.max(endAtMs - nowTs, 0);
+  const hours = Math.min(Math.floor(remainingMs / 3_600_000), 99);
+  const minutes = Math.floor((remainingMs % 3_600_000) / 60_000);
+  const seconds = Math.floor((remainingMs % 60_000) / 1_000);
+
+  const format2 = (value: number) => String(Math.max(0, value)).padStart(2, "0");
   
   return (
     <Layout title={t("siteTitle")}>
@@ -62,7 +88,7 @@ export default function HomePage({
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">หมวดหมู่สินค้า</h2>
-          <a href="/categories" className="text-sm text-blue-600 hover:underline">
+          <a href="/categories" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
             ดูทั้งหมด →
           </a>
         </div>
@@ -82,14 +108,13 @@ export default function HomePage({
           <div className="flex items-center gap-2">
             <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Flash Sale</h2>
             <Clock className="w-4 h-4 text-red-500" />
-            {/* Countdown Timer - Static for now */}
             <div className="flex items-center gap-1 text-white text-xs font-bold">
-              <span className="bg-black px-1.5 py-0.5 rounded">02</span>
-              <span className="bg-black px-1.5 py-0.5 rounded">36</span>
-              <span className="bg-black px-1.5 py-0.5 rounded">00</span>
+              <span className="bg-black px-1.5 py-0.5 rounded">{format2(hours)}</span>
+              <span className="bg-black px-1.5 py-0.5 rounded">{format2(minutes)}</span>
+              <span className="bg-black px-1.5 py-0.5 rounded">{format2(seconds)}</span>
             </div>
           </div>
-          <a href="/sale" className="text-sm text-blue-600 hover:underline">
+          <a href="/sale" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
             ดูทั้งหมด →
           </a>
         </div>
@@ -140,7 +165,7 @@ export default function HomePage({
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าใหม่</h2>
-          <a href="/new" className="text-sm text-blue-600 hover:underline">
+          <a href="/new" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
             ดูทั้งหมด →
           </a>
         </div>
@@ -172,7 +197,7 @@ export default function HomePage({
       <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าแนะนำ</h2>
-          <a href="/recommended" className="text-sm text-blue-600 hover:underline">
+          <a href="/recommended" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
             ดูทั้งหมด →
           </a>
         </div>
@@ -203,7 +228,7 @@ export default function HomePage({
       <section className="px-4 md:px-6 lg:px-8 mb-20 md:mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">ได้รับความนิยมสูง</h2>
-          <a href="/popular" className="text-sm text-blue-600 hover:underline">
+          <a href="/popular" className="px-4 py-1.5 rounded-full bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-colors">
             ดูทั้งหมด →
           </a>
         </div>
@@ -358,6 +383,17 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
       }
     : null;
 
+  const now = new Date();
+  const configuredEnd = process.env.FLASH_SALE_END_AT;
+  let flashEndDate = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+
+  if (configuredEnd) {
+    const parsed = new Date(configuredEnd);
+    if (!Number.isNaN(parsed.getTime())) {
+      flashEndDate = parsed;
+    }
+  }
+
   return {
     props: {
       banners,
@@ -366,6 +402,8 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
       onSale,
       bestSellers,
       categories,
+      flashEndAt: flashEndDate.toISOString(),
+      serverNowTs: now.getTime(),
       subBannerData,
     },
   };

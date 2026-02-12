@@ -19,6 +19,7 @@ model User {
   cart                Cart?
   orders              Order[]
   passwordResetTokens PasswordResetToken[]
+  wishlist            WishlistItem[]
 }
 
 /// Categories with locales
@@ -54,6 +55,7 @@ model Product {
   cartItems    CartItem[]
   orderItems   OrderItem[]
   translations ProductLocale[]
+  wishlistedBy WishlistItem[]
 }
 
 model ProductLocale {
@@ -236,4 +238,16 @@ model Supplier {
   unitPrice   Float    @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
 }

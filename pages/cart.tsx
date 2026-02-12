@@ -1,49 +1,110 @@
 // pages/cart.tsx
-"use client";
-
-import { useEffect, useState } from "react";
-import Layout from "@/components/Layout";
-import { useAuth } from "@/context/AuthContext";
-import Image from "next/image";
+import type { GetServerSideProps } from "next";
+import Head from "next/head";
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
+import { useCallback, useEffect, useMemo } from "react";
+import { useState } from "react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Loader2,
+  MessageCircle,
+  ShoppingCart,
+  Store,
+  Ticket,
+  Trash2,
+} from "lucide-react";
 import useTranslation from "next-translate/useTranslation";
+import { useAuth } from "@/context/AuthContext";
+import { goBackOrPush } from "@/lib/navigation";
+
+type ProductTranslation = {
+  locale: string;
+  name: string;
+  description?: string | null;
+};
 
 interface CartItem {
   id: string;
   quantity: number;
+  sellerName?: string;
   product: {
     id: string;
-    name: string; // ฝั่ง API ควรดึงแปลตาม locale มาให้
+    name: string;
     price: number;
     salePrice?: number | null;
     imageUrl?: string | null;
     stock: number;
+    translations?: ProductTranslation[];
   };
 }
 
+function resolveName(product: CartItem["product"], locale: string) {
+  const exact = product.translations?.find(
+    (item) => item.locale === locale,
+  )?.name;
+  if (exact) return exact;
+  if (product.translations?.[0]?.name) return product.translations[0].name;
+  return product.name || "สินค้า";
+}
+
+function toCurrency(value: number) {
+  return `฿${value.toLocaleString("th-TH")}`;
+}
+
 export default function CartPage() {
-  const { t, lang } = useTranslation("common");
   const router = useRouter();
+  const { lang } = useTranslation("common");
   const { token } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectionInitialized, setSelectionInitialized] = useState(false);
 
-  const loadCart = async () => {
-    if (!token) return;
+  const loadCart = useCallback(async () => {
+    if (!token) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch(`/api/cart?locale=${lang}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      if (!res.ok) {
+        setItems([]);
+        return;
+      }
+
       const data = await res.json();
       setItems(data.items || []);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to fetch cart", error);
+      setItems([]);
     } finally {
       setLoading(false);
     }
+  }, [token, lang]);
+
+  useEffect(() => {
+    loadCart();
+  }, [loadCart]);
+
+  useEffect(() => {
+    if (!token) {
+      setSelectedItemIds(new Set());
+      setSelectionInitialized(false);
+    }
+  }, [token]);
+
+  const handleBack = () => {
+    goBackOrPush(router, "/");
   };
 
   const updateQuantity = async (itemId: string, quantity: number) => {
@@ -54,7 +115,7 @@ export default function CartPage() {
     if (!item) return;
 
     if (quantity > item.product.stock) {
-      alert(t("cart.exceedStock", { stock: item.product.stock }));
+      alert(`สินค้าในคลังมีเพียง ${item.product.stock} ชิ้น`);
       return;
     }
 
@@ -68,168 +129,448 @@ export default function CartPage() {
     });
     if (res.ok) {
       setItems((prev) =>
-        prev.map((i) => (i.id === itemId ? { ...i, quantity } : i))
+        prev.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
       );
     } else {
       const err = await res.json();
-      alert(t("cart.error") + ": " + err.error);
+      alert("เกิดข้อผิดพลาด: " + err.error);
     }
   };
 
   const removeItem = async (itemId: string) => {
     if (!token) return;
-    await fetch("/api/cart", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ itemId }),
+
+    setItems((prev) => prev.filter((item) => item.id !== itemId));
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      next.delete(itemId);
+      return next;
     });
-    loadCart();
+    try {
+      const res = await fetch("/api/cart", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ itemId }),
+      });
+      if (!res.ok) {
+        await loadCart();
+      }
+    } catch (error) {
+      console.error("Failed to remove cart item", error);
+      await loadCart();
+    }
   };
 
   useEffect(() => {
-    loadCart();
-  }, [token, lang]);
+    if (!selectionInitialized) {
+      if (items.length === 0) return;
+      setSelectedItemIds(new Set(items.map((item) => item.id)));
+      setSelectionInitialized(true);
+      return;
+    }
 
-  const total = items.reduce((sum, item) => {
-    const unit = item.product.salePrice ?? item.product.price;
-    return sum + unit * item.quantity;
-  }, 0);
+    setSelectedItemIds((prev) => {
+      const next = new Set<string>();
+      for (const item of items) {
+        if (prev.has(item.id)) {
+          next.add(item.id);
+        }
+      }
+      return next;
+    });
+  }, [items, selectionInitialized]);
+
+  const groupedBySeller = useMemo(() => {
+    const groups = new Map<string, CartItem[]>();
+    for (const item of items) {
+      const seller = item.sellerName?.trim() || "ร้านทั่วไป";
+      if (!groups.has(seller)) {
+        groups.set(seller, []);
+      }
+      groups.get(seller)!.push(item);
+    }
+    return Array.from(groups.entries()).map(([sellerName, groupItems]) => {
+      const selectedCount = groupItems.filter((item) =>
+        selectedItemIds.has(item.id)
+      ).length;
+      const selectedSubtotal = groupItems
+        .filter((item) => selectedItemIds.has(item.id))
+        .reduce((sum, item) => {
+          const unit = item.product.salePrice ?? item.product.price;
+          return sum + unit * item.quantity;
+        }, 0);
+
+      return {
+        sellerName,
+        items: groupItems,
+        selectedCount,
+        selectedSubtotal,
+        allSelected: selectedCount === groupItems.length && groupItems.length > 0,
+      };
+    });
+  }, [items, selectedItemIds]);
+
+  const selectedItemsCount = items.filter((item) =>
+    selectedItemIds.has(item.id)
+  ).length;
+
+  const selectedTotal = items
+    .filter((item) => selectedItemIds.has(item.id))
+    .reduce((sum, item) => {
+      const unit = item.product.salePrice ?? item.product.price;
+      return sum + unit * item.quantity;
+    }, 0);
+
+  const cartQuantityCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  const toggleItemSelected = (itemId: string) => {
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSellerSelected = (sellerName: string) => {
+    const targetGroup = groupedBySeller.find((group) => group.sellerName === sellerName);
+    if (!targetGroup) return;
+
+    setSelectedItemIds((prev) => {
+      const next = new Set(prev);
+      if (targetGroup.allSelected) {
+        for (const item of targetGroup.items) {
+          next.delete(item.id);
+        }
+      } else {
+        for (const item of targetGroup.items) {
+          next.add(item.id);
+        }
+      }
+      return next;
+    });
+  };
 
   // ถ้ายังไม่ล็อกอิน
   if (!token) {
     return (
-      <Layout title={t("cart.title")}>
-        <div className="py-20 text-center">
-          <ShoppingCart size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="mb-4">
-            {t("cart.loginPrompt")}{" "}
-            <Link href="/login" className="text-green-600 hover:underline">
-              {t("cart.login")}
-            </Link>
-          </p>
+      <>
+        <Head>
+          <title>ตะกร้า</title>
+        </Head>
+
+        <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
+          <div className="mx-auto w-full max-w-[440px]">
+            <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+              <div className="flex h-[80px] items-center px-4">
+                <button
+                  type="button"
+                  aria-label="ย้อนกลับ"
+                  onClick={handleBack}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dce1ea] text-[#222b3a]"
+                >
+                  <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
+                </button>
+
+                <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
+                  ตะกร้า
+                </h1>
+              </div>
+            </header>
+
+            <main className="px-4 pb-8">
+              <section className="flex min-h-[500px] flex-col items-center justify-center text-center">
+                <div className="mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#dedede]">
+                  <ShoppingCart
+                    className="h-[42px] w-[42px] text-[#8f8f8f]"
+                    strokeWidth={1.8}
+                  />
+                </div>
+                <h2 className="text-[32px] font-extrabold leading-tight text-black">
+                  ไม่มีสินค้า
+                </h2>
+                <p className="mt-1 text-[15px] text-[#6b7280]">
+                  ไม่ยอบนึงกันเลย
+                </p>
+                <Link
+                  href="/login"
+                  className="mt-3 rounded-2xl bg-[#2f6ef4] px-8 py-2.5 text-[16px] font-medium text-white"
+                >
+                  ไปดูสินค้า
+                </Link>
+              </section>
+            </main>
+          </div>
+
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout title={t("cart.title")}>
-      <h1 className="text-3xl font-bold mb-6">{t("cart.title")}</h1>
+    <>
+      <Head>
+        <title>ตะกร้า</title>
+      </Head>
 
-      {loading ? (
-        <p>{t("cart.loading")}</p>
-      ) : items.length === 0 ? (
-        <div className="py-20 text-center">
-          <ShoppingCart size={48} className="mx-auto text-gray-400 mb-4" />
-          <p className="mb-4">{t("cart.empty")}</p>
-          <Link
-            href="/all-products"
-            className="inline-block btn bg-green-600 hover:bg-green-700 text-white"
-          >
-            {t("cart.browse")}
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-6 mb-8">
-            {items.map((item) => {
-              const unit = item.product.salePrice ?? item.product.price;
-              return (
-                <div
-                  key={item.id}
-                  className="card flex items-center p-4 shadow-sm hover:shadow-md transition"
+      <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
+        <div className="mx-auto w-full max-w-[440px]">
+          <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+            <div className="flex h-[80px] items-center px-4">
+              <button
+                type="button"
+                aria-label="ย้อนกลับ"
+                onClick={handleBack}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dce1ea] text-[#222b3a]"
+              >
+                <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
+              </button>
+
+              <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
+                ตะกร้า{items.length > 0 ? ` (${cartQuantityCount})` : ""}
+              </h1>
+
+              <button
+                type="button"
+                className="ml-auto text-[20px] text-[#2f2f2f]"
+              >
+                แก้ไข
+              </button>
+
+              <button
+                type="button"
+                aria-label="แชท"
+                className="relative ml-3 text-[#f25d3d]"
+              >
+                <MessageCircle className="h-8 w-8" strokeWidth={2.2} />
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#f25d3d] text-[11px] font-bold text-white">
+                  6
+                </span>
+              </button>
+            </div>
+          </header>
+
+          <main className="px-4 pb-[164px]">
+            {loading ? (
+              <div className="flex h-[420px] items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin text-[#2f6ef4]" />
+              </div>
+            ) : items.length === 0 ? (
+              <section className="flex min-h-[500px] flex-col items-center justify-center text-center">
+                <div className="mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#dedede]">
+                  <ShoppingCart
+                    className="h-[42px] w-[42px] text-[#8f8f8f]"
+                    strokeWidth={1.8}
+                  />
+                </div>
+                <h2 className="text-[32px] font-extrabold leading-tight text-black">
+                  ไม่มีสินค้า
+                </h2>
+                <p className="mt-1 text-[15px] text-[#6b7280]">
+                  ไม่ยอบนึงกันเลย
+                </p>
+                <Link
+                  href="/all-products"
+                  className="mt-3 rounded-2xl bg-[#2f6ef4] px-8 py-2.5 text-[16px] font-medium text-white"
                 >
-                  <div className="w-24 h-24 relative rounded-lg overflow-hidden">
-                    <Image
-                      src={item.product.imageUrl ?? "/images/placeholder.png"}
-                      alt={item.product.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 px-4">
-                    <Link
-                      href={`/products/${item.product.id}`}
-                      className="font-medium text-lg hover:underline"
+                  ไปดูสินค้า
+                </Link>
+              </section>
+            ) : (
+              <>
+                <section className="space-y-4 pt-2">
+                  {groupedBySeller.map((group) => (
+                    <div
+                      key={group.sellerName}
+                      className="overflow-hidden rounded-[20px] border border-[#dddddd] bg-white shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
                     >
-                      {item.product.name}
-                    </Link>
-                    <p className="text-gray-500 text-sm mt-1">
-                      {t("cart.unitPrice", { price: unit })}
-                    </p>
-                    <div className="flex items-center mt-2 space-x-2">
+                      <div className="flex items-center gap-2 border-b border-[#efefef] px-3 py-3">
+                        <input
+                          type="checkbox"
+                          checked={group.allSelected}
+                          onChange={() => toggleSellerSelected(group.sellerName)}
+                          className="h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
+                        />
+                        <Store className="h-4 w-4 flex-shrink-0 text-[#666]" />
+                        <div className="min-w-0 flex flex-1 items-center text-[17px] font-semibold text-[#252525]">
+                          <span className="truncate">{group.sellerName}</span>
+                          <ChevronRight className="ml-1 h-4 w-4 flex-shrink-0 text-[#8b8b8b]" />
+                        </div>
+                        <button
+                          type="button"
+                          className="ml-auto flex-shrink-0 text-[15px] text-[#6b7280]"
+                        >
+                          แก้ไข
+                        </button>
+                      </div>
+
+                      <div className="space-y-3 px-3 py-3">
+                        {group.items.map((item) => {
+                          const unit = item.product.salePrice ?? item.product.price;
+                          const productName = resolveName(
+                            item.product,
+                            lang || "th",
+                          );
+                          const hasDiscount =
+                            typeof item.product.salePrice === "number" &&
+                            item.product.salePrice < item.product.price;
+
+                          return (
+                            <div key={item.id} className="flex items-start gap-2">
+                              <input
+                                type="checkbox"
+                                checked={selectedItemIds.has(item.id)}
+                                onChange={() => toggleItemSelected(item.id)}
+                                className="mt-9 h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
+                              />
+
+                              <div className="relative mt-1 h-[96px] w-[96px] flex-shrink-0 overflow-hidden rounded-[12px] border border-[#e7e7e7]">
+                                <img
+                                  src={
+                                    item.product.imageUrl ??
+                                    "/images/placeholder.png"
+                                  }
+                                  alt={productName}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+
+                              <div className="min-w-0 flex-1">
+                                <Link
+                                  href={`/products/${item.product.id}`}
+                                  className="line-clamp-2 text-[16px] font-medium leading-snug text-[#2f2f2f]"
+                                >
+                                  {productName}
+                                </Link>
+
+                                <div className="mt-2 space-y-2">
+                                  <p className="max-w-full truncate rounded-[10px] border border-[#e5e5e5] bg-[#f7f7f7] px-2 py-1 text-[14px] text-[#6b7280]">
+                                    สี: ครีม | ไซส์: L
+                                  </p>
+
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        updateQuantity(item.id, item.quantity - 1)
+                                      }
+                                      disabled={item.quantity <= 1}
+                                      className="h-9 w-9 rounded-[10px] bg-[#f2f2f2] text-[22px] text-[#666] disabled:opacity-40"
+                                    >
+                                      -
+                                    </button>
+
+                                    <span className="w-7 text-center text-[20px] font-medium text-[#333]">
+                                      {item.quantity}
+                                    </span>
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        updateQuantity(item.id, item.quantity + 1)
+                                      }
+                                      disabled={item.quantity >= item.product.stock}
+                                      className="h-9 w-9 rounded-[10px] bg-[#f2f2f2] text-[22px] text-[#666] disabled:opacity-40"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="mt-2 flex items-end justify-between gap-2">
+                                  <div className="min-w-0 flex items-end gap-1">
+                                    <span className="text-[30px] font-extrabold leading-none text-[#f05a2b]">
+                                      {toCurrency(unit)}
+                                    </span>
+                                    {hasDiscount && (
+                                      <span className="truncate text-[15px] text-[#b3b3b3] line-through">
+                                        {toCurrency(item.product.price)}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    aria-label="ลบออกจากตะกร้า"
+                                    onClick={() => removeItem(item.id)}
+                                    className="ml-1 flex-shrink-0 rounded-full p-1 hover:bg-[#fff1ef]"
+                                  >
+                                    <Trash2
+                                      className="h-6 w-6 text-[#ff5858]"
+                                      strokeWidth={2}
+                                    />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
                       <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity - 1)
-                        }
-                        className="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300 flex items-center justify-center"
+                        type="button"
+                        className="flex w-full items-center gap-2 border-t border-[#efefef] px-3 py-3 text-left text-[18px] text-[#666]"
                       >
-                        –
-                      </button>
-                      <input
-                        type="number"
-                        className="w-12 border text-center rounded"
-                        value={item.quantity}
-                        min={1}
-                        max={item.product.stock}
-                        onChange={(e) =>
-                          updateQuantity(
-                            item.id,
-                            Math.min(
-                              Math.max(1, +e.target.value),
-                              item.product.stock
-                            )
-                          )
-                        }
-                      />
-                      <button
-                        onClick={() =>
-                          updateQuantity(item.id, item.quantity + 1)
-                        }
-                        className="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300 flex items-center justify-center"
-                      >
-                        +
+                        <Ticket className="h-5 w-5 text-[#f25d3d]" />
+                        เพิ่มโค้ดร้านค้า
+                        <ChevronRight className="ml-auto h-5 w-5 text-[#9a9a9a]" />
                       </button>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold">
-                      {t("cart.lineTotal", {
-                        total: unit * item.quantity,
-                      })}
-                    </p>
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="mt-2 text-red-600 hover:underline"
-                    >
-                      {t("cart.remove")}
-                    </button>
-                  </div>
+                  ))}
+                </section>
+
+              </>
+            )}
+          </main>
+        </div>
+
+        {!loading && items.length > 0 && (
+          <div
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+          >
+            <div className="mx-auto w-full max-w-[440px] px-4 pb-2 pt-1.5">
+              <div className="space-y-0.5">
+                <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
+                  <span>ราคาสินค้า</span>
+                  <span className="text-[#4b5563]">{toCurrency(selectedTotal)}</span>
                 </div>
-              );
-            })}
-          </div>
+                <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
+                  <span>ค่าจัดส่ง</span>
+                  <span className="font-medium text-[#27b05f]">ฟรี</span>
+                </div>
+                <div className="flex items-center justify-between pt-0.5">
+                  <span className="text-[17px] font-extrabold text-[#2f2f2f]">รวมทั้งหมด</span>
+                  <span className="text-[24px] font-extrabold text-[#2f6ef4]">
+                    {toCurrency(selectedTotal)}
+                  </span>
+                </div>
+              </div>
 
-          <div className="flex justify-between items-center p-4 border-t">
-            <span className="text-xl font-bold">{t("cart.subtotal")}</span>
-            <span className="text-2xl font-bold text-green-700">
-              {t("cart.currency", { amount: total })}
-            </span>
+              <button
+                type="button"
+                disabled={selectedItemsCount === 0}
+                onClick={() => router.push("/checkout")}
+                className="mt-2 w-full rounded-2xl bg-[#2f6ef4] py-2.5 text-[18px] font-medium leading-none text-white hover:bg-[#2558c7] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                สั่งสินค้า
+              </button>
+            </div>
           </div>
-
-          <div className="text-right mt-6">
-            <button
-              onClick={() => router.push("/checkout")}
-              className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              {t("cart.checkout")}
-            </button>
-          </div>
-        </>
-      )}
-    </Layout>
+        )}
+      </div>
+    </>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  return {
+    props: {},
+  };
+};

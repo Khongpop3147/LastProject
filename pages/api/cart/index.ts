@@ -14,17 +14,79 @@ export default async function handler(
 
   // GET /api/cart → ดึงรายการในตะกร้า
   if (req.method === "GET") {
+    const locale =
+      typeof req.query.locale === "string" && ["th", "en"].includes(req.query.locale)
+        ? req.query.locale
+        : "th";
+
     const cart = await prisma.cart.findUnique({
       where: { userId: user.id },
       include: {
         items: {
           include: {
-            product: true,
+            product: {
+              include: {
+                translations: true,
+              },
+            },
           },
         },
       },
     });
-    const items = cart?.items || [];
+    const rawItems = cart?.items || [];
+
+    const candidateNames = Array.from(
+      new Set(
+        rawItems.flatMap((item) =>
+          item.product.translations
+            .map((translation) => translation.name?.trim())
+            .filter((name): name is string => Boolean(name))
+        )
+      )
+    );
+
+    const supplierNameByProductName = new Map<string, string>();
+    if (candidateNames.length > 0) {
+      const suppliers = await prisma.supplier.findMany({
+        where: {
+          productName: {
+            in: candidateNames,
+          },
+        },
+        orderBy: { updatedAt: "desc" },
+      });
+
+      for (const supplier of suppliers) {
+        if (!supplierNameByProductName.has(supplier.productName)) {
+          supplierNameByProductName.set(
+            supplier.productName,
+            supplier.companyName
+          );
+        }
+      }
+    }
+
+    const items = rawItems.map((item) => {
+      const localizedName =
+        item.product.translations.find((t) => t.locale === locale)?.name ||
+        item.product.translations[0]?.name ||
+        "สินค้า";
+
+      const sellerName =
+        item.product.translations
+          .map((t) => supplierNameByProductName.get(t.name))
+          .find((name): name is string => Boolean(name)) || "ร้านทั่วไป";
+
+      return {
+        ...item,
+        sellerName,
+        product: {
+          ...item.product,
+          name: localizedName,
+        },
+      };
+    });
+
     return res.status(200).json({ items });
   }
 
