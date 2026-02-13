@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import { getUserFromToken } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   // ตรวจ token และดึง user
-  const user = await getUserFromToken(req.headers.authorization);
+  const user = await getUserFromRequest(req);
   if (!user) {
     return res.status(401).json({ error: "Unauthorized" });
   }
