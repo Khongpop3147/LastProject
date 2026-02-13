@@ -1,12 +1,12 @@
 // pages/api/products/[id]/favorite.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getUserFromToken } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth";
 import * as productService from "@/services/productService";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query as { id: string };
 
-  const user = await getUserFromToken(req.headers.authorization);
+  const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   if (req.method === "POST") {

@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getUserFromToken } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth";
 import { createAddress, listAddressesByUser } from "@/models/addressModel";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const user = await getUserFromToken(req.headers.authorization);
+  const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   if (req.method === "GET") {

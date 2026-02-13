@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getUserFromToken } from "@/lib/auth";
+import { getUserFromRequest } from "@/lib/auth";
 import {
   getAddressById,
   updateAddress,
@@ -12,7 +12,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const user = await getUserFromToken(req.headers.authorization);
+  const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
   const { id } = req.query as { id: string };

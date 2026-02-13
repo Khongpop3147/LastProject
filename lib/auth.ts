@@ -50,3 +50,28 @@ export async function getUserFromToken(
 
   return user;
 }
+
+/**
+ * Extract token from request (supports both Authorization header and cookies)
+ */
+export function getTokenFromRequest(req: any): string | undefined {
+  // Try Authorization header first
+  if (typeof req.headers.authorization === "string") {
+    return req.headers.authorization;
+  }
+  
+  // Fallback to cookie
+  if (typeof req.cookies?.token === "string" && req.cookies.token.length > 0) {
+    return `Bearer ${req.cookies.token}`;
+  }
+  
+  return undefined;
+}
+
+/**
+ * Get user from request (extracts token automatically)
+ */
+export async function getUserFromRequest(req: any): Promise<User | null> {
+  const token = getTokenFromRequest(req);
+  return getUserFromToken(token);
+}
