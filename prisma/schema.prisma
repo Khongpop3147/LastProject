@@ -18,8 +18,8 @@ model User {
   addresses           Address[]
   cart                Cart?
   orders              Order[]
+  favorites           Favorite[]
   passwordResetTokens PasswordResetToken[]
-  wishlist            WishlistItem[]
 }
 
 /// Categories with locales
@@ -55,7 +55,7 @@ model Product {
   cartItems    CartItem[]
   orderItems   OrderItem[]
   translations ProductLocale[]
-  wishlistedBy WishlistItem[]
+  favorites    Favorite[]
 }
 
 model ProductLocale {
@@ -138,7 +138,9 @@ model Coupon {
 model Address {
   id         String  @id @default(uuid())
   userId     String
+  label      String? // e.g., "Home", "Work"
   recipient  String
+  phone      String?
   line1      String
   line2      String?
   city       String
@@ -146,6 +148,8 @@ model Address {
   country    String
   latitude   Float?
   longitude  Float?
+  isFavorite Boolean @default(false)
+  isDefault  Boolean @default(false)
   user       User    @relation(fields: [userId], references: [id])
 }
 
@@ -240,14 +244,14 @@ model Supplier {
   updatedAt   DateTime @updatedAt
 }
 
-model WishlistItem {
+model Favorite {
   id        String   @id @default(uuid())
   userId    String
   productId String
   createdAt DateTime @default(now())
-  
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
 }
