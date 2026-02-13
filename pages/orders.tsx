@@ -8,6 +8,7 @@ import {
   Loader2,
   PackageCheck,
   Truck,
+  Upload,
 } from "lucide-react";
 import MobileShopBottomNav from "@/components/MobileShopBottomNav";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +35,8 @@ type OrderSummary = {
   status: string;
   createdAt: string;
   updatedAt: string;
+  paymentMethod?: string | null;
+  slipUrl?: string | null;
   items: OrderItem[];
 };
 
@@ -46,7 +49,10 @@ function toCurrency(value: number) {
 }
 
 function toOrderRef(id: string) {
-  return `#${id.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase()}`;
+  return `#${id
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(-8)
+    .toUpperCase()}`;
 }
 
 function statusLabel(status: string) {
@@ -78,7 +84,8 @@ function formatDate(input: string) {
 }
 
 function resolveProductName(item: OrderItem) {
-  if (item.product.translations?.[0]?.name) return item.product.translations[0].name;
+  if (item.product.translations?.[0]?.name)
+    return item.product.translations[0].name;
   if (item.product.name) return item.product.name;
   return "สินค้า";
 }
@@ -90,6 +97,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [updatingId, setUpdatingId] = useState("");
+  const [uploadingSlipId, setUploadingSlipId] = useState("");
+  const [uploadError, setUploadError] = useState("");
 
   const loadOrders = useCallback(async () => {
     const authToken = getAuthToken(token);
@@ -106,7 +115,10 @@ export default function OrdersPage() {
           Authorization: `Bearer ${authToken}`,
         },
       });
-      const json = (await res.json()) as { orders?: OrderSummary[]; error?: string };
+      const json = (await res.json()) as {
+        orders?: OrderSummary[];
+        error?: string;
+      };
       if (!res.ok) {
         setErrorMessage(json.error ?? "ไม่สามารถโหลดคำสั่งซื้อได้");
         setOrders([]);
@@ -154,11 +166,59 @@ export default function OrdersPage() {
 
       setOrders((prev) =>
         prev.map((item) =>
-          item.id === orderId ? { ...item, status: "COMPLETED" } : item
-        )
+          item.id === orderId ? { ...item, status: "COMPLETED" } : item,
+        ),
       );
     } finally {
       setUpdatingId("");
+    }
+  };
+
+  const handleUploadSlip = async (orderId: string, file: File) => {
+    const authToken = getAuthToken(token);
+    if (!authToken) {
+      router.push("/login");
+      return;
+    }
+
+    setUploadingSlipId(orderId);
+    setUploadError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("slip", file);
+
+      const res = await fetch(`/api/orders/${orderId}/upload-slip`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+
+      const json = (await res.json()) as {
+        success?: boolean;
+        slipUrl?: string;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        setUploadError(json.error ?? "อัปโหลดสลิปไม่สำเร็จ");
+        return;
+      }
+
+      // อัปเดต orders ให้มี slipUrl และเปลี่ยนสถานะเป็น PROCESSING
+      setOrders((prev) =>
+        prev.map((item) =>
+          item.id === orderId
+            ? { ...item, slipUrl: json.slipUrl, status: "PROCESSING" }
+            : item,
+        ),
+      );
+    } catch (error) {
+      setUploadError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      setUploadingSlipId("");
     }
   };
 
@@ -183,6 +243,12 @@ export default function OrdersPage() {
         </header>
 
         <main className="space-y-3 px-4 pb-[120px] pt-4">
+          {" "}
+          {uploadError && (
+            <div className="rounded-xl border border-[#ffc9c9] bg-[#fff2f2] px-4 py-3 text-[16px] text-[#db4f4f]">
+              {uploadError}
+            </div>
+          )}
           {loading ? (
             <div className="flex h-[300px] items-center justify-center">
               <Loader2 className="h-10 w-10 animate-spin text-[#2f6ef4]" />
@@ -193,8 +259,12 @@ export default function OrdersPage() {
             </div>
           ) : sortedOrders.length === 0 ? (
             <section className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center">
-              <h2 className="text-[26px] font-extrabold text-[#111827]">ยังไม่มีคำสั่งซื้อ</h2>
-              <p className="mt-1 text-[16px] text-[#6b7280]">เมื่อสั่งซื้อแล้ว รายการจะแสดงที่หน้านี้</p>
+              <h2 className="text-[26px] font-extrabold text-[#111827]">
+                ยังไม่มีคำสั่งซื้อ
+              </h2>
+              <p className="mt-1 text-[16px] text-[#6b7280]">
+                เมื่อสั่งซื้อแล้ว รายการจะแสดงที่หน้านี้
+              </p>
               <button
                 type="button"
                 onClick={() => router.push("/all-products")}
@@ -209,8 +279,15 @@ export default function OrdersPage() {
               const status = order.status.toUpperCase();
               const canTrack = status === "PROCESSING" || status === "SHIPPED";
               const canConfirm = status === "SHIPPED";
-              const image = firstItem?.product?.imageUrl || "/images/placeholder.png";
-              const title = firstItem ? resolveProductName(firstItem) : "คำสั่งซื้อ";
+              const needsSlip =
+                order.paymentMethod === "bank_transfer" &&
+                !order.slipUrl &&
+                status === "PENDING";
+              const image =
+                firstItem?.product?.imageUrl || "/images/placeholder.png";
+              const title = firstItem
+                ? resolveProductName(firstItem)
+                : "คำสั่งซื้อ";
 
               return (
                 <article
@@ -218,10 +295,12 @@ export default function OrdersPage() {
                   className="rounded-[20px] border border-[#d8d8d8] bg-white p-3 shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-[15px] text-[#6b7280]">คำสั่งซื้อ {toOrderRef(order.id)}</p>
+                    <p className="text-[15px] text-[#6b7280]">
+                      คำสั่งซื้อ {toOrderRef(order.id)}
+                    </p>
                     <span
                       className={`rounded-full px-3 py-1 text-[13px] font-semibold ${statusClass(
-                        order.status
+                        order.status,
                       )}`}
                     >
                       {statusLabel(order.status)}
@@ -230,7 +309,11 @@ export default function OrdersPage() {
 
                   <div className="mt-2 flex gap-3">
                     <div className="h-[92px] w-[92px] flex-shrink-0 overflow-hidden rounded-xl border border-[#e5e7eb]">
-                      <img src={image} alt={title} className="h-full w-full object-cover" />
+                      <img
+                        src={image}
+                        alt={title}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -238,7 +321,8 @@ export default function OrdersPage() {
                         {title}
                       </h3>
                       <p className="mt-1 text-[15px] text-[#6b7280]">
-                        {order.items.length} รายการ • {formatDate(order.createdAt)}
+                        {order.items.length} รายการ •{" "}
+                        {formatDate(order.createdAt)}
                       </p>
                       <p className="mt-1 text-[26px] font-extrabold leading-none text-[#2f6ef4]">
                         {toCurrency(order.totalAmount)}
@@ -247,10 +331,29 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="mt-3 flex gap-2">
-                    {canTrack ? (
+                    {needsSlip ? (
+                      <label className="flex flex-1 cursor-pointer items-center justify-center rounded-xl bg-[#fbbf24] py-2 text-[18px] font-semibold text-white hover:bg-[#f59e0b]">
+                        <Upload className="mr-2 h-5 w-5" />
+                        {uploadingSlipId === order.id
+                          ? "กำลังอัปโหลด..."
+                          : "อัปโหลดสลิป"}
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          disabled={uploadingSlipId === order.id}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleUploadSlip(order.id, file);
+                          }}
+                        />
+                      </label>
+                    ) : canTrack ? (
                       <button
                         type="button"
-                        onClick={() => router.push(`/orders/${order.id}/tracking`)}
+                        onClick={() =>
+                          router.push(`/orders/${order.id}/tracking`)
+                        }
                         className="flex flex-1 items-center justify-center rounded-xl bg-[#2f6ef4] py-2 text-[18px] font-semibold text-white"
                       >
                         <Truck className="mr-2 h-5 w-5" />
@@ -259,7 +362,9 @@ export default function OrdersPage() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => router.push(`/orders/${order.id}/tracking`)}
+                        onClick={() =>
+                          router.push(`/orders/${order.id}/tracking`)
+                        }
                         className="flex flex-1 items-center justify-center rounded-xl border border-[#2f6ef4] py-2 text-[18px] font-semibold text-[#2f6ef4]"
                       >
                         <Box className="mr-2 h-5 w-5" />
@@ -280,7 +385,9 @@ export default function OrdersPage() {
                     ) : (
                       <button
                         type="button"
-                        onClick={() => router.push(`/orders/${order.id}/tracking`)}
+                        onClick={() =>
+                          router.push(`/orders/${order.id}/tracking`)
+                        }
                         className="flex items-center justify-center rounded-xl border border-[#d0d5df] px-3 text-[#6b7280]"
                         aria-label="เปิดรายละเอียดคำสั่งซื้อ"
                       >

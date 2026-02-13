@@ -4,7 +4,6 @@ import Cookies from "js-cookie";
 import {
   ArrowLeft,
   Check,
-  CreditCard,
   MapPin,
   Pencil,
   Phone,
@@ -50,7 +49,7 @@ type ProfileResponse = {
   };
 };
 
-type PaymentMethod = "credit_card" | "bank_transfer" | "cod";
+type PaymentMethod = "bank_transfer" | "cod";
 type ShippingMethod = "standard" | "express";
 type MethodsResponse = {
   preferredMethod?: PaymentMethod;
@@ -81,8 +80,10 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressIdState] = useState("");
   const [contactEmail, setContactEmail] = useState("");
 
-  const [shippingMethod, setShippingMethod] = useState<ShippingMethod>("standard");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("credit_card");
+  const [shippingMethod, setShippingMethod] =
+    useState<ShippingMethod>("standard");
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethod>("bank_transfer");
   const [deliveryBaseFee, setDeliveryBaseFee] = useState<number | null>(null);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState("");
@@ -127,20 +128,22 @@ export default function CheckoutPage() {
 
     setLoading(true);
     try {
-      const [cartRes, addressesRes, profileRes, methodsRes] = await Promise.all([
-        fetch("/api/cart?locale=th", {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }),
-        fetch("/api/addresses", {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }),
-        fetch("/api/auth/profile", {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }),
-        fetch("/api/payments/methods", {
-          headers: { Authorization: `Bearer ${authToken}` },
-        }),
-      ]);
+      const [cartRes, addressesRes, profileRes, methodsRes] = await Promise.all(
+        [
+          fetch("/api/cart?locale=th", {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+          fetch("/api/addresses", {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+          fetch("/api/auth/profile", {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+          fetch("/api/payments/methods", {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+        ],
+      );
 
       const cartJson = cartRes.ok
         ? ((await cartRes.json()) as { items?: CartItem[] })
@@ -162,7 +165,6 @@ export default function CheckoutPage() {
       setAddresses(nextAddresses);
       setContactEmail(profileJson.user?.email ?? "");
       if (
-        methodsJson.preferredMethod === "credit_card" ||
         methodsJson.preferredMethod === "bank_transfer" ||
         methodsJson.preferredMethod === "cod"
       ) {
@@ -173,12 +175,16 @@ export default function CheckoutPage() {
         const defaultId = getDefaultAddressId();
         const selectedId = getCheckoutSelectedAddressId();
 
-        const nextDefaultId = nextAddresses.some((item) => item.id === defaultId)
+        const nextDefaultId = nextAddresses.some(
+          (item) => item.id === defaultId,
+        )
           ? defaultId
           : nextAddresses[0].id;
         setDefaultAddressId(nextDefaultId);
 
-        const nextSelectedId = nextAddresses.some((item) => item.id === selectedId)
+        const nextSelectedId = nextAddresses.some(
+          (item) => item.id === selectedId,
+        )
           ? selectedId
           : nextDefaultId;
         setCheckoutSelectedAddressId(nextSelectedId);
@@ -207,7 +213,8 @@ export default function CheckoutPage() {
       setDeliveryLoading(true);
       setDeliveryError("");
       try {
-        const originProvince = process.env.NEXT_PUBLIC_WAREHOUSE_PROVINCE || "Bangkok";
+        const originProvince =
+          process.env.NEXT_PUBLIC_WAREHOUSE_PROVINCE || "Bangkok";
         const res = await fetch("/api/shipping/calculate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -216,7 +223,10 @@ export default function CheckoutPage() {
             destinationProvince: selectedAddress.city,
           }),
         });
-        const data = (await res.json()) as { deliveryFee?: number; error?: string };
+        const data = (await res.json()) as {
+          deliveryFee?: number;
+          error?: string;
+        };
         if (!res.ok) {
           if (cancelled) return;
           setDeliveryBaseFee(null);
@@ -225,7 +235,9 @@ export default function CheckoutPage() {
         }
 
         if (!cancelled) {
-          setDeliveryBaseFee(typeof data.deliveryFee === "number" ? data.deliveryFee : 0);
+          setDeliveryBaseFee(
+            typeof data.deliveryFee === "number" ? data.deliveryFee : 0,
+          );
         }
       } catch {
         if (!cancelled) {
@@ -272,7 +284,10 @@ export default function CheckoutPage() {
       body: JSON.stringify({ code }),
     });
 
-    const json = (await res.json()) as { error?: string; discountValue?: number };
+    const json = (await res.json()) as {
+      error?: string;
+      discountValue?: number;
+    };
     if (!res.ok) {
       setDiscountAmount(0);
       setCouponError(json.error ?? "ใช้คูปองไม่สำเร็จ");
@@ -337,7 +352,7 @@ export default function CheckoutPage() {
         body: JSON.stringify(payload),
       });
 
-      const json = (await res.json()) as { error?: string };
+      const json = (await res.json()) as { error?: string; id?: string };
       if (!res.ok) {
         setOrderError(json.error ?? "สร้างคำสั่งซื้อไม่สำเร็จ");
         return;
@@ -356,7 +371,13 @@ export default function CheckoutPage() {
         ),
       );
 
-      router.push("/success");
+      const orderId = json.id;
+      const query = new URLSearchParams({
+        orderId: orderId || "",
+        paymentMethod,
+        totalAmount: grandTotal.toString(),
+      }).toString();
+      router.push(`/success?${query}`);
     } finally {
       setPlacingOrder(false);
     }
@@ -391,10 +412,14 @@ export default function CheckoutPage() {
               <section className="rounded-2xl bg-[#dce4f7] p-3">
                 <div className="mb-1 flex items-center">
                   <MapPin className="h-6 w-6 text-[#2f6ef4]" />
-                  <h2 className="ml-2 text-[20px] font-bold text-[#1f2937]">ที่อยู่จัดส่ง</h2>
+                  <h2 className="ml-2 text-[20px] font-bold text-[#1f2937]">
+                    ที่อยู่จัดส่ง
+                  </h2>
                   <button
                     type="button"
-                    onClick={() => router.push("/account/addresses?from=checkout")}
+                    onClick={() =>
+                      router.push("/account/addresses?from=checkout")
+                    }
                     className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1f66ea] text-white"
                     aria-label="แก้ไขที่อยู่"
                   >
@@ -408,12 +433,16 @@ export default function CheckoutPage() {
                       {selectedAddress.recipient}
                       {line2Meta.phone ? ` ${line2Meta.phone}` : ""}
                     </p>
-                    <p className="mt-0.5 break-words">{composeAddressSummary(selectedAddress)}</p>
+                    <p className="mt-0.5 break-words">
+                      {composeAddressSummary(selectedAddress)}
+                    </p>
                   </div>
                 ) : (
                   <button
                     type="button"
-                    onClick={() => router.push("/account/addresses/new?from=checkout")}
+                    onClick={() =>
+                      router.push("/account/addresses/new?from=checkout")
+                    }
                     className="rounded-xl border border-[#2f6ef4] bg-white px-4 py-2 text-[17px] font-semibold text-[#2f6ef4]"
                   >
                     เพิ่มที่อยู่จัดส่ง
@@ -424,10 +453,14 @@ export default function CheckoutPage() {
               <section className="rounded-2xl bg-[#dce4f7] p-3">
                 <div className="mb-1 flex items-center">
                   <Phone className="h-6 w-6 text-[#2f6ef4]" />
-                  <h2 className="ml-2 text-[20px] font-bold text-[#1f2937]">ข้อมูลติดต่อ</h2>
+                  <h2 className="ml-2 text-[20px] font-bold text-[#1f2937]">
+                    ข้อมูลติดต่อ
+                  </h2>
                   <button
                     type="button"
-                    onClick={() => router.push("/account/addresses?from=checkout")}
+                    onClick={() =>
+                      router.push("/account/addresses?from=checkout")
+                    }
                     className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1f66ea] text-white"
                     aria-label="แก้ไขข้อมูลติดต่อ"
                   >
@@ -457,7 +490,9 @@ export default function CheckoutPage() {
                       >
                         <div className="h-[88px] w-[88px] flex-shrink-0 overflow-hidden rounded-xl">
                           <img
-                            src={item.product.imageUrl || "/images/placeholder.png"}
+                            src={
+                              item.product.imageUrl || "/images/placeholder.png"
+                            }
                             alt={item.product.name}
                             className="h-full w-full object-cover"
                           />
@@ -467,7 +502,9 @@ export default function CheckoutPage() {
                           <h3 className="line-clamp-2 break-words text-[18px] font-bold leading-tight text-[#232323]">
                             {item.product.name}
                           </h3>
-                          <p className="text-[16px] text-[#6b7280]">จำนวน {item.quantity} ชิ้น</p>
+                          <p className="text-[16px] text-[#6b7280]">
+                            จำนวน {item.quantity} ชิ้น
+                          </p>
                           <p className="text-[26px] font-extrabold leading-none text-[#2f6ef4]">
                             {toCurrency(unitPrice * item.quantity)}
                           </p>
@@ -479,7 +516,9 @@ export default function CheckoutPage() {
               </section>
 
               <section>
-                <h2 className="mb-2 text-[26px] font-extrabold text-[#1f2937]">วิธีจัดส่ง</h2>
+                <h2 className="mb-2 text-[26px] font-extrabold text-[#1f2937]">
+                  วิธีจัดส่ง
+                </h2>
                 <div className="space-y-2">
                   <button
                     type="button"
@@ -502,17 +541,19 @@ export default function CheckoutPage() {
 
                     <Truck className="mr-2 h-6 w-6 text-[#22c55e]" />
                     <div className="text-left">
-                      <p className="text-[18px] font-semibold text-[#1f2937]">จัดส่งปกติ</p>
+                      <p className="text-[18px] font-semibold text-[#1f2937]">
+                        จัดส่งปกติ
+                      </p>
                       <p className="text-[18px] text-[#6b7280]">3 - 5 วัน</p>
                     </div>
                     <span className="ml-auto text-[18px] font-bold text-[#22b35f]">
                       {deliveryLoading
                         ? "..."
                         : deliveryBaseFee === null
-                        ? "-"
-                        : deliveryBaseFee === 0
-                        ? "ฟรี"
-                        : toCurrency(deliveryBaseFee)}
+                          ? "-"
+                          : deliveryBaseFee === 0
+                            ? "ฟรี"
+                            : toCurrency(deliveryBaseFee)}
                     </span>
                   </button>
 
@@ -537,29 +578,37 @@ export default function CheckoutPage() {
 
                     <Truck className="mr-2 h-6 w-6 text-[#22c55e]" />
                     <div className="text-left">
-                      <p className="text-[18px] font-semibold text-[#1f2937]">จัดส่งด่วน</p>
+                      <p className="text-[18px] font-semibold text-[#1f2937]">
+                        จัดส่งด่วน
+                      </p>
                       <p className="text-[18px] text-[#6b7280]">1 - 2 วัน</p>
                     </div>
                     <span className="ml-auto text-[18px] font-bold text-[#1f2937]">
                       {deliveryLoading
                         ? "..."
                         : deliveryBaseFee === null
-                        ? "-"
-                        : toCurrency(deliveryBaseFee + 50)}
+                          ? "-"
+                          : toCurrency(deliveryBaseFee + 50)}
                     </span>
                   </button>
                 </div>
                 {deliveryError ? (
-                  <p className="mt-2 text-[17px] text-[#db4f4f]">{deliveryError}</p>
+                  <p className="mt-2 text-[17px] text-[#db4f4f]">
+                    {deliveryError}
+                  </p>
                 ) : null}
               </section>
 
               <section>
                 <div className="mb-2 flex items-center">
-                  <h2 className="text-[26px] font-extrabold text-[#1f2937]">วิธีชำระเงิน</h2>
+                  <h2 className="text-[26px] font-extrabold text-[#1f2937]">
+                    วิธีชำระเงิน
+                  </h2>
                   <button
                     type="button"
-                    onClick={() => router.push("/account/settings/payment?from=checkout")}
+                    onClick={() =>
+                      router.push("/account/settings/payment?from=checkout")
+                    }
                     className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1f66ea] text-white"
                     aria-label="แก้ไขวิธีชำระเงิน"
                   >
@@ -568,18 +617,6 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("credit_card")}
-                    className={`rounded-full px-4 py-2 text-[16px] font-semibold ${
-                      paymentMethod === "credit_card"
-                        ? "bg-[#dce4ff] text-[#2f6ef4]"
-                        : "bg-[#e5e7eb] text-[#1f2937]"
-                    }`}
-                  >
-                    <CreditCard className="mr-1 inline h-4 w-4" />
-                    บัตรเครดิต/เดบิต
-                  </button>
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("bank_transfer")}
@@ -623,7 +660,9 @@ export default function CheckoutPage() {
                   </button>
                 </div>
                 {couponError ? (
-                  <p className="mt-1 text-[17px] text-[#db4f4f]">{couponError}</p>
+                  <p className="mt-1 text-[17px] text-[#db4f4f]">
+                    {couponError}
+                  </p>
                 ) : null}
               </section>
 
@@ -651,24 +690,30 @@ export default function CheckoutPage() {
               <span>ค่าจัดส่ง</span>
               <span
                 className={
-                  selectedAddress && deliveryFee === 0 ? "font-semibold text-[#22b35f]" : ""
+                  selectedAddress && deliveryFee === 0
+                    ? "font-semibold text-[#22b35f]"
+                    : ""
                 }
               >
                 {!selectedAddress
                   ? "-"
                   : deliveryFee === 0
-                  ? "ฟรี"
-                  : toCurrency(deliveryFee)}
+                    ? "ฟรี"
+                    : toCurrency(deliveryFee)}
               </span>
             </div>
             {discountAmount > 0 ? (
               <div className="flex items-center justify-between text-[16px] text-[#6b7280]">
                 <span>ส่วนลด</span>
-                <span className="font-semibold text-[#2f6ef4]">- {toCurrency(discountAmount)}</span>
+                <span className="font-semibold text-[#2f6ef4]">
+                  - {toCurrency(discountAmount)}
+                </span>
               </div>
             ) : null}
             <div className="flex items-center justify-between pt-0.5">
-              <span className="text-[24px] font-extrabold text-[#1f2937]">รวมทั้งหมด</span>
+              <span className="text-[24px] font-extrabold text-[#1f2937]">
+                รวมทั้งหมด
+              </span>
               <span className="text-[30px] font-extrabold leading-none text-[#2f6ef4]">
                 {toCurrency(grandTotal)}
               </span>
@@ -677,7 +722,9 @@ export default function CheckoutPage() {
 
           <button
             type="button"
-            disabled={loading || placingOrder || !selectedAddress || items.length === 0}
+            disabled={
+              loading || placingOrder || !selectedAddress || items.length === 0
+            }
             onClick={handlePlaceOrder}
             className="mt-2 w-full rounded-2xl bg-[#2f6ef4] py-2.5 text-[24px] font-semibold leading-none text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
