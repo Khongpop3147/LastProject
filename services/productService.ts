@@ -32,5 +32,8 @@ export async function removeFavorite(userId: string, productId: string) {
 
 export async function listFavorites(userId: string) {
   const rows = await favModel.listFavoritesByUser(userId);
-  return rows.map((r) => r.product);
+  return rows.map((r) => ({
+    ...r.product,
+    wishlistedAt: r.createdAt,
+  }));
 }

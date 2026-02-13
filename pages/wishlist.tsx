@@ -90,7 +90,7 @@ export default function WishlistPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/wishlist", {
+      const res = await fetch("/api/auth/favorites", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -99,7 +99,8 @@ export default function WishlistPage() {
         return;
       }
 
-      const data = (await res.json()) as WishlistProduct[];
+      const json = await res.json();
+      const data = json.favorites || [];
       setProducts(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch wishlist", error);
@@ -125,7 +126,7 @@ export default function WishlistPage() {
 
     setProducts((prev) => prev.filter((product) => product.id !== productId));
     try {
-      const res = await fetch(`/api/wishlist/${productId}`, {
+      const res = await fetch(`/api/products/${productId}/favorite`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -144,15 +145,15 @@ export default function WishlistPage() {
 
     setClearingAll(true);
     try {
-      const res = await fetch("/api/wishlist", {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setProducts([]);
-      } else {
-        await loadWishlist();
-      }
+      // Clear all by removing each item
+      const deletePromises = products.map((product) =>
+        fetch(`/api/products/${product.id}/favorite`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      );
+      await Promise.all(deletePromises);
+      setProducts([]);
     } catch (error) {
       console.error("Failed to clear wishlist", error);
       await loadWishlist();

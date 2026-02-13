@@ -18,5 +18,15 @@ export async function isFavorite(userId: string, productId: string) {
 }
 
 export async function listFavoritesByUser(userId: string) {
-  return prisma.favorite.findMany({ where: { userId }, include: { product: true } });
+  return prisma.favorite.findMany({
+    where: { userId },
+    include: {
+      product: {
+        include: {
+          translations: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }

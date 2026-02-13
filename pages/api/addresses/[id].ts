@@ -8,7 +8,10 @@ import {
   setFavoriteAddress,
 } from "@/models/addressModel";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const user = await getUserFromToken(req.headers.authorization);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
 
@@ -28,19 +31,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       if (action === "setDefault") {
         const updated = await setDefaultAddress(user.id, id);
-        if (!updated) return res.status(404).json({ error: "Not found or forbidden" });
+        if (!updated)
+          return res.status(404).json({ error: "Not found or forbidden" });
         return res.status(200).json({ address: updated });
       }
 
       if (action === "setFavorite") {
         const val = body.value === true;
         const updated = await setFavoriteAddress(user.id, id, val);
-        if (!updated) return res.status(404).json({ error: "Not found or forbidden" });
+        if (!updated)
+          return res.status(404).json({ error: "Not found or forbidden" });
         return res.status(200).json({ address: updated });
       }
 
       const updated = await updateAddress(user.id, id, body);
-      if (!updated) return res.status(404).json({ error: "Not found or forbidden" });
+      if (!updated)
+        return res.status(404).json({ error: "Not found or forbidden" });
       return res.status(200).json({ address: updated });
     } catch (err: any) {
       console.error(err);

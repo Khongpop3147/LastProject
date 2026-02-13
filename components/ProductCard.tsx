@@ -44,18 +44,16 @@ export default function ProductCard({
     try {
       let res: Response;
       if (nextState) {
-        // Add to wishlist
-        res = await fetch("/api/wishlist", {
+        // Add to favorites
+        res = await fetch(`/api/products/${product.id}/favorite`, {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ productId: product.id }),
         });
       } else {
-        // Remove from wishlist
-        res = await fetch(`/api/wishlist/${product.id}`, {
+        // Remove from favorites
+        res = await fetch(`/api/products/${product.id}/favorite`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -63,10 +61,10 @@ export default function ProductCard({
         });
       }
       if (!res.ok) {
-        throw new Error(`Wishlist request failed with status ${res.status}`);
+        throw new Error(`Favorite request failed with status ${res.status}`);
       }
     } catch (error) {
-      console.error("Failed to update wishlist", error);
+      console.error("Failed to update favorites", error);
       setIsWishlisted(!nextState); // Revert on error
     }
   };

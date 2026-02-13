@@ -72,7 +72,7 @@ export default function AccountPage() {
           fetch("/api/orders", {
             headers: { Authorization: `Bearer ${authToken}` },
           }),
-          fetch("/api/wishlist", {
+          fetch("/api/auth/favorites", {
             headers: { Authorization: `Bearer ${authToken}` },
           }),
         ]);
@@ -86,8 +86,8 @@ export default function AccountPage() {
           ? ((await ordersRes.json()) as { orders?: OrderSummary[] })
           : { orders: [] };
         const wishlistJson = wishlistRes.ok
-          ? ((await wishlistRes.json()) as unknown[])
-          : [];
+          ? ((await wishlistRes.json()) as { favorites?: unknown[] })
+          : { favorites: [] };
 
         const orders = Array.isArray(ordersJson.orders) ? ordersJson.orders : [];
         const activeOrders = orders.filter((item) => {
@@ -99,7 +99,7 @@ export default function AccountPage() {
         setEmail(profileJson.user?.email ?? "-");
         setOrderCount(orders.length);
         setActiveOrderCount(activeOrders.length);
-        setWishlistCount(Array.isArray(wishlistJson) ? wishlistJson.length : 0);
+        setWishlistCount(Array.isArray(wishlistJson.favorites) ? wishlistJson.favorites.length : 0);
       } finally {
         if (!cancelled) setLoading(false);
       }
