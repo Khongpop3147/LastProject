@@ -47,7 +47,9 @@ export default function AddressesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedAddressId, setSelectedAddressIdState] = useState("");
   const [defaultAddressId, setDefaultAddressIdState] = useState("");
-  const [deletingAddress, setDeletingAddress] = useState<AddressItem | null>(null);
+  const [deletingAddress, setDeletingAddress] = useState<AddressItem | null>(
+    null,
+  );
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const fromCheckout = router.query.from === "checkout";
@@ -72,8 +74,8 @@ export default function AddressesPage() {
         return;
       }
 
-      const data = (await res.json()) as { items?: AddressItem[] };
-      const items = data.items ?? [];
+      const data = (await res.json()) as { addresses?: AddressItem[] };
+      const items = data.addresses ?? [];
       setAddresses(items);
 
       if (items.length === 0) {
@@ -151,7 +153,9 @@ export default function AddressesPage() {
         return;
       }
 
-      const nextItems = addresses.filter((item) => item.id !== deletingAddress.id);
+      const nextItems = addresses.filter(
+        (item) => item.id !== deletingAddress.id,
+      );
       setAddresses(nextItems);
 
       removeAddressMeta(deletingAddress.id);
@@ -198,7 +202,9 @@ export default function AddressesPage() {
               <h1 className="text-[30px] font-extrabold leading-none tracking-tight text-black">
                 ที่อยู่จัดส่ง
               </h1>
-              <p className="text-[16px] text-[#6b7280]">{addresses.length} ที่อยู่</p>
+              <p className="text-[16px] text-[#6b7280]">
+                {addresses.length} ที่อยู่
+              </p>
             </div>
 
             <button
@@ -206,7 +212,9 @@ export default function AddressesPage() {
               aria-label="เพิ่มที่อยู่ใหม่"
               onClick={() =>
                 router.push(
-                  fromCheckout ? "/account/addresses/new?from=checkout" : "/account/addresses/new"
+                  fromCheckout
+                    ? "/account/addresses/new?from=checkout"
+                    : "/account/addresses/new",
                 )
               }
               className="ml-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#2f6ef4] text-white"
@@ -223,13 +231,19 @@ export default function AddressesPage() {
             </div>
           ) : addresses.length === 0 ? (
             <section className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center">
-              <h2 className="text-[24px] font-extrabold text-[#111827]">ยังไม่มีที่อยู่จัดส่ง</h2>
-              <p className="mt-1 text-[17px] text-[#6b7280]">เพิ่มที่อยู่เพื่อใช้งานหน้าชำระเงิน</p>
+              <h2 className="text-[24px] font-extrabold text-[#111827]">
+                ยังไม่มีที่อยู่จัดส่ง
+              </h2>
+              <p className="mt-1 text-[17px] text-[#6b7280]">
+                เพิ่มที่อยู่เพื่อใช้งานหน้าชำระเงิน
+              </p>
               <button
                 type="button"
                 onClick={() =>
                   router.push(
-                    fromCheckout ? "/account/addresses/new?from=checkout" : "/account/addresses/new"
+                    fromCheckout
+                      ? "/account/addresses/new?from=checkout"
+                      : "/account/addresses/new",
                   )
                 }
                 className="mt-4 rounded-2xl bg-[#2f6ef4] px-8 py-2.5 text-[18px] font-medium text-white"
@@ -245,14 +259,15 @@ export default function AddressesPage() {
               };
               const parsedLine2 = parseAddressLine2(address.line2);
               const isDefault = defaultAddressId === address.id;
-              const isSelected = fromCheckout && selectedAddressId === address.id;
+              const isSelected =
+                fromCheckout && selectedAddressId === address.id;
 
               const Icon =
                 meta.type === "home"
                   ? House
                   : meta.type === "work"
-                  ? BriefcaseBusiness
-                  : Building2;
+                    ? BriefcaseBusiness
+                    : Building2;
 
               return (
                 <article
@@ -261,8 +276,8 @@ export default function AddressesPage() {
                     isDefault
                       ? "border-[#2f6ef4]"
                       : isSelected
-                      ? "border-[#89a8f4]"
-                      : "border-[#d8d8d8]"
+                        ? "border-[#89a8f4]"
+                        : "border-[#d8d8d8]"
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -300,13 +315,19 @@ export default function AddressesPage() {
 
                     <button
                       type="button"
-                      aria-label={isDefault ? "ที่อยู่เริ่มต้น" : "ตั้งเป็นที่อยู่เริ่มต้น"}
+                      aria-label={
+                        isDefault
+                          ? "ที่อยู่เริ่มต้น"
+                          : "ตั้งเป็นที่อยู่เริ่มต้น"
+                      }
                       onClick={() => handleSetDefault(address.id)}
                       className="flex h-10 w-10 items-center justify-center rounded-full"
                     >
                       <Star
                         className={`h-7 w-7 ${
-                          isDefault ? "fill-[#f4b400] text-[#f4b400]" : "text-[#9ca3af]"
+                          isDefault
+                            ? "fill-[#f4b400] text-[#f4b400]"
+                            : "text-[#9ca3af]"
                         }`}
                         strokeWidth={2}
                       />
@@ -346,7 +367,7 @@ export default function AddressesPage() {
                         router.push(
                           fromCheckout
                             ? `/account/addresses/${address.id}?from=checkout`
-                            : `/account/addresses/${address.id}`
+                            : `/account/addresses/${address.id}`,
                         )
                       }
                       className="rounded-xl border border-[#2f6ef4] bg-white px-2 py-2 text-[14px] font-semibold text-[#2f6ef4]"
@@ -376,7 +397,9 @@ export default function AddressesPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdfe0] text-[#ff5c5f]">
               <Trash2 className="h-8 w-8" />
             </div>
-            <h3 className="text-center text-[26px] font-extrabold text-[#232323]">ลบที่อยู่นี้?</h3>
+            <h3 className="text-center text-[26px] font-extrabold text-[#232323]">
+              ลบที่อยู่นี้?
+            </h3>
             <p className="mt-1 text-center text-[17px] leading-tight text-[#6b7280]">
               ที่อยู่นี้จะถูกลบออกอย่างถาวร
             </p>

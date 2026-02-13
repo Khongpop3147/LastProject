@@ -216,7 +216,9 @@ export default function AddressEditorPage() {
         country: form.country.trim() || "ไทย",
       };
 
-      const endpoint = isCreateMode ? "/api/addresses" : `/api/addresses/${addressId}`;
+      const endpoint = isCreateMode
+        ? "/api/addresses"
+        : `/api/addresses/${addressId}`;
       const method = isCreateMode ? "POST" : "PUT";
 
       const res = await fetch(endpoint, {
@@ -235,7 +237,8 @@ export default function AddressEditorPage() {
         return;
       }
 
-      const saved = (await res.json()) as AddressItem;
+      const responseData = (await res.json()) as { address: AddressItem };
+      const saved = responseData.address;
       const finalLabel = toLabel(form.type, form.label);
       setAddressMeta(saved.id, { type: form.type, label: finalLabel });
 
@@ -281,7 +284,11 @@ export default function AddressEditorPage() {
           </div>
         </header>
 
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-3 px-4 pb-[250px] pt-4">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="space-y-3 px-4 pb-[250px] pt-4"
+        >
           {loading ? (
             <div className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center text-[17px] text-[#6b7280]">
               กำลังโหลดข้อมูล...
@@ -289,7 +296,9 @@ export default function AddressEditorPage() {
           ) : (
             <>
               <section>
-                <h2 className="mb-2 text-[20px] font-bold text-[#6b7280]">ประเภทที่อยู่</h2>
+                <h2 className="mb-2 text-[20px] font-bold text-[#6b7280]">
+                  ประเภทที่อยู่
+                </h2>
                 <div className="grid grid-cols-3 gap-2">
                   {ADDRESS_TYPE_OPTIONS.map((option) => {
                     const Icon = option.icon;
@@ -304,7 +313,8 @@ export default function AddressEditorPage() {
                             type: option.type,
                             label:
                               prev.label.trim().length > 0 &&
-                              prev.label !== getAddressTypeDefaultLabel(prev.type)
+                              prev.label !==
+                                getAddressTypeDefaultLabel(prev.type)
                                 ? prev.label
                                 : getAddressTypeDefaultLabel(option.type),
                           }))
@@ -318,7 +328,9 @@ export default function AddressEditorPage() {
                         <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center">
                           <Icon className="h-7 w-7" strokeWidth={2.25} />
                         </div>
-                        <div className="text-[17px] font-semibold">{option.label}</div>
+                        <div className="text-[17px] font-semibold">
+                          {option.label}
+                        </div>
                       </button>
                     );
                   })}
@@ -366,7 +378,9 @@ export default function AddressEditorPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-[17px] font-semibold text-[#6b7280]">จังหวัด</label>
+                  <label className="mb-1 block text-[17px] font-semibold text-[#6b7280]">
+                    จังหวัด
+                  </label>
                   <div className="relative">
                     <select
                       value={form.city}
@@ -416,7 +430,9 @@ export default function AddressEditorPage() {
                     <input
                       type="text"
                       value={form.subdistrict}
-                      onChange={(e) => updateField("subdistrict", e.target.value)}
+                      onChange={(e) =>
+                        updateField("subdistrict", e.target.value)
+                      }
                       placeholder="กรอกแขวง/ตำบล"
                       className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
                     />
@@ -451,7 +467,10 @@ export default function AddressEditorPage() {
       {!loading ? (
         <div
           className="fixed left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white px-4 pt-3 shadow-[0_-6px_20px_rgba(0,0,0,0.08)]"
-          style={{ bottom: "calc(84px + env(safe-area-inset-bottom))", paddingBottom: "12px" }}
+          style={{
+            bottom: "calc(84px + env(safe-area-inset-bottom))",
+            paddingBottom: "12px",
+          }}
         >
           <div className="mx-auto w-full max-w-[440px] space-y-3">
             <button
@@ -460,9 +479,13 @@ export default function AddressEditorPage() {
                 formRef.current?.requestSubmit();
               }}
               disabled={submitting}
-                className="w-full rounded-2xl bg-[#2f6ef4] py-3 text-[20px] font-semibold text-white disabled:opacity-60"
+              className="w-full rounded-2xl bg-[#2f6ef4] py-3 text-[20px] font-semibold text-white disabled:opacity-60"
             >
-              {submitting ? "กำลังบันทึก..." : isCreateMode ? "เพิ่มที่อยู่" : "บันทึกที่อยู่"}
+              {submitting
+                ? "กำลังบันทึก..."
+                : isCreateMode
+                  ? "เพิ่มที่อยู่"
+                  : "บันทึกที่อยู่"}
             </button>
             <button
               type="button"
