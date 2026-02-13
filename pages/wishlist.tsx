@@ -472,9 +472,3 @@ export default function WishlistPage() {
     </>
   );
 }
-
-export const getServerSideProps: GetServerSideProps = async () => {
-  return {
-    props: {},
-  };
-};

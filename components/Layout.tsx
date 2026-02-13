@@ -26,6 +26,7 @@ export default function Layout({
   const router = useRouter();
   const [showPromo, setShowPromo] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
+  const [seniorMode, setSeniorMode] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -38,8 +39,19 @@ export default function Layout({
       if (!cookieConsent) {
         setShowCookieConsent(true);
       }
+      const seniorPref = localStorage.getItem("seniorMode");
+      const enabled = seniorPref === "true";
+      setSeniorMode(enabled);
+      document.documentElement.classList.toggle("senior-mode", enabled);
     }
   }, []);
+
+  const toggleSeniorMode = () => {
+    const next = !seniorMode;
+    setSeniorMode(next);
+    localStorage.setItem("seniorMode", next ? "true" : "false");
+    document.documentElement.classList.toggle("senior-mode", next);
+  };
 
   const handleCookieConsent = (accepted: boolean) => {
     localStorage.setItem("cookieConsent", accepted ? "true" : "false");
@@ -47,32 +59,18 @@ export default function Layout({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white overflow-x-hidden">
       <Head>
         <title>{title}</title>
-        <meta name="description" content="ตลาดสินค้าเกษตรสดใหม่ ICN_FREEZE" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="description" content="Fresh marketplace by ICN_FREEZE" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
       </Head>
 
-      {/* fixed header - Hidden on mobile */}
-      <header className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-white shadow">
-        <div className="flex items-center justify-between px-4 py-2">
-          {/* Language Switcher */}
-          <nav className="flex space-x-2">
-            <Link href="/" locale="th" className="hover:underline">
-              ไทย
-            </Link>
-            <span>|</span>
-            <Link href="/" locale="en" className="hover:underline">
-              EN
-            </Link>
-          </nav>
-          {/* Main Navbar */}
-          <Navbar />
-        </div>
-      </header>
+      <Navbar />
 
-      {/* promo + cookie */}
       <PromoModal show={showPromo} onClose={() => setShowPromo(false)} />
       {showCookieConsent && (
         <CookieConsent
@@ -81,9 +79,7 @@ export default function Layout({
         />
       )}
 
-      {/* content with top margin so it doesn't sit under the fixed header */}
-      {/* Add bottom padding on mobile to prevent content from being hidden by bottom navigation */}
-      <main className="flex-grow w-full mx-auto py-4 md:mt-20 pb-20 md:pb-0">
+      <main className="flex-grow w-full max-w-full mx-auto py-4 mt-16 sm:mt-20 md:mt-24 pb-20 md:pb-0 overflow-x-hidden">
         {children}
       </main>
 
@@ -92,7 +88,11 @@ export default function Layout({
       {/* Bottom Navigation - Mobile Only */}
       {!hideBottomNav && (
         <MobileShopBottomNav
-          activePath={router.pathname === "/all-products" ? "/all-products" : router.pathname}
+          activePath={
+            router.pathname === "/all-products"
+              ? "/all-products"
+              : router.pathname
+          }
         />
       )}
     </div>

@@ -45,12 +45,21 @@ export async function deleteAddress(userId: string, id: string): Promise<boolean
 }
 
 export async function setDefaultAddress(userId: string, id: string): Promise<Address | null> {
-  // unset others
-  await prisma.address.updateMany({ where: { userId, isDefault: true }, data: { isDefault: false } });
-  const updated = await prisma.address.update({ where: { id }, data: { isDefault: true } });
-  // ensure owner
-  if (updated.userId !== userId) return null;
-  return updated;
+  const target = await prisma.address.findFirst({ where: { id, userId } });
+  if (!target) return null;
+
+  await prisma.$transaction([
+    prisma.address.updateMany({
+      where: { userId, isDefault: true },
+      data: { isDefault: false },
+    }),
+    prisma.address.updateMany({
+      where: { id, userId },
+      data: { isDefault: true },
+    }),
+  ]);
+
+  return getAddressById(userId, id);
 }
 
 export async function setFavoriteAddress(userId: string, id: string, value: boolean): Promise<Address | null> {

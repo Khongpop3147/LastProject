@@ -1,6 +1,7 @@
 // pages/api/admin/stats.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export type StatsResponse = {
   totalSales: number;
@@ -13,6 +14,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<StatsResponse>
 ) {
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   if (req.method !== "GET") {
     return res.status(405).end();
   }

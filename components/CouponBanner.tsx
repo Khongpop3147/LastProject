@@ -3,8 +3,11 @@
 
 import { ChevronRight, Ticket } from "lucide-react";
 import Link from "next/link";
+import useTranslation from "next-translate/useTranslation";
 
 export default function CouponBanner() {
+  const { t } = useTranslation("common");
+
   return (
     <Link
       href="/coupons"

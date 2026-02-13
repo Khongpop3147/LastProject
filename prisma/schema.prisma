@@ -125,14 +125,25 @@ model OrderItem {
 }
 
 model Coupon {
-  id            String    @id @default(uuid())
-  code          String    @unique
+  id            String           @id @default(uuid())
+  code          String           @unique
   discountType  String
   discountValue Float
   usageLimit    Int?
   usedCount     Int       @default(0)
   expiresAt     DateTime?
+  translations  CouponLocale[]
   orders        Order[]
+}
+
+model CouponLocale {
+  id         String  @id @default(uuid())
+  coupon     Coupon  @relation(fields: [couponId], references: [id])
+  couponId   String
+  locale     String  // e.g. 'th' | 'en'
+  title      String
+  description String?
+  @@unique([couponId, locale])
 }
 
 model Address {

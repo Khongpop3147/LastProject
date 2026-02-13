@@ -1,4 +1,4 @@
-// pages/register.tsx
+﻿// pages/register.tsx
 "use client";
 
 import { useState } from "react";
@@ -6,8 +6,10 @@ import { useRouter } from "next/router";
 import { User, Mail, Lock } from "lucide-react";
 import Layout from "@/components/Layout";
 import Image from "next/image";
+import useTranslation from "next-translate/useTranslation";
 
 export default function RegisterPage() {
+  const { t } = useTranslation("common");
   const router = useRouter();
   const [form, setForm] = useState({
     name: "",
@@ -31,11 +33,11 @@ export default function RegisterPage() {
     setError(null);
 
     if (!form.agree) {
-      setError("กรุณายอมรับเงื่อนไขการใช้งาน");
+      setError(t("auth.register.errors.acceptTerms"));
       return;
     }
     if (form.password !== form.confirm) {
-      setError("รหัสผ่านไม่ตรงกัน");
+      setError(t("auth.register.errors.passwordMismatch"));
       return;
     }
 
@@ -60,26 +62,24 @@ export default function RegisterPage() {
   };
 
   return (
-    <Layout title="Register">
+    <Layout title={t("auth.register.pageTitle")}>
       <div className="flex h-screen">
-        {/* Left: Form */}
         <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-50 p-8">
           <div className="w-full max-w-md">
             <h2 className="text-2xl font-bold text-blue-600 mb-6">
-              Register your account
+              {t("auth.register.heading")}
             </h2>
 
             {error && <p className="text-red-500 mb-4">{error}</p>}
 
             <form onSubmit={onSubmit} className="space-y-5">
-              {/* Username */}
               <div>
-                <label className="block text-sm mb-1">Username</label>
+                <label className="block text-sm mb-1">{t("auth.fields.usernameLabel")}</label>
                 <div className="relative">
                   <input
                     name="name"
                     type="text"
-                    placeholder="QweryDesign"
+                    placeholder={t("auth.fields.usernamePlaceholder")}
                     value={form.name}
                     onChange={onChange}
                     required
@@ -91,14 +91,13 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Email */}
               <div>
-                <label className="block text-sm mb-1">Email Address</label>
+                <label className="block text-sm mb-1">{t("auth.fields.emailLabel")}</label>
                 <div className="relative">
                   <input
                     name="email"
                     type="email"
-                    placeholder="alex@email.com"
+                    placeholder={t("auth.fields.emailPlaceholder")}
                     value={form.email}
                     onChange={onChange}
                     required
@@ -110,14 +109,13 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Password */}
               <div>
-                <label className="block text-sm mb-1">Password</label>
+                <label className="block text-sm mb-1">{t("auth.fields.passwordLabel")}</label>
                 <div className="relative">
                   <input
                     name="password"
                     type="password"
-                    placeholder="Enter your password"
+                    placeholder={t("auth.fields.passwordPlaceholder")}
                     value={form.password}
                     onChange={onChange}
                     required
@@ -129,14 +127,13 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Confirm Password */}
               <div>
-                <label className="block text-sm mb-1">Confirm Password</label>
+                <label className="block text-sm mb-1">{t("auth.fields.confirmPasswordLabel")}</label>
                 <div className="relative">
                   <input
                     name="confirm"
                     type="password"
-                    placeholder="Re-enter your password"
+                    placeholder={t("auth.fields.confirmPasswordPlaceholder")}
                     value={form.confirm}
                     onChange={onChange}
                     required
@@ -148,7 +145,6 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Terms */}
               <div className="flex items-center text-sm">
                 <input
                   type="checkbox"
@@ -158,30 +154,28 @@ export default function RegisterPage() {
                   className="h-4 w-4 mr-2"
                 />
                 <span>
-                  I agree to the{" "}
+                  {t("auth.register.agreePrefix")}{" "}
                   <button
                     type="button"
                     onClick={() => router.push("/terms")}
                     className="text-blue-600 hover:underline"
                   >
-                    terms of service
+                    {t("auth.register.termsLink")}
                   </button>
                   .
                 </span>
               </div>
 
-              {/* Register */}
               <button
                 type="submit"
                 className="w-full bg-blue-600 text-white py-2 rounded-full hover:bg-blue-700 transition"
               >
-                Register
+                {t("auth.register.submit")}
               </button>
             </form>
           </div>
         </div>
 
-        {/* Right: Illustration */}
         <div className="hidden md:block w-1/2 relative">
           <Image
             src="/images/1.png"

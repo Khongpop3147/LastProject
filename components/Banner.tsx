@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface BannerSlide {
   title: string;
@@ -28,26 +29,42 @@ export default function Banner({ slides, isPromotion = false }: BannerProps) {
     return () => clearInterval(timer);
   }, [total]);
 
+  const prev = () => setIdx((i) => (i - 1 + total) % total);
+  const next = () => setIdx((i) => (i + 1) % total);
+
   return (
-    <div className="my-4 relative w-full h-52 md:h-48 lg:h-64 overflow-hidden rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-500">
-      {/* Background Image */}
+    <div className="my-4 relative w-full h-64 md:h-72 lg:h-80 overflow-hidden rounded-3xl bg-gray-100 ring-1 ring-black/5 shadow-lg">
       <Image
         src={slides[idx].img}
         alt={slides[idx].title}
         fill
-        className="object-cover"
+        className="object-cover scale-[1.02]"
       />
 
-     
+      <button
+        type="button"
+        onClick={prev}
+        aria-label="Previous slide"
+        className="hidden md:flex absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm text-white items-center justify-center hover:bg-white/30 transition"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      <button
+        type="button"
+        onClick={next}
+        aria-label="Next slide"
+        className="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm text-white items-center justify-center hover:bg-white/30 transition"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
 
-      {/* Dots indicator */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
         {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => setIdx(i)}
-            className={`h-1.5 rounded-full transition-all ${
-              i === idx ? "w-6 bg-blue-600" : "w-1.5 bg-gray-300"
+            className={`rounded-full transition-all ${
+              i === idx ? "w-2.5 h-2.5 bg-white" : "w-1.5 h-1.5 bg-white/55"
             }`}
           />
         ))}

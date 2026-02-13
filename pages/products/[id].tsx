@@ -1,23 +1,25 @@
-// pages/products/[id].tsx
 import { GetServerSideProps } from "next";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import {
-  ArrowLeft,
-  Heart,
-  Share2,
-  Package,
-  Check,
-} from "lucide-react";
+import { ArrowLeft, Heart, Share2, Package, Check } from "lucide-react";
 import Layout from "@/components/Layout";
-import ProductOptions, { ProductOption } from "@/components/ProductOptions";
 import QuantitySelector from "@/components/QuantitySelector";
+import ProductOptions from "@/components/ProductOptions";
 import { prisma } from "@/lib/prisma";
 import { useAuth } from "@/context/AuthContext";
 import { calculateDeliveryDate } from "@/lib/shippingUtils";
 import { goBackOrPush } from "@/lib/navigation";
 import type { ProductLocale } from "@prisma/client";
+import { isInWishlist, toggleWishlist } from "@/lib/wishlist";
+
+interface ProductOption {
+  id: string;
+  label: string;
+  value: string;
+  color?: string;
+  disabled?: boolean;
+}
 
 interface ProductPageProps {
   product: {
@@ -35,7 +37,7 @@ interface ProductPageProps {
 
 export default function ProductPage({ product }: ProductPageProps) {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   // State management
   const [selectedOption, setSelectedOption] = useState<string | null>("pink");
@@ -45,8 +47,8 @@ export default function ProductPage({ product }: ProductPageProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState<string>("");
-  const [distanceKm, setDistanceKm] = useState<number>(100); // Default ~100km from Bangkok
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [distanceKm] = useState(100);
 
   const handleBack = () => {
     goBackOrPush(router, "/");
@@ -61,16 +63,21 @@ export default function ProductPage({ product }: ProductPageProps) {
     setDeliveryDate(date);
   }, [selectedShipping, distanceKm]);
 
+  useEffect(() => {
+    if (!product?.id) return;
+    setIsWishlisted(isInWishlist(product.id, user?.id));
+  }, [product?.id, user?.id]);
+
   if (!product) {
     return (
-      <Layout title="ไม่พบสินค้า">
+      <Layout title="Product Not Found">
         <div className="container py-16 text-center">
-          <h1 className="text-2xl font-semibold">ไม่พบสินค้า</h1>
+          <h1 className="text-2xl font-semibold">Product not found</h1>
           <button
             onClick={() => router.push("/")}
             className="mt-4 text-blue-600 hover:underline"
           >
-            ← กลับหน้าหลัก
+            Back to home
           </button>
         </div>
       </Layout>
@@ -96,10 +103,14 @@ export default function ProductPage({ product }: ProductPageProps) {
     descriptionLines.length > 0
       ? descriptionLines
       : (
-          normalizedDescription.match(/.{1,70}(?:\s|$)/g)?.map((line) => line.trim()) || []
+          normalizedDescription
+            .match(/.{1,70}(?:\s|$)/g)
+            ?.map((line) => line.trim()) || []
         ).filter(Boolean);
   const finalDescriptionLines =
-    fallbackLines.length > 0 ? fallbackLines : ["รายละเอียดสินค้ายังไม่ถูกระบุ"];
+    fallbackLines.length > 0
+      ? fallbackLines
+      : ["รายละเอียดสินค้ายังไม่ถูกระบุ"];
   const hasMoreDescriptionLines = finalDescriptionLines.length > 3;
   const visibleDescriptionLines = isDescriptionExpanded
     ? finalDescriptionLines
@@ -124,30 +135,49 @@ export default function ProductPage({ product }: ProductPageProps) {
   ];
 
   // Handlers
+  const requireLogin = () => {
+    if (!token) {
+      router.push("/login");
+      return false;
+    }
+    return true;
+  };
+
   const handleWishlist = () => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-    setIsWishlisted(!isWishlisted);
+    if (!product) return;
+    const next = toggleWishlist(
+      {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        salePrice: product.salePrice,
+        imageUrl: product.imageUrl,
+        stock: product.stock,
+      },
+      user?.id,
+    );
+    setIsWishlisted(next);
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: product.name,
-        text: product.description,
-        url: window.location.href,
-      });
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: product.name,
+          text: product.description,
+          url: window.location.href,
+        });
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert("Link copied");
+      }
+    } catch {
+      // no-op
     }
   };
 
-  const handleAddToCart = async () => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
+  const addToCart = async (redirect: "cart" | "checkout" | "none") => {
+    if (!requireLogin()) return;
     if (product.stock === 0) return;
 
     setLoading(true);
@@ -161,11 +191,43 @@ export default function ProductPage({ product }: ProductPageProps) {
         body: JSON.stringify({ productId: product.id, quantity }),
       });
 
-      if (!res.ok) throw new Error("เพิ่มสินค้าล้มเหลว");
-      router.push("/cart");
+      if (!res.ok) {
+        throw new Error("Cannot add product to cart");
+      }
+
+      if (redirect === "cart") router.push("/cart");
+      if (redirect === "checkout") router.push("/checkout");
+      if (redirect === "none") alert("Added to cart");
     } catch (error) {
       console.error(error);
-      alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+    if (isOutOfStock) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ productId: product.id, quantity }),
+      });
+      if (res.ok) {
+        router.push("/checkout");
+      }
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -248,7 +310,10 @@ export default function ProductPage({ product }: ProductPageProps) {
 
               <ul className="space-y-2">
                 {visibleDescriptionLines.map((line, idx) => (
-                  <li key={`${line}-${idx}`} className="flex items-start gap-2 text-[18px] leading-relaxed text-[#374151]">
+                  <li
+                    key={`${line}-${idx}`}
+                    className="flex items-start gap-2 text-[18px] leading-relaxed text-[#374151]"
+                  >
                     <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#9ca3af]" />
                     <span>{line}</span>
                   </li>
@@ -261,7 +326,9 @@ export default function ProductPage({ product }: ProductPageProps) {
                   onClick={() => setIsDescriptionExpanded((prev) => !prev)}
                   className="mt-3 text-[16px] font-semibold text-[#2f6ef4]"
                 >
-                  {isDescriptionExpanded ? "ย่อรายละเอียด" : "ดูรายละเอียดเพิ่มเติม"}
+                  {isDescriptionExpanded
+                    ? "ย่อรายละเอียด"
+                    : "ดูรายละเอียดเพิ่มเติม"}
                 </button>
               ) : null}
             </section>
@@ -285,11 +352,15 @@ export default function ProductPage({ product }: ProductPageProps) {
             </section>
 
             <section>
-              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">ข้อมูลเพิ่มเติม</h2>
+              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
+                ข้อมูลเพิ่มเติม
+              </h2>
 
               {product.material ? (
                 <div className="mb-3">
-                  <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">วัสดุ</h3>
+                  <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">
+                    วัสดุ
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {product.material.split(",").map((mat, idx) => (
                       <span
@@ -304,7 +375,9 @@ export default function ProductPage({ product }: ProductPageProps) {
               ) : null}
 
               <div className="mb-3">
-                <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">ผลิตจาก</h3>
+                <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">
+                  ผลิตจาก
+                </h3>
                 <span className="inline-flex rounded-lg bg-[#dfe7f8] px-3 py-1.5 text-[16px] font-medium text-[#374151]">
                   EU
                 </span>
@@ -312,7 +385,9 @@ export default function ProductPage({ product }: ProductPageProps) {
             </section>
 
             <section>
-              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">วิธีจัดส่ง</h2>
+              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
+                วิธีจัดส่ง
+              </h2>
 
               <button
                 type="button"
@@ -335,13 +410,17 @@ export default function ProductPage({ product }: ProductPageProps) {
                       <Check className="h-4 w-4 text-white" strokeWidth={3} />
                     ) : null}
                   </span>
-                  <span className="text-[19px] font-semibold text-[#111827]">จัดส่งปกติ</span>
+                  <span className="text-[19px] font-semibold text-[#111827]">
+                    จัดส่งปกติ
+                  </span>
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
                     5-7 วัน
                   </span>
-                  <span className="text-[19px] font-bold text-[#27b05f]">ฟรี</span>
+                  <span className="text-[19px] font-bold text-[#27b05f]">
+                    ฟรี
+                  </span>
                 </span>
               </button>
 
@@ -366,13 +445,17 @@ export default function ProductPage({ product }: ProductPageProps) {
                       <Check className="h-4 w-4 text-white" strokeWidth={3} />
                     ) : null}
                   </span>
-                  <span className="text-[19px] font-semibold text-[#111827]">จัดส่งด่วน</span>
+                  <span className="text-[19px] font-semibold text-[#111827]">
+                    จัดส่งด่วน
+                  </span>
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
                     1-2 วัน
                   </span>
-                  <span className="text-[19px] font-bold text-[#111827]">฿50</span>
+                  <span className="text-[19px] font-bold text-[#111827]">
+                    ฿50
+                  </span>
                 </span>
               </button>
 
@@ -385,18 +468,26 @@ export default function ProductPage({ product }: ProductPageProps) {
               <div className="flex items-center gap-3 rounded-xl bg-[#e3f3ea] px-3 py-3">
                 <Package className="h-7 w-7 text-[#27b05f]" />
                 <div>
-                  <p className="text-[18px] font-semibold text-[#177245]">จัดส่งฟรี</p>
-                  <p className="text-[14px] text-[#2f855a]">สำหรับคำสั่งซื้อ 500 บาทขึ้นไป</p>
+                  <p className="text-[18px] font-semibold text-[#177245]">
+                    จัดส่งฟรี
+                  </p>
+                  <p className="text-[14px] text-[#2f855a]">
+                    สำหรับคำสั่งซื้อ 500 บาทขึ้นไป
+                  </p>
                 </div>
               </div>
             </section>
 
             <section>
-              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">จำนวน</h2>
+              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
+                จำนวน
+              </h2>
               <QuantitySelector
                 quantity={quantity}
                 onDecrease={() => setQuantity(Math.max(1, quantity - 1))}
-                onIncrease={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                onIncrease={() =>
+                  setQuantity(Math.min(product.stock, quantity + 1))
+                }
                 max={product.stock}
                 disabled={isOutOfStock}
               />
@@ -416,13 +507,15 @@ export default function ProductPage({ product }: ProductPageProps) {
             >
               <Heart
                 className={`h-7 w-7 ${
-                  isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : "text-[#9ca3af]"
+                  isWishlisted
+                    ? "fill-[#ff4f80] text-[#ff4f80]"
+                    : "text-[#9ca3af]"
                 }`}
               />
             </button>
 
-              <button
-                onClick={async () => {
+            <button
+              onClick={async () => {
                 if (!token) {
                   router.push("/login");
                   return;
@@ -460,7 +553,11 @@ export default function ProductPage({ product }: ProductPageProps) {
                   : "bg-[#2f6ef4] text-white"
               }`}
             >
-              {isOutOfStock ? "สินค้าหมด" : loading ? "กำลังเพิ่ม..." : "ซื้อเลย"}
+              {isOutOfStock
+                ? "สินค้าหมด"
+                : loading
+                  ? "กำลังเพิ่ม..."
+                  : "ซื้อเลย"}
             </button>
           </div>
         </div>

@@ -1,4 +1,3 @@
-// pages/index.tsx
 import { GetServerSideProps } from "next";
 import type { Prisma } from "@prisma/client";
 import useTranslation from "next-translate/useTranslation";
@@ -25,6 +24,58 @@ interface HomeProps {
   categories: Category[];
   flashEndAt: string;
   serverNowTs: number;
+}
+
+type ShelfProps = {
+  title: string;
+  href: string;
+  products: Product[];
+  viewAllLabel: string;
+  showBadge?: "sale" | "new";
+  palette: string[];
+  icon?: React.ReactNode;
+};
+
+function ProductShelf({
+  title,
+  href,
+  products,
+  viewAllLabel,
+  showBadge,
+  palette,
+  icon,
+}: ShelfProps) {
+  return (
+    <section className="mb-8 md:mb-10 rounded-3xl bg-white/80 backdrop-blur-sm border border-gray-100 p-4 md:p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4 md:mb-5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+            {title}
+          </h2>
+          {icon}
+        </div>
+        <Link
+          href={href}
+          className="text-sm text-teal-700 hover:underline font-medium"
+        >
+          {viewAllLabel}
+        </Link>
+      </div>
+
+      <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
+        {products.slice(0, 10).map((product, idx) => (
+          <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
+            <ProductCard
+              product={product}
+              backgroundColor={palette[idx % palette.length]}
+              showBadge={showBadge ?? null}
+              salePercent={25 + idx * 5}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function HomePage({
@@ -114,115 +165,117 @@ export default function HomePage({
     },
   ];
 
-  const format2 = (value: number) => String(Math.max(0, value)).padStart(2, "0");
-  
+  const format2 = (value: number) =>
+    String(Math.max(0, value)).padStart(2, "0");
+
   return (
     <Layout title={t("siteTitle")}>
-      {/* Mobile Header - ร้านค้า + Search */}
       <div className="md:hidden -mt-8">
         <MobileHeader />
       </div>
 
-      {/* Hero Banner */}
-      <section className="px-4 mb-4">
-        <Banner slides={banners} />
-      </section>
+      <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="pointer-events-none absolute -top-8 -right-6 w-48 h-48 rounded-full bg-teal-100/50 blur-3xl" />
+        <div className="pointer-events-none absolute top-64 -left-10 w-56 h-56 rounded-full bg-cyan-100/50 blur-3xl" />
 
-      {/* Coupon Banner */}
-      <section className="mb-5">
-        <CouponBanner />
-      </section>
-
-      {/* Category Grid */}
-      <section className={commonSectionClass}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">หมวดหมู่สินค้า</h2>
-          <Link href="/categories" className={actionLinkClass}>
-            ดูทั้งหมด →
-          </Link>
-        </div>
-        <CategoryCarousel categories={categories} />
-      </section>
-
-      {/* Sub Banner - แบนเนอร์โปรโมชั่น */}
-      {subBanners && subBanners.length > 0 && (
-        <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-          <SubBannerCarousel slides={subBanners} />
+        {/* Coupon Banner */}
+        <section className="mb-5">
+          <CouponBanner />
         </section>
-      )}
 
-      {/* Flash Sale */}
-      <section className={commonSectionClass}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Flash Sale</h2>
-            <Clock className="w-4 h-4 text-red-500" />
-            <div className="flex items-center gap-1 text-white text-xs font-bold">
-              <span className="bg-black px-1.5 py-0.5 rounded">{format2(hours)}</span>
-              <span className="bg-black px-1.5 py-0.5 rounded">{format2(minutes)}</span>
-              <span className="bg-black px-1.5 py-0.5 rounded">{format2(seconds)}</span>
-            </div>
+        {/* Category Grid */}
+        <section className={commonSectionClass}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
+              หมวดหมู่สินค้า
+            </h2>
+            <Link href="/categories" className={actionLinkClass}>
+              ดูทั้งหมด →
+            </Link>
           </div>
-          <Link href="/sale" className={actionLinkClass}>
-            ดูทั้งหมด →
-          </Link>
-        </div>
-        
-        {/* Flash Sale Products - Responsive Grid */}
-        <div className={productGridClass}>
-          {onSale.slice(0, 10).map((product, idx) => (
-            <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
-              <ProductCard 
-                product={product} 
-                backgroundColor={flashColors[idx % flashColors.length]}
-                showBadge="sale"
-                salePercent={25 + (idx * 5)}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+          <CategoryCarousel categories={categories} />
+        </section>
 
-      {/* Popular Products - สินค้ายอดนิยม */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4">สินค้ายอดนิยม</h2>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-          {bestSellers.slice(0, 5).map((product) => (
-            <div key={product.id} className="flex-shrink-0">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-colors">
-                <img
-                  src={product.imageUrl ?? "/images/placeholder.png"}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
+        {/* Sub Banner - แบนเนอร์โปรโมชั่น */}
+        {subBanners && subBanners.length > 0 && (
+          <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
+            <SubBannerCarousel slides={subBanners} />
+          </section>
+        )}
+
+        {/* Flash Sale */}
+        <section className={commonSectionClass}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
+                Flash Sale
+              </h2>
+              <Clock className="w-4 h-4 text-red-500" />
+              <div className="flex items-center gap-1 text-white text-xs font-bold">
+                <span className="bg-black px-1.5 py-0.5 rounded">
+                  {format2(hours)}
+                </span>
+                <span className="bg-black px-1.5 py-0.5 rounded">
+                  {format2(minutes)}
+                </span>
+                <span className="bg-black px-1.5 py-0.5 rounded">
+                  {format2(seconds)}
+                </span>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {homeSections.map((section) => (
-        <section key={section.title} className={section.wrapperClass}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">{section.title}</h2>
-            <Link href={section.href} className={actionLinkClass}>
+            <Link href="/sale" className={actionLinkClass}>
               ดูทั้งหมด →
             </Link>
           </div>
 
+          {/* Flash Sale Products - Responsive Grid */}
           <div className={productGridClass}>
-            {section.products.slice(0, 10).map((product, idx) => (
+            {onSale.slice(0, 10).map((product, idx) => (
               <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
                 <ProductCard
                   product={product}
-                  backgroundColor={section.colors[idx % section.colors.length]}
-                  showBadge={section.badge}
+                  backgroundColor={flashColors[idx % flashColors.length]}
+                  showBadge="sale"
+                  salePercent={25 + idx * 5}
                 />
               </div>
             ))}
           </div>
         </section>
-      ))}
+
+        {subBanners && subBanners.length > 0 && (
+          <section className="mb-8 md:mb-10">
+            <SubBannerCarousel slides={subBanners} />
+          </section>
+        )}
+
+        {homeSections.map((section) => (
+          <section key={section.title} className={section.wrapperClass}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
+                {section.title}
+              </h2>
+              <Link href={section.href} className={actionLinkClass}>
+                ดูทั้งหมด →
+              </Link>
+            </div>
+
+            <div className={productGridClass}>
+              {section.products.slice(0, 10).map((product, idx) => (
+                <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
+                  <ProductCard
+                    product={product}
+                    backgroundColor={
+                      section.colors[idx % section.colors.length]
+                    }
+                    showBadge={section.badge}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </Layout>
   );
 }
@@ -232,31 +285,31 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
 }) => {
   const lang = locale ?? "th";
 
-  // 1. Hero banners (กรองเฉพาะ banner หลัก ไม่รวม sub banner)
   const rawHero = await prisma.bannerLocale.findMany({
-    where: { 
+    where: {
       locale: lang,
-      banner: { 
+      banner: {
         isNot: {
-          position: "sub"
-        }
-      }
+          position: "sub",
+        },
+      },
     },
     include: { banner: true },
     orderBy: { banner: { order: "asc" } },
   });
+
   const banners: BannerSlide[] = rawHero.map(({ title, sub, banner }) => ({
     title: title ?? "",
     sub: sub ?? "",
     img: banner.imageUrl,
   }));
 
-  // 2. Promotion banners
   const rawPromo = await prisma.bannerLocale.findMany({
     where: { locale: lang, banner: { position: "sub" } },
     include: { banner: true },
     orderBy: { banner: { order: "asc" } },
   });
+
   const subBanners: BannerSlide[] = rawPromo.map(({ title, sub, banner }) => ({
     title: title ?? "",
     sub: sub ?? "",
@@ -274,13 +327,9 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
     return raw.map(mapToProduct);
   }
 
-  // 3. Featured
-  const featured = await getProducts({ isFeatured: true }, 6);
+  const featured = await getProducts({ isFeatured: true }, 10);
+  const onSale = await getProducts({ salePrice: { not: null } }, 10);
 
-  // 4. On Sale
-  const onSale = await getProducts({ salePrice: { not: null } }, 8);
-
-  // 5. Best Sellers
   const top = await prisma.orderItem.groupBy({
     by: ["productId"],
     _sum: { quantity: true },
@@ -298,13 +347,12 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
     .filter((item): item is NonNullable<typeof item> => Boolean(item))
     .map(mapToProduct);
 
-  // 6. Categories with product count
   const rawCats = await prisma.categoryLocale.findMany({
     where: { locale: lang },
     include: { category: true },
     orderBy: { name: "asc" },
   });
-  
+
   const categories: Category[] = await Promise.all(
     rawCats.map(async ({ category, name }) => {
       // นับจำนวนสินค้าในแต่ละหมวดหมู่
@@ -318,14 +366,14 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
           select: { imageUrl: true },
         }),
       ]);
-      
+
       return {
         id: category.id,
         name,
         productCount,
         imageUrl: coverProduct?.imageUrl ?? null,
       };
-    })
+    }),
   );
 
   const now = new Date();

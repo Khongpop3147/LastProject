@@ -251,7 +251,9 @@ export default function QaPage() {
                 <Headset className="h-7 w-7" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-[25px] font-extrabold leading-tight">ศูนย์ช่วยเหลือ</h2>
+                <h2 className="text-[25px] font-extrabold leading-tight">
+                  ศูนย์ช่วยเหลือ
+                </h2>
                 <p className="mt-1 text-[16px] leading-snug text-white/90">
                   ค้นหาคำตอบด้วยตัวเองได้ทันที หรือส่งคำถามให้ทีมงานช่วยตรวจสอบ
                 </p>
@@ -277,7 +279,9 @@ export default function QaPage() {
           </section>
 
           <section className="rounded-2xl border border-[#e3e4e7] bg-white p-3">
-            <h2 className="text-[21px] font-extrabold text-[#111827]">ค้นหาคำถาม</h2>
+            <h2 className="text-[21px] font-extrabold text-[#111827]">
+              ค้นหาคำถาม
+            </h2>
             <div className="relative mt-2">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9ca3af]" />
               <input
@@ -367,10 +371,17 @@ export default function QaPage() {
                   const open = openFaqId === faq.id;
                   const topic = inferTopic(faq.question, faq.answer);
                   return (
-                    <article key={faq.id} className="rounded-xl border border-[#e5e7eb] bg-[#fcfcfd]">
+                    <article
+                      key={faq.id}
+                      className="rounded-xl border border-[#e5e7eb] bg-[#fcfcfd]"
+                    >
                       <button
                         type="button"
-                        onClick={() => setOpenFaqId((prev) => (prev === faq.id ? "" : faq.id))}
+                        onClick={() =>
+                          setOpenFaqId((prev) =>
+                            prev === faq.id ? "" : faq.id,
+                          )
+                        }
                         className="flex w-full items-start gap-2 px-3 py-3 text-left"
                       >
                         <div className="min-w-0 flex-1">
@@ -391,7 +402,8 @@ export default function QaPage() {
                       {open ? (
                         <div className="border-t border-[#e5e7eb] px-3 py-3">
                           <p className="text-[16px] leading-relaxed text-[#4b5563]">
-                            {faq.answer?.trim() || "ทีมงานกำลังเตรียมคำตอบให้คุณอยู่"}
+                            {faq.answer?.trim() ||
+                              "ทีมงานกำลังเตรียมคำตอบให้คุณอยู่"}
                           </p>
                         </div>
                       ) : null}
@@ -504,7 +516,9 @@ function ShortcutButton({
       className="rounded-xl border border-[#d8d8db] bg-white p-3 text-left"
     >
       {icon}
-      <p className="mt-1 text-[16px] font-semibold leading-tight text-[#1f2937]">{label}</p>
+      <p className="mt-1 text-[16px] font-semibold leading-tight text-[#1f2937]">
+        {label}
+      </p>
     </button>
   );
 }

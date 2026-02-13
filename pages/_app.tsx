@@ -6,6 +6,10 @@ import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import Router from "next/router";
 import { Loader2, RotateCcw, Smartphone } from "lucide-react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// สร้าง instance เดียวตลอดแอป
+const queryClient = new QueryClient();
 
 // เปลี่ยนเป็น import จาก next-translate-plugin
 import appWithI18n from "next-translate/appWithI18n";
@@ -57,7 +61,7 @@ function MyApp({ Component, pageProps }: AppProps) {
       if (typeof window === "undefined") return;
 
       const isMobileDevice = window.matchMedia(
-        "(max-width: 1024px) and (pointer: coarse)"
+        "(max-width: 1024px) and (pointer: coarse)",
       ).matches;
       const isLandscape = window.matchMedia("(orientation: landscape)").matches;
       setIsMobileLandscape(isMobileDevice && isLandscape);
@@ -88,50 +92,54 @@ function MyApp({ Component, pageProps }: AppProps) {
         <meta name="screen-orientation" content="portrait" />
         <meta name="orientation" content="portrait" />
       </Head>
-      <AuthProvider>
-        <Component {...pageProps} />
-        {isMobileLandscape ? (
-          <div className="fixed inset-0 z-[260] flex items-center justify-center bg-[#f8faff] px-6">
-            <div
-              role="alert"
-              aria-live="assertive"
-              className="w-full max-w-[380px] rounded-3xl border border-[#d7deea] bg-white px-6 py-8 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
-            >
-              <div className="mx-auto flex w-fit items-center gap-3 rounded-full bg-[#eef3ff] px-4 py-3">
-                <Smartphone className="h-8 w-8 text-[#2f6ef4]" />
-                <RotateCcw className="h-7 w-7 text-[#2f6ef4]" />
+
+      {/* ครอบด้วย React Query provider */}
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Component {...pageProps} />
+          {isMobileLandscape ? (
+            <div className="fixed inset-0 z-[260] flex items-center justify-center bg-[#f8faff] px-6">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="w-full max-w-[380px] rounded-3xl border border-[#d7deea] bg-white px-6 py-8 text-center shadow-[0_12px_30px_rgba(0,0,0,0.12)]"
+              >
+                <div className="mx-auto flex w-fit items-center gap-3 rounded-full bg-[#eef3ff] px-4 py-3">
+                  <Smartphone className="h-8 w-8 text-[#2f6ef4]" />
+                  <RotateCcw className="h-7 w-7 text-[#2f6ef4]" />
+                </div>
+                <p className="mt-4 text-[30px] font-extrabold leading-tight text-[#1f2937]">
+                  รองรับเฉพาะแนวตั้ง
+                </p>
+                <p className="mt-2 text-[18px] font-medium leading-snug text-[#4b5563]">
+                  กรุณาหมุนหน้าจอกลับเป็นแนวตั้ง
+                  <br />
+                  เพื่อใช้งานต่อ
+                </p>
               </div>
-              <p className="mt-4 text-[30px] font-extrabold leading-tight text-[#1f2937]">
-                รองรับเฉพาะแนวตั้ง
-              </p>
-              <p className="mt-2 text-[18px] font-medium leading-snug text-[#4b5563]">
-                กรุณาหมุนหน้าจอกลับเป็นแนวตั้ง
-                <br />
-                เพื่อใช้งานต่อ
-              </p>
             </div>
-          </div>
-        ) : null}
-        {isRouteLoading ? (
-          <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/10 px-5">
-            <div
-              role="status"
-              aria-live="polite"
-              className="w-full max-w-[292px] rounded-2xl border border-[#d9deea] bg-white px-5 py-5 text-center shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
-            >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf1ff]">
-                <Loader2 className="h-7 w-7 animate-spin text-[#2f6ef4]" />
+          ) : null}
+          {isRouteLoading ? (
+            <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/10 px-5">
+              <div
+                role="status"
+                aria-live="polite"
+                className="w-full max-w-[292px] rounded-2xl border border-[#d9deea] bg-white px-5 py-5 text-center shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
+              >
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf1ff]">
+                  <Loader2 className="h-7 w-7 animate-spin text-[#2f6ef4]" />
+                </div>
+                <p className="mt-4 text-[18px] font-semibold text-[#1f2937]">
+                  กำลังโหลดหน้า...
+                </p>
+                <p className="mt-1 text-[14px] text-[#6b7280]">
+                  กรุณารอสักครู่
+                </p>
               </div>
-              <p className="mt-4 text-[18px] font-semibold text-[#1f2937]">
-                กำลังโหลดหน้า...
-              </p>
-              <p className="mt-1 text-[14px] text-[#6b7280]">
-                กรุณารอสักครู่
-              </p>
             </div>
-          </div>
-        ) : null}
-      </AuthProvider>
+          ) : null}
+        </AuthProvider>
+      </QueryClientProvider>
     </>
   );
 }

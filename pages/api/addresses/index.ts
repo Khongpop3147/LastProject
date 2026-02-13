@@ -11,14 +11,24 @@ export default async function handler(
 
   if (req.method === "GET") {
     const list = await listAddressesByUser(user.id);
-    return res.status(200).json({ addresses: list });
+    return res.status(200).json({ addresses: list, items: list });
   }
 
   if (req.method === "POST") {
     try {
-      const body = req.body;
+      const body = req.body || {};
+      const recipient = String(body.recipient ?? "").trim();
+      const line1 = String(body.line1 ?? "").trim();
+      const city = String(body.city ?? "").trim();
+      const postalCode = String(body.postalCode ?? "").trim();
+      const country = String(body.country ?? "").trim();
+
+      if (!recipient || !line1 || !city || !postalCode || !country) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
       const created = await createAddress(user.id, body);
-      return res.status(201).json({ address: created });
+      return res.status(201).json({ address: created, item: created });
     } catch (err: any) {
       console.error(err);
       return res.status(400).json({ error: err?.message || "Bad Request" });

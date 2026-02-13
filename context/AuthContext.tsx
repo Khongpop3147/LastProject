@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   createContext,
@@ -20,13 +20,10 @@ interface User {
 interface AuthContextValue {
   user: User | null;
   token: string | null;
-  /**
-   * @param remember ถ้า true → คุกกี้อยู่ได้นาน 7 วัน
-   *                 ถ้า false → คุกกี้เป็น session cookie (หายเมื่อปิดเบราว์เซอร์)
-   */
   login: (email: string, password: string, remember: boolean) => Promise<void>;
   logout: () => void;
   adminLogout: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -36,19 +33,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
-  // โหลด token จากคุกกี้ตอน mount
-  useEffect(() => {
+  const refreshProfile = async () => {
     const t = Cookies.get("token");
-    if (t) {
-      setToken(t);
-      // ดึงข้อมูลโปรไฟล์ (ถ้ามี API)
-      fetch("/api/auth/profile", {
-        headers: { Authorization: `Bearer ${t}` },
-      })
-        .then((res) => res.json())
-        .then((data) => setUser(data.user))
-        .catch(() => logout());
+    if (!t) {
+      setUser(null);
+      setToken(null);
+      return;
     }
+
+    try {
+      const res = await fetch("/api/auth/profile", {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (!res.ok) throw new Error("Unauthorized");
+      const data = await res.json();
+      setToken(t);
+      setUser(data.user || null);
+    } catch {
+      Cookies.remove("token");
+      setUser(null);
+      setToken(null);
+    }
+  };
+
+  useEffect(() => {
+    refreshProfile();
   }, []);
 
   const login = async (email: string, password: string, remember: boolean) => {
@@ -63,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const { user: u, token: tkn } = await res.json();
 
-    // เซ็ตคุกกี้
     if (remember) {
       Cookies.set("token", tkn, { expires: 7 });
     } else {
@@ -83,20 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const adminLogout = async () => {
-    // 1. ล้าง HTTP-only cookie บนเซิร์ฟเวอร์
     await fetch("/api/auth/logout", { method: "POST" });
-
-    // 2. ถ้าคุณเคยเซ็ต cookie ด้วย js-cookie ด้วยชื่อเดียวกัน
     Cookies.remove("token");
-
-    // 3. เคลียร์ state และ redirect
     setUser(null);
     setToken(null);
     router.push("/admin/login");
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, adminLogout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, adminLogout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

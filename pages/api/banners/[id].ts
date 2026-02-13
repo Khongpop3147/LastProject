@@ -1,13 +1,13 @@
-// pages/api/banners/[id].ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { IncomingForm, File } from "formidable";
 import fs from "fs";
 import path from "path";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const config = {
   api: {
-    bodyParser: false, // ปิด built-in parser เพื่อใช้ formidable
+    bodyParser: false,
   },
 };
 
@@ -32,20 +32,16 @@ const parseForm = (req: NextApiRequest): Promise<Parsed> =>
     form.parse(req, (err, fields, files) => {
       if (err) return reject(err);
 
-      // normalize fields to string only
       const flds: Record<string, string> = {};
       for (const key in fields) {
         const raw = fields[key];
-        let txt = "";
         if (Array.isArray(raw)) {
-          txt = typeof raw[0] === "string" ? raw[0] : "";
-        } else if (typeof raw === "string") {
-          txt = raw;
+          flds[key] = typeof raw[0] === "string" ? raw[0] : "";
+        } else {
+          flds[key] = typeof raw === "string" ? raw : "";
         }
-        flds[key] = txt;
       }
 
-      // normalize files to single File
       const normalizedFiles: Record<string, File> = {};
       for (const key in files) {
         const fileVal = files[key];
@@ -64,6 +60,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   const rawId = req.query.id;
   const id =
     typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : null;
@@ -72,7 +71,6 @@ export default async function handler(
     return res.status(400).json({ error: "Invalid banner id" });
   }
 
-  // PUT: update banner with locale upsert
   if (req.method === "PUT") {
     try {
       const { fields, files } = await parseForm(req);
@@ -87,7 +85,6 @@ export default async function handler(
         imageUrl = `/api/file/banners/${fileName}`;
       }
 
-      // locale-specific fields
       const titleTh = fields.titleTh || "";
       const titleEn = fields.titleEn || "";
       const subTh = fields.subTh || "";
@@ -129,36 +126,33 @@ export default async function handler(
         include: { translations: true },
       });
 
-      const th = updated.translations.find((t) => t.locale === "th")!;
-      const en = updated.translations.find((t) => t.locale === "en")!;
+      const th = updated.translations.find((t) => t.locale === "th");
+      const en = updated.translations.find((t) => t.locale === "en");
       return res.status(200).json({
         id: updated.id,
         imageUrl: updated.imageUrl,
         order: updated.order,
         position: updated.position,
-        titleTh: th.title,
-        titleEn: en.title,
-        subTh: th.sub,
-        subEn: en.sub,
-        descriptionTh: th.description,
-        descriptionEn: en.description,
+        titleTh: th?.title ?? "",
+        titleEn: en?.title ?? "",
+        subTh: th?.sub ?? "",
+        subEn: en?.sub ?? "",
+        descriptionTh: th?.description ?? "",
+        descriptionEn: en?.description ?? "",
       });
     } catch (err: any) {
       console.error("Update banner error:", err);
-      return res
-        .status(500)
-        .json({ error: "เกิดข้อผิดพลาดในการแก้ไขแบนเนอร์" });
+      return res.status(500).json({ error: "Cannot update banner" });
     }
   }
 
-  // DELETE: remove banner
   if (req.method === "DELETE") {
     try {
       await prisma.banner.delete({ where: { id } });
       return res.status(204).end();
     } catch (err: any) {
       console.error("Delete banner error:", err);
-      return res.status(500).json({ error: "เกิดข้อผิดพลาดในการลบแบนเนอร์" });
+      return res.status(500).json({ error: "Cannot delete banner" });
     }
   }
 

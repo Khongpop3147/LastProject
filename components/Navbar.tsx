@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
-import { Truck, ShoppingCart, Menu, X } from "lucide-react";
+import { Truck, ShoppingCart, Heart, Menu, X } from "lucide-react";
 import useTranslation from "next-translate/useTranslation";
 
 export default function Navbar() {
@@ -24,10 +24,9 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 md:h-24">
-          {/* Left: Hamburger + Logo */}
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setMobileOpen((o) => !o)}
@@ -48,7 +47,6 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile: Orders & Cart Icons */}
           <div className="flex items-center space-x-4 md:hidden">
             <Link href="/orders" aria-label={t("orders")}>
               <Truck
@@ -64,19 +62,18 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Center (desktop): Nav Links + Language */}
-          <div className="hidden md:flex items-center space-x-8">
-            <ul className="flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-10">
+            <ul className="flex items-center space-x-7">
               {navItems.map(({ key, href }) => {
                 const isActive = pathname === href;
                 return (
                   <li key={href}>
                     <Link
                       href={href}
-                      className={`px-3 py-1 text-base font-medium rounded-md transition-colors ${
+                      className={`px-4 py-2 text-lg font-semibold rounded-full transition-colors ${
                         isActive
-                          ? "bg-green-600 text-white"
-                          : "text-gray-700 hover:text-green-600"
+                          ? "bg-teal-600 text-white shadow-sm"
+                          : "text-gray-700 hover:text-teal-700 hover:bg-teal-50"
                       }`}
                     >
                       {t(key)}
@@ -86,25 +83,24 @@ export default function Navbar() {
               })}
             </ul>
 
-            {/* Language Switcher */}
             <div className="flex items-center space-x-2 text-sm font-medium">
               <Link
-                href={pathname}
+                href={router.asPath}
                 locale="th"
                 className={
                   lang === "th"
-                    ? "bg-green-600 text-white px-2 py-1 rounded"
+                    ? "bg-teal-600 text-white px-2 py-1 rounded"
                     : "text-gray-700 hover:bg-gray-200 px-2 py-1 rounded"
                 }
               >
                 TH
               </Link>
               <Link
-                href={pathname}
+                href={router.asPath}
                 locale="en"
                 className={
                   lang === "en"
-                    ? "bg-green-600 text-white px-2 py-1 rounded"
+                    ? "bg-teal-600 text-white px-2 py-1 rounded"
                     : "text-gray-700 hover:bg-gray-200 px-2 py-1 rounded"
                 }
               >
@@ -113,25 +109,33 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Right (desktop): Icons & Auth */}
           <div className="hidden md:flex items-center space-x-4">
             <Link
               href="/orders"
-              className="text-gray-600 hover:text-green-600 transition"
+              className="text-gray-600 hover:text-teal-700 transition"
             >
               <Truck size={24} />
             </Link>
             <Link
+              href="/wishlist"
+              className="text-gray-600 hover:text-teal-700 transition"
+            >
+              <Heart size={24} />
+            </Link>
+            <Link
               href="/cart"
-              className="text-gray-600 hover:text-green-600 transition"
+              className="text-gray-600 hover:text-teal-700 transition"
             >
               <ShoppingCart size={24} />
             </Link>
             {user ? (
               <>
-                <span className="text-gray-700">
-                  {t("hello")}, {user.name}
-                </span>
+                <Link
+                  href="/account/settings"
+                  className="px-3 py-1 text-sm text-gray-700 rounded-md hover:text-teal-700 transition"
+                >
+                  {t("settings.title")}
+                </Link>
                 <button
                   onClick={logout}
                   className="px-3 py-1 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition"
@@ -143,13 +147,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="px-3 py-1 text-sm text-gray-700 rounded-md hover:text-green-600 transition"
+                  className="px-3 py-1 text-sm text-gray-700 rounded-md hover:text-teal-700 transition"
                 >
                   {t("login")}
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+                  className="px-3 py-1 text-sm bg-teal-600 text-white rounded-md hover:bg-teal-700 transition"
                 >
                   {t("signup")}
                 </Link>
@@ -158,7 +162,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileOpen && (
           <div className="md:hidden bg-white border-t shadow-sm">
             <ul className="flex flex-col divide-y">
@@ -182,7 +185,7 @@ export default function Navbar() {
             <div className="flex flex-col space-y-2 p-4 border-t">
               <div className="flex items-center space-x-2">
                 <Link
-                  href={pathname}
+                  href={router.asPath}
                   locale="th"
                   className={`px-2 py-1 rounded transition-colors ${
                     lang === "th"
@@ -194,7 +197,7 @@ export default function Navbar() {
                   TH
                 </Link>
                 <Link
-                  href={pathname}
+                  href={router.asPath}
                   locale="en"
                   className={`px-2 py-1 rounded transition-colors ${
                     lang === "en"
@@ -208,9 +211,13 @@ export default function Navbar() {
               </div>
               {user ? (
                 <>
-                  <span className="text-gray-700">
-                    {t("hello")}, {user.name}
-                  </span>
+                  <Link
+                    href="/account/settings"
+                    className="block text-gray-700 hover:bg-green-50 px-4 py-2 rounded transition-colors"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    {t("settings.title")}
+                  </Link>
                   <button
                     onClick={() => {
                       logout();

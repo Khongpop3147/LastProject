@@ -1,8 +1,8 @@
 // pages/api/auth/profile.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { getUserFromToken } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 function getAuthHeader(req: NextApiRequest) {
   if (typeof req.headers.authorization === "string") {
@@ -24,7 +24,7 @@ function isValidEmail(value: string) {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const user = await getUserFromToken(getAuthHeader(req));
   if (!user) {
@@ -45,7 +45,9 @@ export default async function handler(
   if (req.method === "PATCH") {
     const rawName = String(req.body?.name ?? "");
     const rawEmail = String(req.body?.email ?? "");
-    const rawPassword = String(req.body?.newPassword ?? "");
+    const rawPassword = String(
+      req.body?.newPassword ?? req.body?.password ?? "",
+    );
 
     const nextName = rawName.trim();
     const nextEmail = normalizeEmail(rawEmail);
@@ -63,10 +65,20 @@ export default async function handler(
       return res.status(400).json({ error: "รูปแบบอีเมลไม่ถูกต้อง" });
     }
 
-    if (nextPassword && nextPassword.length < 8) {
+    if (nextPassword && nextPassword.length < 6) {
       return res
         .status(400)
-        .json({ error: "รหัสผ่านใหม่ต้องยาวอย่างน้อย 8 ตัวอักษร" });
+        .json({ error: "รหัสผ่านใหม่ต้องยาวอย่างน้อย 6 ตัวอักษร" });
+    }
+
+    // Check if email is already used by another user
+    if (nextEmail && nextEmail !== user.email) {
+      const existing = await prisma.user.findUnique({
+        where: { email: nextEmail },
+      });
+      if (existing && existing.id !== user.id) {
+        return res.status(409).json({ error: "อีเมลนี้ถูกใช้งานแล้ว" });
+      }
     }
 
     const data: { name?: string; email?: string; passwordHash?: string } = {};
@@ -100,6 +112,7 @@ export default async function handler(
         return res.status(409).json({ error: "อีเมลนี้ถูกใช้งานแล้ว" });
       }
 
+      console.error("Update profile error:", error);
       return res.status(500).json({ error: "ไม่สามารถอัปเดตข้อมูลได้" });
     }
   }

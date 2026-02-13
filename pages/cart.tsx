@@ -61,7 +61,7 @@ export default function CartPage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [selectionInitialized, setSelectionInitialized] = useState(false);
 
@@ -128,6 +128,7 @@ export default function CartPage() {
       },
       body: JSON.stringify({ itemId, quantity }),
     });
+
     if (res.ok) {
       setItems((prev) =>
         prev.map((i) => (i.id === itemId ? { ...i, quantity } : i)),
@@ -192,7 +193,7 @@ export default function CartPage() {
           if (!res.ok) {
             throw new Error("Failed to remove selected item");
           }
-        })
+        }),
       );
     } catch (error) {
       console.error("Failed to remove selected cart items", error);
@@ -230,7 +231,7 @@ export default function CartPage() {
     }
     return Array.from(groups.entries()).map(([sellerName, groupItems]) => {
       const selectedCount = groupItems.filter((item) =>
-        selectedItemIds.has(item.id)
+        selectedItemIds.has(item.id),
       ).length;
       const selectedSubtotal = groupItems
         .filter((item) => selectedItemIds.has(item.id))
@@ -244,13 +245,14 @@ export default function CartPage() {
         items: groupItems,
         selectedCount,
         selectedSubtotal,
-        allSelected: selectedCount === groupItems.length && groupItems.length > 0,
+        allSelected:
+          selectedCount === groupItems.length && groupItems.length > 0,
       };
     });
   }, [items, selectedItemIds]);
 
   const selectedItemsCount = items.filter((item) =>
-    selectedItemIds.has(item.id)
+    selectedItemIds.has(item.id),
   ).length;
 
   const selectedTotal = items
@@ -275,7 +277,9 @@ export default function CartPage() {
   };
 
   const toggleSellerSelected = (sellerName: string) => {
-    const targetGroup = groupedBySeller.find((group) => group.sellerName === sellerName);
+    const targetGroup = groupedBySeller.find(
+      (group) => group.sellerName === sellerName,
+    );
     if (!targetGroup) return;
 
     setSelectedItemIds((prev) => {
@@ -304,7 +308,6 @@ export default function CartPage() {
     setIsEditing(true);
   };
 
-  // ถ้ายังไม่ล็อกอิน
   if (!token) {
     return (
       <>
@@ -349,7 +352,7 @@ export default function CartPage() {
                   href="/login"
                   className="mt-3 rounded-2xl bg-[#2f6ef4] px-8 py-2.5 text-[16px] font-medium text-white"
                 >
-                  ไปดูสินค้า
+                  เข้าสู่ระบบ
                 </Link>
               </section>
             </main>
@@ -433,7 +436,9 @@ export default function CartPage() {
                           <input
                             type="checkbox"
                             checked={group.allSelected}
-                            onChange={() => toggleSellerSelected(group.sellerName)}
+                            onChange={() =>
+                              toggleSellerSelected(group.sellerName)
+                            }
                             className="h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
                           />
                         ) : null}
@@ -446,7 +451,8 @@ export default function CartPage() {
 
                       <div className="space-y-3 px-3 py-3">
                         {group.items.map((item) => {
-                          const unit = item.product.salePrice ?? item.product.price;
+                          const unit =
+                            item.product.salePrice ?? item.product.price;
                           const productName = resolveName(
                             item.product,
                             lang || "th",
@@ -456,7 +462,10 @@ export default function CartPage() {
                             item.product.salePrice < item.product.price;
 
                           return (
-                            <div key={item.id} className={`flex items-start ${isEditing ? "gap-2" : "gap-3"}`}>
+                            <div
+                              key={item.id}
+                              className={`flex items-start ${isEditing ? "gap-2" : "gap-3"}`}
+                            >
                               {isEditing ? (
                                 <input
                                   type="checkbox"
@@ -495,7 +504,10 @@ export default function CartPage() {
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        updateQuantity(item.id, item.quantity - 1)
+                                        updateQuantity(
+                                          item.id,
+                                          item.quantity - 1,
+                                        )
                                       }
                                       disabled={item.quantity <= 1}
                                       className="h-9 w-9 rounded-[10px] bg-[#f2f2f2] text-[22px] text-[#666] disabled:opacity-40"
@@ -510,9 +522,14 @@ export default function CartPage() {
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        updateQuantity(item.id, item.quantity + 1)
+                                        updateQuantity(
+                                          item.id,
+                                          item.quantity + 1,
+                                        )
                                       }
-                                      disabled={item.quantity >= item.product.stock}
+                                      disabled={
+                                        item.quantity >= item.product.stock
+                                      }
                                       className="h-9 w-9 rounded-[10px] bg-[#f2f2f2] text-[22px] text-[#666] disabled:opacity-40"
                                     >
                                       +
@@ -564,7 +581,6 @@ export default function CartPage() {
                     </div>
                   ))}
                 </section>
-
               </>
             )}
           </main>
@@ -573,7 +589,9 @@ export default function CartPage() {
         {!loading && items.length > 0 && (
           <div
             className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+            style={{
+              paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)",
+            }}
           >
             <div className="mx-auto w-full max-w-[440px] px-4 pb-2 pt-1.5">
               {isEditing ? (
@@ -598,14 +616,18 @@ export default function CartPage() {
                   <div className="space-y-0.5">
                     <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
                       <span>ราคาสินค้า</span>
-                      <span className="text-[#4b5563]">{toCurrency(selectedTotal)}</span>
+                      <span className="text-[#4b5563]">
+                        {toCurrency(selectedTotal)}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
                       <span>ค่าจัดส่ง</span>
                       <span className="font-medium text-[#27b05f]">ฟรี</span>
                     </div>
                     <div className="flex items-center justify-between pt-0.5">
-                      <span className="text-[17px] font-extrabold text-[#2f2f2f]">รวมทั้งหมด</span>
+                      <span className="text-[17px] font-extrabold text-[#2f2f2f]">
+                        รวมทั้งหมด
+                      </span>
                       <span className="text-[24px] font-extrabold text-[#2f6ef4]">
                         {toCurrency(selectedTotal)}
                       </span>

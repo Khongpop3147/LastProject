@@ -215,7 +215,9 @@ export default function AccountProfilePage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-[18px] font-semibold text-[#374151]">อีเมล</label>
+              <label className="mb-1 block text-[18px] font-semibold text-[#374151]">
+                อีเมล
+              </label>
               <input
                 type="email"
                 value={form.email}
@@ -235,7 +237,10 @@ export default function AccountProfilePage() {
                 type="password"
                 value={form.newPassword}
                 onChange={(event) =>
-                  setForm((prev) => ({ ...prev, newPassword: event.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    newPassword: event.target.value,
+                  }))
                 }
                 placeholder="อย่างน้อย 8 ตัวอักษร"
                 className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[18px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"

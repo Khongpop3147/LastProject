@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/router";
 import type { GetServerSideProps } from "next";
 import { adminGuard } from "@/lib/adminGuard";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -543,7 +544,10 @@ function ManageProductSection() {
 
       {editProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded shadow-lg w-full max-w-lg overflow-auto p-6">
+          <div
+            className="bg-white rounded shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto p-6"
+            style={{ scrollbarWidth: "thin", scrollbarColor: "#888 #f1f1f1" }} // เพิ่ม style scroll bar สำหรับ Firefox
+          >
             <h3 className="text-xl mb-4">แก้ไขสินค้า</h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <label className="block">
@@ -1310,8 +1314,11 @@ export function ManageBannerSection() {
 
       {editBanner && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6">
-            <h3 className="text-xl font-semibold mb-4">
+          <div
+            className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6"
+            style={{ scrollbarWidth: "thin", scrollbarColor: "#888 #f1f1f1" }} // เพิ่ม style scroll bar สำหรับ Firefox
+          >
+            <h3 className="text-xl mb-4">
               แก้ไขแบนเนอร์ / Edit Banner
             </h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">

@@ -1,22 +1,30 @@
-// pages/api/banners/index.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
-// 1) ปิด bodyParser ของ Next.js เพื่อให้ multer อ่าน multipart/form-data ได้
 export const config = { api: { bodyParser: false } };
 
-// 2) ตั้งค่า multer ให้บันทึกรูปลง public/uploads/banners
 const upload = multer({
   storage: multer.diskStorage({
-    destination: "./public/uploads/banners",
-    filename: (_req, file, cb) =>
-      cb(null, `${Date.now()}-${file.originalname}`),
+    destination: (_req, _file, cb) => {
+      const uploadDir = path.join(process.cwd(), "public", "uploads", "banners");
+      fs.mkdirSync(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const base = path
+        .basename(file.originalname, ext)
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+      cb(null, `${Date.now()}-${base}${ext}`);
+    },
   }),
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-// 3) wrapper ให้ multer ทำงานแบบ promise-friendly
 function runMiddleware(
   req: NextApiRequest,
   res: NextApiResponse,
@@ -31,17 +39,17 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // เรียก multer ก่อน ถ้าเป็น POST ที่มี image
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   if (req.method === "POST") {
     await runMiddleware(req, res, upload.single("image"));
   }
 
-  // อ่าน position จาก query (ถ้ามี)
   const posQuery = Array.isArray(req.query.position)
     ? req.query.position[0]
     : req.query.position;
 
-  // GET /api/banners → คืน banners พร้อม translations สองภาษา
   if (req.method === "GET") {
     const whereClause = posQuery ? { position: posQuery } : {};
     const raw = await prisma.banner.findMany({
@@ -70,7 +78,6 @@ export default async function handler(
     return res.status(200).json({ items });
   }
 
-  // POST /api/banners → สร้าง banner พร้อม translations
   if (req.method === "POST") {
     const file = (req as any).file as Express.Multer.File | undefined;
     const {
@@ -94,10 +101,10 @@ export default async function handler(
     };
 
     if (!file) {
-      return res.status(400).json({ error: "ต้องระบุรูปภาพ (field: image)" });
+      return res.status(400).json({ error: "Image is required (field: image)" });
     }
     if (!titleTh || !titleEn) {
-      return res.status(400).json({ error: "ต้องระบุ titleTh และ titleEn" });
+      return res.status(400).json({ error: "titleTh and titleEn are required" });
     }
 
     const imageUrl = `/uploads/banners/${file.filename}`;
@@ -130,20 +137,20 @@ export default async function handler(
         include: { translations: true },
       });
 
-      const th = banner.translations.find((t) => t.locale === "th")!;
-      const en = banner.translations.find((t) => t.locale === "en")!;
+      const th = banner.translations.find((t) => t.locale === "th");
+      const en = banner.translations.find((t) => t.locale === "en");
 
       return res.status(201).json({
         id: banner.id,
         imageUrl: banner.imageUrl,
         order: banner.order,
         position: banner.position,
-        titleTh: th.title,
-        titleEn: en.title,
-        subTh: th.sub,
-        subEn: en.sub,
-        descriptionTh: th.description,
-        descriptionEn: en.description,
+        titleTh: th?.title ?? "",
+        titleEn: en?.title ?? "",
+        subTh: th?.sub ?? "",
+        subEn: en?.sub ?? "",
+        descriptionTh: th?.description ?? "",
+        descriptionEn: en?.description ?? "",
       });
     } catch (err: any) {
       console.error("Error creating banner:", err);
@@ -151,7 +158,6 @@ export default async function handler(
     }
   }
 
-  // Method Not Allowed
   res.setHeader("Allow", ["GET", "POST"]);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 }

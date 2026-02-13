@@ -1,6 +1,7 @@
 import type { GetServerSideProps } from "next";
 import Head from "next/head";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import {
   Search,
   SlidersHorizontal,
@@ -8,6 +9,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import useTranslation from "next-translate/useTranslation";
 import ProductCard from "@/components/ProductCard";
 import MobileShopBottomNav from "@/components/MobileShopBottomNav";
 import { prisma } from "@/lib/prisma";
@@ -45,7 +47,10 @@ const cardBackgrounds = [
 ];
 
 function getDisplayPrice(product: SearchProduct) {
-  if (typeof product.salePrice === "number" && product.salePrice < product.price) {
+  if (
+    typeof product.salePrice === "number" &&
+    product.salePrice < product.price
+  ) {
     return product.salePrice;
   }
 
@@ -53,11 +58,16 @@ function getDisplayPrice(product: SearchProduct) {
 }
 
 function getDiscountPercent(product: SearchProduct) {
-  if (typeof product.salePrice !== "number" || product.salePrice >= product.price) {
+  if (
+    typeof product.salePrice !== "number" ||
+    product.salePrice >= product.price
+  ) {
     return 0;
   }
 
-  return Math.round(((product.price - product.salePrice) / product.price) * 100);
+  return Math.round(
+    ((product.price - product.salePrice) / product.price) * 100,
+  );
 }
 
 function toCurrency(value: number) {
@@ -65,7 +75,10 @@ function toCurrency(value: number) {
 }
 
 function computePriceCeiling(products: SearchProduct[]) {
-  const highest = products.reduce((max, item) => Math.max(max, getDisplayPrice(item)), 0);
+  const highest = products.reduce(
+    (max, item) => Math.max(max, getDisplayPrice(item)),
+    0,
+  );
   const rounded = Math.ceil(highest / 1000) * 1000;
   return Math.max(30000, rounded || 30000);
 }
@@ -139,12 +152,18 @@ export default function AllProductsPage({
     if (typeof window === "undefined") return;
     window.localStorage.setItem(
       HISTORY_STORAGE_KEY,
-      JSON.stringify(searchHistory.slice(0, MAX_HISTORY_ITEMS))
+      JSON.stringify(searchHistory.slice(0, MAX_HISTORY_ITEMS)),
     );
   }, [searchHistory]);
 
   const suggestedKeywords = useMemo(() => {
-    const base = ["กระโปรง", "เครื่องประดับ", "เสื้อยืดสีดำ", "ยีนส์", "รองเท้าสีขาว"];
+    const base = [
+      "กระโปรง",
+      "เครื่องประดับ",
+      "เสื้อยืดสีดำ",
+      "ยีนส์",
+      "รองเท้าสีขาว",
+    ];
     const fromCategories = categories.slice(0, 2).map((item) => item.name);
     return Array.from(new Set([...base, ...fromCategories])).slice(0, 6);
   }, [categories]);
@@ -191,14 +210,24 @@ export default function AllProductsPage({
     });
 
     return list;
-  }, [products, normalizedSearch, selectedCategory, maxPrice, discountOnly, sortBy]);
+  }, [
+    products,
+    normalizedSearch,
+    selectedCategory,
+    maxPrice,
+    discountOnly,
+    sortBy,
+  ]);
 
   const commitSearch = (rawValue: string) => {
     const value = rawValue.trim();
     if (!value) return;
 
     setSearchHistory((prev) => {
-      const next = [value, ...prev.filter((item) => item.toLowerCase() !== value.toLowerCase())];
+      const next = [
+        value,
+        ...prev.filter((item) => item.toLowerCase() !== value.toLowerCase()),
+      ];
       return next.slice(0, MAX_HISTORY_ITEMS);
     });
   };
@@ -219,7 +248,10 @@ export default function AllProductsPage({
   const emptyResult = filteredProducts.length === 0;
   const showNoResult =
     emptyResult &&
-    (normalizedSearch.length > 0 || selectedCategory !== "all" || discountOnly || maxPrice < priceCeiling);
+    (normalizedSearch.length > 0 ||
+      selectedCategory !== "all" ||
+      discountOnly ||
+      maxPrice < priceCeiling);
   const showHelperSections = showAdvanced || normalizedSearch.length === 0;
 
   return (
@@ -280,7 +312,9 @@ export default function AllProductsPage({
             {showAdvanced ? (
               <section className="space-y-4 pb-4">
                 <div>
-                  <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">หมวดหมู่</h2>
+                  <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">
+                    หมวดหมู่
+                  </h2>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -311,7 +345,9 @@ export default function AllProductsPage({
                 </div>
 
                 <div>
-                  <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">เรียงตาม</h2>
+                  <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">
+                    เรียงตาม
+                  </h2>
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
@@ -381,7 +417,9 @@ export default function AllProductsPage({
                     max={priceCeiling}
                     step={500}
                     value={maxPrice}
-                    onChange={(event) => setMaxPrice(Number(event.target.value))}
+                    onChange={(event) =>
+                      setMaxPrice(Number(event.target.value))
+                    }
                     className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#d1d5db] accent-[#2f6ef4]"
                   />
                 </div>
@@ -391,9 +429,14 @@ export default function AllProductsPage({
             {showNoResult ? (
               <section className="flex min-h-[560px] flex-col items-center justify-center text-center">
                 <div className="mb-4 flex h-[108px] w-[108px] items-center justify-center rounded-full bg-[#dedede]">
-                  <ShoppingCart className="h-[56px] w-[56px] text-[#8f8f8f]" strokeWidth={1.8} />
+                  <ShoppingCart
+                    className="h-[56px] w-[56px] text-[#8f8f8f]"
+                    strokeWidth={1.8}
+                  />
                 </div>
-                <h2 className="text-[32px] font-extrabold leading-tight text-black">ไม่พบสินค้า</h2>
+                <h2 className="text-[32px] font-extrabold leading-tight text-black">
+                  ไม่พบสินค้า
+                </h2>
                 <p className="mt-1 text-[18px] text-[#6b7280]">
                   ลองค้นหาด้วยคำอื่น หรือดูหมวดหมู่สินค้า
                 </p>
@@ -411,7 +454,9 @@ export default function AllProductsPage({
                   <>
                     <section className="pb-2">
                       <div className="mb-2 flex items-center justify-between">
-                        <h2 className="text-[20px] font-extrabold text-[#1f2937]">ประวัติการค้นหา</h2>
+                        <h2 className="text-[20px] font-extrabold text-[#1f2937]">
+                          ประวัติการค้นหา
+                        </h2>
                         {searchHistory.length > 0 ? (
                           <button
                             type="button"
@@ -438,12 +483,16 @@ export default function AllProductsPage({
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[16px] text-[#9ca3af]">ยังไม่มีประวัติการค้นหา</p>
+                        <p className="text-[16px] text-[#9ca3af]">
+                          ยังไม่มีประวัติการค้นหา
+                        </p>
                       )}
                     </section>
 
                     <section className="pb-2 pt-3">
-                      <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">แนะนำ</h2>
+                      <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">
+                        แนะนำ
+                      </h2>
                       <div className="flex flex-wrap gap-2">
                         {suggestedKeywords.map((item) => (
                           <button
@@ -462,7 +511,9 @@ export default function AllProductsPage({
 
                 <section className="pt-2">
                   <div className="mb-2 flex items-end justify-between">
-                    <h2 className="text-[24px] font-extrabold text-[#1f2937]">สำรวจสินค้า</h2>
+                    <h2 className="text-[24px] font-extrabold text-[#1f2937]">
+                      สำรวจสินค้า
+                    </h2>
                     <p className="text-[15px] text-[#6b7280]">
                       ทั้งหมด {filteredProducts.length} รายการ
                     </p>
@@ -478,9 +529,16 @@ export default function AllProductsPage({
                         <ProductCard
                           key={product.id}
                           product={product}
-                          backgroundColor={cardBackgrounds[idx % cardBackgrounds.length]}
-                          showBadge={getDiscountPercent(product) > 0 ? "sale" : "new"}
-                          salePercent={Math.max(getDiscountPercent(product), 20)}
+                          backgroundColor={
+                            cardBackgrounds[idx % cardBackgrounds.length]
+                          }
+                          showBadge={
+                            getDiscountPercent(product) > 0 ? "sale" : "new"
+                          }
+                          salePercent={Math.max(
+                            getDiscountPercent(product),
+                            20,
+                          )}
                         />
                       ))
                     )}

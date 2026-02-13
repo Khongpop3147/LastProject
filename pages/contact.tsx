@@ -103,7 +103,9 @@ export default function ContactPage() {
         return;
       }
 
-      setSuccessMessage("ส่งข้อความเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด");
+      setSuccessMessage(
+        "ส่งข้อความเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
+      );
       setForm((prev) => ({ ...prev, subject: "", message: "" }));
     } catch {
       setErrorMessage("ส่งข้อความไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
@@ -130,14 +132,18 @@ export default function ContactPage() {
               <h1 className="text-[30px] font-extrabold leading-none tracking-tight text-black">
                 ติดต่อเรา
               </h1>
-              <p className="text-[16px] text-[#6b7280]">สอบถามข้อมูล แจ้งปัญหา</p>
+              <p className="text-[16px] text-[#6b7280]">
+                สอบถามข้อมูล แจ้งปัญหา
+              </p>
             </div>
           </div>
         </header>
 
         <main className="space-y-4 px-4 pb-[120px] pt-4">
           <section>
-            <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">ช่องทางติดต่อ</h2>
+            <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
+              ช่องทางติดต่อ
+            </h2>
             <div className="grid grid-cols-2 gap-3">
               {CONTACT_CARDS.map((item) => {
                 const Icon = item.icon;
@@ -169,7 +175,9 @@ export default function ContactPage() {
           <section className="rounded-2xl border border-[#e3e4e7] bg-white p-4">
             <div className="mb-1 flex items-center">
               <Clock3 className="h-6 w-6 text-[#eab308]" />
-              <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">เวลาทำการ</h2>
+              <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">
+                เวลาทำการ
+              </h2>
             </div>
             <p className="text-[17px] leading-tight text-[#4b5563]">
               จันทร์ - ศุกร์: 09:00 - 18:00 น.
@@ -182,16 +190,20 @@ export default function ContactPage() {
           <section className="rounded-2xl border border-[#e3e4e7] bg-white p-4">
             <div className="mb-1 flex items-center">
               <MapPin className="h-6 w-6 text-[#2f6ef4]" />
-              <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">ที่อยู่สำนักงาน</h2>
+              <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">
+                ที่อยู่สำนักงาน
+              </h2>
             </div>
             <p className="text-[17px] leading-tight text-[#4b5563]">
-              123 อาคารสุขสันต์ ชั้น 15 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา กรุงเทพมหานคร
-              10110
+              123 อาคารสุขสันต์ ชั้น 15 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา
+              กรุงเทพมหานคร 10110
             </p>
           </section>
 
           <section className="rounded-2xl border border-[#d8d8d8] bg-white p-4">
-            <h2 className="text-[24px] font-extrabold text-[#1f2937]">ส่งข้อความถึงเรา</h2>
+            <h2 className="text-[24px] font-extrabold text-[#1f2937]">
+              ส่งข้อความถึงเรา
+            </h2>
 
             <form onSubmit={handleSubmit} className="mt-2 space-y-2">
               <input
@@ -260,4 +272,3 @@ export default function ContactPage() {
     </div>
   );
 }
-

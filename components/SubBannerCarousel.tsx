@@ -40,9 +40,9 @@ export default function SubBannerCarousel({ slides }: SubBannerCarouselProps) {
       <div className="relative h-full flex items-center justify-between px-4 md:px-6">
         {/* Left Content */}
         <div className="flex-1 text-white z-10">
-          <p className="text-xs md:text-sm opacity-90 mb-1"></p>
+          <p className="text-sm md:text-base opacity-90 mb-1"></p>
           <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1">{currentSlide.title}</h2>
-          <p className="text-xs md:text-sm opacity-80 mb-2">{currentSlide.sub}</p>
+          <p className="text-sm md:text-base opacity-90 mb-2">{currentSlide.sub}</p>
           
           {/* Dots indicator */}
           <div className="flex gap-1.5">
@@ -63,14 +63,14 @@ export default function SubBannerCarousel({ slides }: SubBannerCarouselProps) {
       {/* Navigation Arrows */}
       <button 
         onClick={goToPrevious}
-        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors z-20"
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
         aria-label="Previous"
       >
         <ChevronLeft className="w-5 h-5 text-white" />
       </button>
       <button 
         onClick={goToNext}
-        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors z-20"
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
         aria-label="Next"
       >
         <ChevronRight className="w-5 h-5 text-white" />
