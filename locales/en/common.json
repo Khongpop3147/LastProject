@@ -5,26 +5,37 @@
   "specialOffers": "Special Offers",
   "bestSellers": "Best Sellers",
   "featured": "Featured Products",
-
   "nav": {
     "home": "Home",
     "products": "Products",
     "about": "About Us",
     "qa": "Q/A"
   },
-
   "orders": "Orders",
-  "cart": "Cart",
+  "cart": {
+    "title": "Shopping Cart",
+    "loading": "Loading...",
+    "empty": "Your cart is empty",
+    "loginPrompt": "Please",
+    "login": "log in",
+    "browse": "Browse Products",
+    "unitPrice": "Unit price: ${{price}}",
+    "lineTotal": "Total: ${{total}}",
+    "subtotal": "Subtotal:",
+    "remove": "Remove",
+    "checkout": "Checkout",
+    "exceedStock": "Cannot exceed stock (max {{stock}})",
+    "error": "Error",
+    "currency": "฿{{amount}}"
+  },
   "hello": "Hello",
   "logout": "Logout",
   "login": "Login",
   "signup": "Sign Up",
-
   "allPromos": "All Promotions",
   "allPromosDesc": "Browse all our special offers",
   "noPromosYet": "There are no promotions at the moment",
   "viewDetails": "View details",
-
   "notFound": "Not Found",
   "productNotFound": "Product not found",
   "backHome": "Back to home",
@@ -38,16 +49,12 @@
   "addToCart": "Add to cart",
   "cartFetchError": "Failed to fetch cart",
   "addCartError": "Failed to add to cart",
-
   "contactUsTitle": "Contact Us",
   "contactHeading": "Contact Us",
-  "contactText": "If you have any questions about your order, please contact ICN_FREEZE Customer Service any day.",
-  "lineLabel": "Line ID",
-  "lineId": "@468yvjbo",
+  "contactText": "If you need help with products, ordering, or delivery, please contact our support team via Line or phone. We are here to assist you every day.",
   "phoneLabel": "Phone",
-  "phoneNumber": "094-546-2224",
+  "phoneNumber": "082-476-1787",
   "contactHours": "(06:00 – 24:00)",
-
   "qaTitle": "Q&A",
   "qaSubmit": "Submit Question",
   "qaSubmitting": "Submitting...",
@@ -55,7 +62,6 @@
   "qaFaqHeading": "Frequently Asked Questions",
   "qaSentSuccess": "Your question has been sent! We’ll get back to you soon.",
   "qaSentError": "Something went wrong. Please try again.",
-
   "checkout": {
     "title": "Checkout",
     "heading": "Checkout",
@@ -71,8 +77,8 @@
     "addressHeading": "Shipping Address",
     "recipient": "Recipient Name",
     "line1": "Street Address",
-    "line2": "Sub-district / District",
-    "line3": "Ward / Line 3",
+    "line2": "Subdistrict / Ward",
+    "line3": "District / Area",
     "postalCode": "Postal Code",
     "country": "Country",
     "paymentHeading": "Payment Method",
@@ -85,7 +91,17 @@
     "orderError": "Order error: {{message}}",
     "cardholder": "Cardholder Name",
     "processing": "Processing…",
-    "payNow": "Pay {{total}} ฿"
+    "payNow": "Pay {{total}} ฿",
+    "stepAddress": "Address",
+    "stepPayment": "Payment",
+    "addressHelp": "Please fill in delivery details exactly as they appear on your home address.",
+    "continuePayment": "Continue to payment",
+    "completeAddressFirst": "Complete address first to unlock payment.",
+    "orderSummary": "Order Summary",
+    "discountLabel": "Discount",
+    "deliveryFee": "Delivery Fee",
+    "grandTotal": "Grand Total",
+    "calculatingDelivery": "Calculating delivery..."
   },
   "myOrders": "My Orders",
   "ordersLoading": "Loading orders…",
@@ -103,29 +119,13 @@
     "completed": "Completed",
     "cancelled": "Cancelled"
   },
-  "cart": {
-    "title": "Shopping Cart",
-    "loading": "Loading...",
-    "empty": "Your cart is empty",
-    "loginPrompt": "Please",
-    "login": "log in",
-    "browse": "Browse Products",
-    "unitPrice": "Unit price: ${{price}}",
-    "lineTotal": "Total: ${{total}}",
-    "subtotal": "Subtotal:",
-    "remove": "Remove",
-    "checkout": "Checkout",
-    "exceedStock": "Cannot exceed stock (max {{stock}})",
-    "error": "Error",
-    "currency": "฿{{amount}}"
-  },
   "footer": {
     "faq": "FAQ",
     "contact": "Contact Us",
     "privacy": "Privacy Policy",
     "cookies": "Cookie Policy",
     "terms": "Terms & Conditions",
-    "rights": "ICN_FREEZE. All Rights Reserved"
+    "rights": "Computer Engineering CMU"
   },
   "coupons": {
     "loading": "Loading coupons…",
@@ -136,5 +136,107 @@
     "offPct": "{value}% OFF",
     "remaining": "{count} uses left",
     "expires": "Expires {date}"
+  },
+  "wishlistLabel": "Wishlist",
+  "accountLabel": "Account",
+  "unit": {
+    "items": "items"
+  },
+  "couponBanner": {
+    "title": "Coupons",
+    "subtitle": "Grab your special discount coupons."
+  },
+  "help": {
+    "call": "Call Help"
+  },
+  "viewAll": "View all",
+  "accessibility": {
+    "normal": "A Normal",
+    "large": "A+"
+  },
+  "flashSale": "Flash Sale",
+  "popularPicks": "Popular Picks",
+  "newArrivals": "New Arrivals",
+  "recommended": "Recommended",
+  "wishlist": {
+    "title": "Wishlist",
+    "emptyTitle": "No items in wishlist yet",
+    "emptyDesc": "Save products you like to view them later.",
+    "browse": "Browse products",
+    "clearAll": "Clear all",
+    "remove": "Remove"
+  },
+  "auth": {
+    "fields": {
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "alex@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "usernameLabel": "Username",
+      "usernamePlaceholder": "QweryDesign",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter your password"
+    },
+    "login": {
+      "pageTitle": "Login",
+      "heading": "Log in into your account",
+      "rememberMe": "Remember me?",
+      "forgotPassword": "Forgot Password?",
+      "submit": "Log in Now",
+      "continueWith": "Or continue with",
+      "signUpNow": "Sign up Now"
+    },
+    "register": {
+      "pageTitle": "Register",
+      "heading": "Register your account",
+      "agreePrefix": "I agree to the",
+      "termsLink": "terms of service",
+      "submit": "Register",
+      "errors": {
+        "acceptTerms": "Please accept the terms of service",
+        "passwordMismatch": "Passwords do not match"
+      }
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "personal": "Personal",
+    "store": "Store",
+    "account": "Account",
+    "profile": "Profile",
+    "shippingAddress": "Shipping Address",
+    "paymentMethods": "Payment Methods",
+    "country": "Country",
+    "currency": "Currency",
+    "sizes": "Sizes",
+    "terms": "Terms & Conditions",
+    "language": "Language",
+    "about": "About Us",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "passwordPlaceholder": "Leave blank to keep current password",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Profile updated successfully",
+    "saveError": "Unable to save profile",
+    "logout": "Logout"
+  },
+  "profileLink": "Profile",
+  "addresses": {
+    "title": "Favorite Addresses",
+    "addAddress": "Add Address",
+    "editAddress": "Edit Address",
+    "save": "Save Address",
+    "update": "Update Address",
+    "cancel": "Cancel",
+    "preferred": "Preferred",
+    "setPreferred": "Set as preferred",
+    "edit": "Edit",
+    "delete": "Delete",
+    "empty": "No addresses yet",
+    "loading": "Loading addresses...",
+    "required": "Please complete required fields",
+    "saveError": "Unable to save address"
   }
 }

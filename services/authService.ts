@@ -4,7 +4,13 @@ import jwt from "jsonwebtoken";
 import * as userModel from "../models/userModel";
 import type { User } from "@prisma/client";
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("Missing JWT_SECRET in environment");
+  }
+  return secret;
+}
 
 export async function register(
   name: string,
@@ -28,7 +34,9 @@ export async function login(
   if (!user) throw new Error("Invalid credentials");
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new Error("Invalid credentials");
-  const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+  const token = jwt.sign({ userId: user.id }, getJwtSecret(), {
+    expiresIn: "7d",
+  });
   const { passwordHash, ...safeUser } = user;
   return { user: safeUser, token };
 }

@@ -6,29 +6,52 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // ตรวจ token และดึง user
   const user = await getUserFromToken(req.headers.authorization);
   if (!user) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // GET /api/cart → ดึงรายการในตะกร้า
+  const locale =
+    typeof req.query.locale === "string" && ["th", "en"].includes(req.query.locale)
+      ? req.query.locale
+      : "th";
+
   if (req.method === "GET") {
     const cart = await prisma.cart.findUnique({
       where: { userId: user.id },
       include: {
         items: {
           include: {
-            product: true,
+            product: {
+              include: {
+                translations: {
+                  where: { locale },
+                  take: 1,
+                },
+              },
+            },
           },
         },
       },
     });
-    const items = cart?.items || [];
+
+    const items = (cart?.items || []).map((it) => ({
+      id: it.id,
+      quantity: it.quantity,
+      product: {
+        id: it.product.id,
+        name: it.product.translations[0]?.name ?? "",
+        description: it.product.translations[0]?.description ?? "",
+        price: it.product.price,
+        salePrice: it.product.salePrice,
+        imageUrl: it.product.imageUrl,
+        stock: it.product.stock,
+      },
+    }));
+
     return res.status(200).json({ items });
   }
 
-  // POST /api/cart → เพิ่มหรืออัปเดตจำนวน (เพิ่มจำนวนเข้าไป)
   if (req.method === "POST") {
     const { productId, quantity } = req.body as {
       productId: string;
@@ -37,6 +60,11 @@ export default async function handler(
 
     if (!productId || !quantity || quantity <= 0) {
       return res.status(400).json({ error: "Invalid productId or quantity" });
+    }
+
+    const product = await prisma.product.findUnique({ where: { id: productId } });
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
     }
 
     const cart = await prisma.cart.upsert({
@@ -64,7 +92,6 @@ export default async function handler(
     return res.status(200).json(item);
   }
 
-  // PATCH /api/cart → อัปเดตจำนวนสินค้าแบบ set จำนวนใหม่
   if (req.method === "PATCH") {
     const { itemId, quantity } = req.body as {
       itemId: string;
@@ -76,6 +103,14 @@ export default async function handler(
     }
 
     try {
+      const ownedItem = await prisma.cartItem.findFirst({
+        where: { id: itemId, cart: { userId: user.id } },
+      });
+
+      if (!ownedItem) {
+        return res.status(404).json({ error: "Cart item not found" });
+      }
+
       const updatedItem = await prisma.cartItem.update({
         where: { id: itemId },
         data: { quantity },
@@ -86,13 +121,21 @@ export default async function handler(
     }
   }
 
-  // DELETE /api/cart → ลบสินค้าออกจากตะกร้า
   if (req.method === "DELETE") {
     const { itemId } = req.body as { itemId?: string };
     if (!itemId) {
       return res.status(400).json({ error: "Missing itemId" });
     }
+
     try {
+      const ownedItem = await prisma.cartItem.findFirst({
+        where: { id: itemId, cart: { userId: user.id } },
+      });
+
+      if (!ownedItem) {
+        return res.status(404).json({ error: "Cart item not found" });
+      }
+
       await prisma.cartItem.delete({ where: { id: itemId } });
       return res.status(200).json({ success: true });
     } catch (err: any) {

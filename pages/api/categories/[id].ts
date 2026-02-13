@@ -1,26 +1,27 @@
-// pages/api/categories/[id].ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { id } = req.query as { id: string };
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
+  const rawId = req.query.id;
+  const id =
+    typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : null;
+
+  if (!id) {
+    return res.status(400).json({ error: "Invalid category id" });
+  }
 
   if (req.method === "DELETE") {
     try {
-      // 1) ลบ translations (ถ้าไม่มี cascade)
-      await prisma.categoryLocale.deleteMany({
-        where: { categoryId: id },
-      });
-
-      // 2) ลบ Category
-      await prisma.category.delete({
-        where: { id },
-      });
-
-      return res.status(204).end(); // No Content
+      await prisma.categoryLocale.deleteMany({ where: { categoryId: id } });
+      await prisma.category.delete({ where: { id } });
+      return res.status(204).end();
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }

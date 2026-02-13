@@ -1,6 +1,7 @@
 // pages/api/admin/sales-by-date.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export type DailySalesResponse = {
   date: string;
@@ -11,6 +12,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<DailySalesResponse | { error: string }>
 ) {
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }

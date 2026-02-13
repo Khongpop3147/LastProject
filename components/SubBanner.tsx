@@ -30,9 +30,9 @@ export default function SubBanner({
       <div className="relative h-full flex items-center justify-between px-4 md:px-6">
         {/* Left Content */}
         <div className="flex-1 text-white z-10">
-          <p className="text-xs md:text-sm opacity-90 mb-1">{buttonText || "recommended for you"}</p>
+          <p className="text-sm md:text-base opacity-95 mb-1">{buttonText || "Recommended for you"}</p>
           <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1">{title}</h2>
-          <p className="text-xs md:text-sm opacity-80 mb-2">{description}</p>
+          <p className="text-sm md:text-base opacity-90 mb-2">{description}</p>
           {/* Dots indicator */}
           <div className="flex gap-1.5">
             <div className="w-6 h-1 bg-white rounded-full"></div>
@@ -47,13 +47,13 @@ export default function SubBanner({
 
       {/* Navigation Arrows */}
       <button 
-        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors z-20"
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
         aria-label="Previous"
       >
         <ChevronLeft className="w-5 h-5 text-white" />
       </button>
       <button 
-        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors z-20"
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
         aria-label="Next"
       >
         <ChevronRight className="w-5 h-5 text-white" />

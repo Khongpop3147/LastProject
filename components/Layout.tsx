@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Head from "next/head";
-import Link from "next/link";
+import useTranslation from "next-translate/useTranslation";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import PromoModal from "./PromoModal";
@@ -22,8 +22,10 @@ export default function Layout({
   title = "ICN_FREEZE",
   hideBottomNav = false,
 }: LayoutProps) {
+  const { t } = useTranslation("common");
   const [showPromo, setShowPromo] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
+  const [seniorMode, setSeniorMode] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -36,8 +38,19 @@ export default function Layout({
       if (!cookieConsent) {
         setShowCookieConsent(true);
       }
+      const seniorPref = localStorage.getItem("seniorMode");
+      const enabled = seniorPref === "true";
+      setSeniorMode(enabled);
+      document.documentElement.classList.toggle("senior-mode", enabled);
     }
   }, []);
+
+  const toggleSeniorMode = () => {
+    const next = !seniorMode;
+    setSeniorMode(next);
+    localStorage.setItem("seniorMode", next ? "true" : "false");
+    document.documentElement.classList.toggle("senior-mode", next);
+  };
 
   const handleCookieConsent = (accepted: boolean) => {
     localStorage.setItem("cookieConsent", accepted ? "true" : "false");
@@ -45,32 +58,15 @@ export default function Layout({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white overflow-x-hidden">
       <Head>
         <title>{title}</title>
-        <meta name="description" content="ตลาดสินค้าเกษตรสดใหม่ ICN_FREEZE" />
+        <meta name="description" content="Fresh marketplace by ICN_FREEZE" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </Head>
 
-      {/* fixed header - Hidden on mobile */}
-      <header className="hidden md:block fixed top-0 left-0 right-0 z-50 bg-white shadow">
-        <div className="flex items-center justify-between px-4 py-2">
-          {/* Language Switcher */}
-          <nav className="flex space-x-2">
-            <Link href="/" locale="th" className="hover:underline">
-              ไทย
-            </Link>
-            <span>|</span>
-            <Link href="/" locale="en" className="hover:underline">
-              EN
-            </Link>
-          </nav>
-          {/* Main Navbar */}
-          <Navbar />
-        </div>
-      </header>
+      <Navbar />
 
-      {/* promo + cookie */}
       <PromoModal show={showPromo} onClose={() => setShowPromo(false)} />
       {showCookieConsent && (
         <CookieConsent
@@ -79,15 +75,29 @@ export default function Layout({
         />
       )}
 
-      {/* content with top margin so it doesn't sit under the fixed header */}
-      {/* Add bottom padding on mobile to prevent content from being hidden by bottom navigation */}
-      <main className="flex-grow w-full mx-auto py-4 md:mt-20 pb-20 md:pb-0">
+      <main className="flex-grow w-full max-w-full mx-auto py-4 mt-16 sm:mt-20 md:mt-24 pb-20 md:pb-0 overflow-x-hidden">
         {children}
       </main>
 
       <Footer />
 
-      {/* Bottom Navigation - Mobile Only */}
+      <div className="fixed right-4 bottom-24 md:bottom-6 z-50 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={toggleSeniorMode}
+          className="touch-target px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold shadow-lg hover:bg-blue-700"
+          aria-label="Toggle senior mode"
+        >
+          {seniorMode ? t("accessibility.normal") || "A Normal" : t("accessibility.large") || "A+"}
+        </button>
+        <a
+          href="tel:0824761787"
+          className="touch-target px-4 py-2 rounded-xl bg-emerald-600 text-white font-semibold shadow-lg text-center hover:bg-emerald-700"
+        >
+          {t("help.call") || "Call Help"}
+        </a>
+      </div>
+
       {!hideBottomNav && <BottomNavigation cartCount={0} />}
     </div>
   );

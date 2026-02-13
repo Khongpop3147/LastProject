@@ -54,13 +54,11 @@ export default async function handler(
       return res.status(400).json({ error: T.USAGE_LIMIT });
     }
 
-    // increment usage
-    await prisma.coupon.update({
-      where: { code },
-      data: { usedCount: coupon.usedCount + 1 },
+    // Preview only. Usage is incremented when an order is actually created.
+    return res.status(200).json({
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
     });
-
-    return res.status(200).json({ discountValue: coupon.discountValue });
   }
 
   res.setHeader("Allow", ["GET", "POST"]);

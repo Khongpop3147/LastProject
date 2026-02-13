@@ -12,6 +12,19 @@ export const config = {
   api: { bodyParser: false },
 };
 
+async function moveUploadedFile(src: string, dest: string) {
+  try {
+    await fs.promises.rename(src, dest);
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException;
+    if (err.code !== "EXDEV") {
+      throw error;
+    }
+    await fs.promises.copyFile(src, dest);
+    await fs.promises.unlink(src);
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -112,17 +125,27 @@ export default async function handler(
 
       // คำนวณส่วนลด
       let couponId: string | null = null;
+      let couponUsageLimit: number | null = null;
       let discountValue = 0;
       if (couponCodeRaw) {
         const coupon = await prisma.coupon.findUnique({
           where: { code: couponCodeRaw },
         });
-        if (coupon) {
-          couponId = coupon.id;
-          discountValue = coupon.discountValue ?? 0;
-          if (coupon.discountType === "percent") {
-            discountValue = (totalAmount * discountValue) / 100;
-          }
+        if (!coupon) {
+          return res.status(400).json({ error: "Invalid coupon code" });
+        }
+        if (coupon.expiresAt && coupon.expiresAt < new Date()) {
+          return res.status(400).json({ error: "Coupon has expired" });
+        }
+        if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) {
+          return res.status(400).json({ error: "Coupon usage limit reached" });
+        }
+
+        couponId = coupon.id;
+        couponUsageLimit = coupon.usageLimit ?? null;
+        discountValue = coupon.discountValue ?? 0;
+        if (coupon.discountType === "percent") {
+          discountValue = (totalAmount * discountValue) / 100;
         }
       }
       const totalAfterDiscount = Math.max(totalAmount - discountValue, 0);
@@ -149,7 +172,7 @@ export default async function handler(
           .toString(36)
           .slice(2)}${ext}`;
         const dest = path.join(uploadDir, filename);
-        await fs.promises.rename((rawFile as any).filepath, dest);
+        await moveUploadedFile((rawFile as any).filepath, dest);
         slipUrl = `/uploads/slips/${filename}`;
       }
       if (!slipUrl && typeof fields.slipUrl === "string") {
@@ -173,8 +196,21 @@ export default async function handler(
       }
 
       // สร้าง order และอัปเดต stock ใน transaction
-      const [newOrder] = await prisma.$transaction([
-        prisma.order.create({
+      const newOrder = await prisma.$transaction(async (tx) => {
+        if (couponId) {
+          const incremented = await tx.coupon.updateMany({
+            where:
+              couponUsageLimit != null
+                ? { id: couponId, usedCount: { lt: couponUsageLimit } }
+                : { id: couponId },
+            data: { usedCount: { increment: 1 } },
+          });
+          if (incremented.count !== 1) {
+            throw new Error("COUPON_USAGE_LIMIT");
+          }
+        }
+
+        const createdOrder = await tx.order.create({
           data: {
             userId: user.id,
             recipient,
@@ -215,14 +251,17 @@ export default async function handler(
               },
             },
           },
-        }),
-        ...items.map((item) =>
-          prisma.product.update({
+        });
+
+        for (const item of items) {
+          await tx.product.update({
             where: { id: item.productId },
             data: { stock: { decrement: item.quantity } },
-          })
-        ),
-      ]);
+          });
+        }
+
+        return createdOrder;
+      });
 
       // เตรียม response ให้แสดงชื่อ translation ด้วย
       const orderWithNames = {
@@ -238,6 +277,9 @@ export default async function handler(
 
       return res.status(201).json(orderWithNames);
     } catch (error: any) {
+      if (error instanceof Error && error.message === "COUPON_USAGE_LIMIT") {
+        return res.status(400).json({ error: "Coupon usage limit reached" });
+      }
       console.error("Create order error:", error);
       return res
         .status(500)
@@ -266,11 +308,23 @@ export default async function handler(
   }
 
   // Fallback to formidable for multipart/form-data
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error("Form parse error:", err);
-      return res.status(500).json({ error: "Cannot parse form data" });
-    }
-    await processFields(fields, files);
-  });
+  try {
+    const parsedForm = await new Promise<{ fields: any; files: any }>(
+      (resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({ fields, files });
+        });
+      }
+    );
+
+    await processFields(parsedForm.fields, parsedForm.files);
+    return;
+  } catch (err) {
+    console.error("Form parse error:", err);
+    return res.status(500).json({ error: "Cannot parse form data" });
+  }
 }

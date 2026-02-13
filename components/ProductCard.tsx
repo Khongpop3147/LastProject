@@ -1,13 +1,12 @@
-// components/ProductCard.tsx
-"use client";
+﻿"use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, Star } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
 import type { Product } from "@/types/product";
+import { isInWishlist, toggleWishlist } from "@/lib/wishlist";
+import { useAuth } from "@/context/AuthContext";
 
 interface ProductCardProps {
   product: Product & { stock: number };
@@ -16,105 +15,102 @@ interface ProductCardProps {
   salePercent?: number;
 }
 
-export default function ProductCard({ 
-  product, 
-  backgroundColor = "bg-gradient-to-br from-orange-400 to-orange-500",
+export default function ProductCard({
+  product,
+  backgroundColor = "bg-gradient-to-br from-orange-300 to-orange-500",
   showBadge = null,
-  salePercent = 25
+  salePercent = 25,
 }: ProductCardProps) {
-  const { token } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [isWishlisted, setIsWishlisted] = useState(false);
+
+  useEffect(() => {
+    setIsWishlisted(isInWishlist(product.id, user?.id));
+  }, [product.id, user?.id]);
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-    
-    setIsWishlisted(!isWishlisted);
-    // TODO: Add API call to add/remove from wishlist
+    const next = toggleWishlist({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      salePrice: product.salePrice,
+      imageUrl: product.imageUrl,
+      stock: product.stock,
+    }, user?.id);
+    setIsWishlisted(next);
   };
 
   const hasDiscount = product.salePrice && product.salePrice < product.price;
   const displayPrice = product.salePrice || product.price;
-  
-  // Calculate real discount percentage from prices
-  const calculatedDiscountPercent = hasDiscount 
+
+  const calculatedDiscountPercent = hasDiscount
     ? Math.round(((product.price - product.salePrice!) / product.price) * 100)
     : 0;
-  
-  // Use calculated discount if available, otherwise use prop
   const discountPercent = hasDiscount ? calculatedDiscountPercent : salePercent;
-  
-  const rating = 4.9; // Mock rating
-  const reviewCount = 219; // Mock review count
+
+  const rating = 4.9;
+  const reviewCount = 219;
 
   return (
     <Link href={`/products/${product.id}`}>
-      <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
-        {/* Image Section with Background Color */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group">
         <div className={`relative ${backgroundColor} aspect-square overflow-hidden`}>
-          {/* Badge */}
           {showBadge === "sale" && (
-            <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10">
-              ลด {discountPercent}%
+            <div className="absolute top-2 right-2 bg-red-500/95 text-white text-[11px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm">
+              -{discountPercent}%
             </div>
           )}
           {showBadge === "new" && (
-            <div className="absolute top-2 right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10">
-              ใหม่
+            <div className="absolute top-2 right-2 bg-teal-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm">
+              NEW
             </div>
           )}
 
-          {/* Product Image */}
           <Image
             src={product.imageUrl ?? "/images/placeholder.png"}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-110 transition-transform duration-300"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
           />
 
-          {/* Wishlist Button */}
           <button
             onClick={handleWishlist}
-            className="absolute bottom-2 right-2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all z-10"
+            className="absolute bottom-2 right-2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all z-10"
           >
             <Heart
-              className={`w-5 h-5 ${
+              className={`w-4 h-4 ${
                 isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"
               }`}
             />
           </button>
         </div>
 
-        {/* Content Section */}
         <div className="p-3">
-          {/* Product Name - 2 lines */}
-          <h3 className="text-sm md:text-base font-medium text-gray-800 line-clamp-2 mb-2 min-h-[40px]">
+          <h3 className="text-base md:text-lg font-semibold text-gray-800 line-clamp-2 mb-2 min-h-[46px]">
             {product.name}
           </h3>
 
-          {/* Price Section */}
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-lg md:text-xl font-bold text-blue-600">
+          <div className="flex items-center gap-2 mb-1">
+            <span
+              className={`text-xl md:text-2xl font-bold ${
+                hasDiscount ? "text-red-600" : "text-teal-700"
+              }`}
+            >
               ฿{displayPrice.toLocaleString()}
             </span>
             {hasDiscount && (
-              <span className="text-sm text-gray-400 line-through">
+              <span className="text-xs text-gray-400 line-through">
                 ฿{product.price.toLocaleString()}
               </span>
             )}
           </div>
 
-          {/* Rating Section */}
           <div className="flex items-center gap-1">
             <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium text-gray-700">{rating}</span>
-            <span className="text-xs text-gray-400">({reviewCount}รีวิว)</span>
+            <span className="text-xs font-medium text-gray-700">{rating}</span>
+            <span className="text-xs text-gray-400">({reviewCount})</span>
           </div>
         </div>
       </div>

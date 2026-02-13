@@ -1,6 +1,7 @@
 // pages/api/admin/coupons.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 // helper แปลง expiresAt จาก string เป็น Date|null
 function parseDate(input?: string) {
@@ -15,6 +16,8 @@ export default async function handler(
 ) {
   const { method, query, body } = req;
   const id = Array.isArray(query.id) ? query.id[0] : query.id;
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
 
   try {
     switch (method) {

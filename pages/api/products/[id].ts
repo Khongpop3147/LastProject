@@ -1,10 +1,9 @@
-// pages/api/products/[id].ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { IncomingForm, File } from "formidable";
 import fs from "fs";
 import path from "path";
-import { Not } from "typeorm";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const config = {
   api: {
@@ -17,13 +16,9 @@ type Parsed = {
   files: Record<string, File>;
 };
 
-/**
- * parseForm: parse multipart/form-data via formidable,
- * normalize fields to string and files
- */
 const parseForm = (req: NextApiRequest): Promise<Parsed> =>
   new Promise((resolve, reject) => {
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
     const form = new IncomingForm({
@@ -32,44 +27,40 @@ const parseForm = (req: NextApiRequest): Promise<Parsed> =>
       keepExtensions: true,
     });
 
-    form.parse(
-      req,
-      (err, fields: Record<string, any>, files: Record<string, any>) => {
-        if (err) return reject(err);
-        // Normalize fields to string
-        const flds: Record<string, string> = {};
-        for (const key in fields) {
-          const val = fields[key];
-          let strVal: string;
-          if (Array.isArray(val)) {
-            strVal = typeof val[0] === "string" ? val[0] : "";
-          } else if (typeof val === "string") {
-            strVal = val;
-          } else {
-            strVal = "";
-          }
-          flds[key] = strVal;
+    form.parse(req, (err, fields: Record<string, any>, files: Record<string, any>) => {
+      if (err) return reject(err);
+
+      const flds: Record<string, string> = {};
+      for (const key in fields) {
+        const val = fields[key];
+        if (Array.isArray(val)) {
+          flds[key] = typeof val[0] === "string" ? val[0] : "";
+        } else {
+          flds[key] = typeof val === "string" ? val : "";
         }
-        // Normalize files
-        const normalizedFiles: Record<string, File> = {};
-        for (const key in files) {
-          const file = files[key];
-          if (Array.isArray(file)) {
-            if (file[0]) normalizedFiles[key] = file[0];
-          } else if (file) {
-            normalizedFiles[key] = file;
-          }
-        }
-        resolve({ fields: flds, files: normalizedFiles });
       }
-    );
+
+      const normalizedFiles: Record<string, File> = {};
+      for (const key in files) {
+        const file = files[key];
+        if (Array.isArray(file)) {
+          if (file[0]) normalizedFiles[key] = file[0];
+        } else if (file) {
+          normalizedFiles[key] = file;
+        }
+      }
+
+      resolve({ fields: flds, files: normalizedFiles });
+    });
   });
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Extract product ID from query
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   const rawId = req.query.id;
   const id =
     typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : null;
@@ -78,7 +69,6 @@ export default async function handler(
     return res.status(400).json({ error: "Invalid product id" });
   }
 
-  // DELETE: delete translations, orderItems, cartItems, then product
   if (req.method === "DELETE") {
     try {
       await prisma.$transaction([
@@ -96,12 +86,10 @@ export default async function handler(
     }
   }
 
-  // PUT: update product and upsert translations
   if (req.method === "PUT") {
     try {
       const { fields, files } = await parseForm(req);
 
-      // Parse text fields
       const nameTh = fields.nameTh ?? "";
       const nameEn = fields.nameEn ?? "";
       const materialTh = fields.materialTh ?? "";
@@ -116,34 +104,29 @@ export default async function handler(
         if (!isNaN(sp)) salePrice = sp;
       }
 
-      // Validate limits (INT4 max: 2,147,483,647)
-      const MAX_INT = 2147483647;
-      if (stock > MAX_INT || stock < -MAX_INT) {
+      const maxInt = 2147483647;
+      if (stock > maxInt || stock < -maxInt) {
         return res.status(400).json({ error: "Stock value is out of range" });
       }
-      if (price > MAX_INT || (salePrice && salePrice > MAX_INT)) {
+      if (price > maxInt || (salePrice && salePrice > maxInt)) {
         return res.status(400).json({ error: "Price value is too large" });
       }
 
-      // Build update data
       const updateData: any = { price, stock, salePrice };
 
-      // Category connect/disconnect
       if (fields.categoryId?.trim()) {
         updateData.category = { connect: { id: fields.categoryId } };
       } else {
         updateData.category = { disconnect: true };
       }
 
-      // Update image if provided
       if (files.image) {
         const file = Array.isArray(files.image) ? files.image[0] : files.image;
         const tmpPath = (file.filepath || (file as any).path) as string;
         const fileName = path.basename(tmpPath);
-        updateData.imageUrl = `/uploads/${fileName}`;
+        updateData.imageUrl = `/uploads/products/${fileName}`;
       }
 
-      // Upsert translations for th & en
       updateData.translations = {
         upsert: [
           {
@@ -182,7 +165,6 @@ export default async function handler(
     }
   }
 
-  // Method not allowed
   res.setHeader("Allow", ["DELETE", "PUT"]);
   return res.status(405).end(`Method ${req.method} Not Allowed`);
 }

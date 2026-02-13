@@ -1,13 +1,11 @@
-// pages/index.tsx
 import { GetServerSideProps } from "next";
+import Link from "next/link";
 import useTranslation from "next-translate/useTranslation";
 import Layout from "@/components/Layout";
 import MobileHeader from "@/components/MobileHeader";
 import Banner, { BannerSlide } from "@/components/Banner";
 import CouponBanner from "@/components/CouponBanner";
 import CategoryCarousel from "@/components/CategoryCarousel";
-import DiscountCarousel from "@/components/DiscountCarousel";
-import SubBanner from "@/components/SubBanner";
 import SubBannerCarousel from "@/components/SubBannerCarousel";
 import ProductCard from "@/components/ProductCard";
 import { prisma } from "@/lib/prisma";
@@ -15,11 +13,11 @@ import { Category, Product } from "@/types/product";
 import { Clock } from "lucide-react";
 
 interface HomeProps {
-  banners: BannerSlide[];       // Hero banners
-  subBanners: BannerSlide[];    // Sub/Promotion banners
-  featured: Product[];          // สินค้าแนะนำ
-  onSale: Product[];            // สินค้าลดราคา
-  bestSellers: Product[];       // สินค้าขายดี
+  banners: BannerSlide[];
+  subBanners: BannerSlide[];
+  featured: Product[];
+  onSale: Product[];
+  bestSellers: Product[];
   categories: Category[];
   subBannerData: {
     title: string;
@@ -30,6 +28,45 @@ interface HomeProps {
   } | null;
 }
 
+type ShelfProps = {
+  title: string;
+  href: string;
+  products: Product[];
+  viewAllLabel: string;
+  showBadge?: "sale" | "new";
+  palette: string[];
+  icon?: React.ReactNode;
+};
+
+function ProductShelf({ title, href, products, viewAllLabel, showBadge, palette, icon }: ShelfProps) {
+  return (
+    <section className="mb-8 md:mb-10 rounded-3xl bg-white/80 backdrop-blur-sm border border-gray-100 p-4 md:p-5 shadow-sm">
+      <div className="flex items-center justify-between mb-4 md:mb-5">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">{title}</h2>
+          {icon}
+        </div>
+        <Link href={href} className="text-sm text-teal-700 hover:underline font-medium">
+          {viewAllLabel}
+        </Link>
+      </div>
+
+      <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
+        {products.slice(0, 10).map((product, idx) => (
+          <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
+            <ProductCard
+              product={product}
+              backgroundColor={palette[idx % palette.length]}
+              showBadge={showBadge ?? null}
+              salePercent={25 + idx * 5}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function HomePage({
   banners,
   subBanners,
@@ -37,198 +74,126 @@ export default function HomePage({
   onSale,
   bestSellers,
   categories,
-  subBannerData,
 }: HomeProps) {
   const { t } = useTranslation("common");
-  
+
   return (
     <Layout title={t("siteTitle")}>
-      {/* Mobile Header - ร้านค้า + Search */}
       <div className="md:hidden -mt-8">
         <MobileHeader />
       </div>
 
-      {/* Hero Banner */}
-      <section className="px-4 mb-4">
-        <Banner slides={banners} />
-      </section>
+      <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="pointer-events-none absolute -top-8 -right-6 w-48 h-48 rounded-full bg-teal-100/50 blur-3xl" />
+        <div className="pointer-events-none absolute top-64 -left-10 w-56 h-56 rounded-full bg-cyan-100/50 blur-3xl" />
 
-      {/* Coupon Banner */}
-      <section className="mb-5">
-        <CouponBanner />
-      </section>
-
-      {/* Category Grid */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">หมวดหมู่สินค้า</h2>
-          <a href="/categories" className="text-sm text-blue-600 hover:underline">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        <CategoryCarousel categories={categories} />
-      </section>
-
-      {/* Sub Banner - แบนเนอร์โปรโมชั่น */}
-      {subBanners && subBanners.length > 0 && (
-        <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-          <SubBannerCarousel slides={subBanners} />
+        <section className="pt-1 md:pt-2 mb-5 md:mb-6">
+          <Banner slides={banners} />
         </section>
-      )}
 
-      {/* Flash Sale */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">Flash Sale</h2>
-            <Clock className="w-4 h-4 text-red-500" />
-            {/* Countdown Timer - Static for now */}
-            <div className="flex items-center gap-1 text-white text-xs font-bold">
-              <span className="bg-black px-1.5 py-0.5 rounded">02</span>
-              <span className="bg-black px-1.5 py-0.5 rounded">36</span>
-              <span className="bg-black px-1.5 py-0.5 rounded">00</span>
-            </div>
+        <section className="mb-6">
+          <CouponBanner />
+        </section>
+
+        <section className="mb-8 md:mb-10 rounded-3xl bg-white/80 backdrop-blur-sm border border-gray-100 p-4 md:p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">{t("categories") || "Categories"}</h2>
+            <Link href="/all-products" className="text-sm text-teal-700 hover:underline font-medium">
+              {t("viewAll") || "View all"}
+            </Link>
           </div>
-          <a href="/sale" className="text-sm text-blue-600 hover:underline">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        
-        {/* Flash Sale Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {onSale.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-orange-400 to-orange-500",
-              "bg-gradient-to-br from-yellow-400 to-yellow-500",
-              "bg-gradient-to-br from-pink-400 to-pink-500",
-              "bg-gradient-to-br from-blue-400 to-blue-500",
-              "bg-gradient-to-br from-purple-400 to-purple-500"
-            ];
-            return (
-              <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
-                  showBadge="sale"
-                  salePercent={25 + (idx * 5)}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
+          <CategoryCarousel categories={categories} />
+        </section>
 
-      {/* Popular Products - สินค้ายอดนิยม */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-4">สินค้ายอดนิยม</h2>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-          {bestSellers.slice(0, 5).map((product) => (
-            <div key={product.id} className="flex-shrink-0">
-              <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-colors">
-                <img
-                  src={product.imageUrl ?? "/images/placeholder.png"}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+        {subBanners && subBanners.length > 0 && (
+          <section className="mb-8 md:mb-10">
+            <SubBannerCarousel slides={subBanners} />
+          </section>
+        )}
 
-      {/* New Products - สินค้าใหม่ */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าใหม่</h2>
-          <a href="/new" className="text-sm text-blue-600 hover:underline">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        
-        {/* New Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {featured.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-cyan-400 to-cyan-500",
-              "bg-gradient-to-br from-red-400 to-red-500",
-              "bg-gradient-to-br from-blue-400 to-blue-500",
-              "bg-gradient-to-br from-green-400 to-green-500",
-              "bg-gradient-to-br from-indigo-400 to-indigo-500"
-            ];
-            return (
-              <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
-                  showBadge="new"
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
+        <ProductShelf
+          title={t("flashSale") || "Flash Sale"}
+          href="/all-products?discount=1"
+          products={onSale}
+          viewAllLabel={t("viewAll") || "View all"}
+          showBadge="sale"
+          icon={<Clock className="w-4 h-4 text-red-500" />}
+          palette={[
+            "bg-gradient-to-br from-orange-400 to-orange-500",
+            "bg-gradient-to-br from-yellow-400 to-yellow-500",
+            "bg-gradient-to-br from-pink-400 to-pink-500",
+            "bg-gradient-to-br from-blue-400 to-blue-500",
+            "bg-gradient-to-br from-purple-400 to-purple-500",
+          ]}
+        />
 
-      {/* Recommended Products - สินค้าแนะนำ */}
-      <section className="px-4 md:px-6 lg:px-8 mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">สินค้าแนะนำ</h2>
-          <a href="/recommended" className="text-sm text-blue-600 hover:underline">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        
-        {/* Recommended Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {featured.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-teal-400 to-teal-500",
-              "bg-gradient-to-br from-amber-400 to-amber-500",
-              "bg-gradient-to-br from-rose-400 to-rose-500",
-              "bg-gradient-to-br from-violet-400 to-violet-500",
-              "bg-gradient-to-br from-lime-400 to-lime-500"
-            ];
-            return (
-              <div key={product.id} className="flex-shrink-0 w-40">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
+        <section className="mb-8 md:mb-10 rounded-3xl bg-white/80 backdrop-blur-sm border border-gray-100 p-4 md:p-5 shadow-sm">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
+            {t("popularPicks") || "Popular Picks"}
+          </h2>
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-3">
+            {bestSellers.slice(0, 8).map((product) => (
+              <Link
+                key={product.id}
+                href={`/products/${product.id}`}
+                className="group rounded-xl border border-gray-100 bg-white p-2 text-center hover:shadow-md transition"
+              >
+                <div className="w-16 h-16 md:w-20 md:h-20 mx-auto rounded-full overflow-hidden border-2 border-gray-200 group-hover:border-blue-500 transition-colors">
+                  <img
+                    src={product.imageUrl ?? "/images/placeholder.png"}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="mt-2 text-sm md:text-base line-clamp-2 text-gray-800">{product.name}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
 
-      {/* Special Offers - ได้รับความนิยมสูง */}
-      <section className="px-4 md:px-6 lg:px-8 mb-20 md:mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">ได้รับความนิยมสูง</h2>
-          <a href="/popular" className="text-sm text-blue-600 hover:underline">
-            ดูทั้งหมด →
-          </a>
-        </div>
-        
-        {/* Popular Products - Responsive Grid */}
-        <div className="flex md:grid md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 overflow-x-auto md:overflow-visible scrollbar-hide pb-2">
-          {bestSellers.slice(0, 10).map((product, idx) => {
-            const bgColors = [
-              "bg-gradient-to-br from-fuchsia-400 to-fuchsia-500",
-              "bg-gradient-to-br from-sky-400 to-sky-500",
-              "bg-gradient-to-br from-emerald-400 to-emerald-500",
-              "bg-gradient-to-br from-orange-400 to-orange-500",
-              "bg-gradient-to-br from-pink-400 to-pink-500"
-            ];
-            return (
-              <div key={product.id} className="flex-shrink-0 w-40 md:w-auto">
-                <ProductCard 
-                  product={product} 
-                  backgroundColor={bgColors[idx % bgColors.length]}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
+        <ProductShelf
+          title={t("newArrivals") || "New Arrivals"}
+          href="/all-products"
+          products={featured}
+          viewAllLabel={t("viewAll") || "View all"}
+          showBadge="new"
+          palette={[
+            "bg-gradient-to-br from-cyan-400 to-cyan-500",
+            "bg-gradient-to-br from-red-400 to-red-500",
+            "bg-gradient-to-br from-blue-400 to-blue-500",
+            "bg-gradient-to-br from-green-400 to-green-500",
+            "bg-gradient-to-br from-indigo-400 to-indigo-500",
+          ]}
+        />
+
+        <ProductShelf
+          title={t("recommended") || "Recommended"}
+          href="/all-products"
+          products={featured}
+          viewAllLabel={t("viewAll") || "View all"}
+          palette={[
+            "bg-gradient-to-br from-teal-400 to-teal-500",
+            "bg-gradient-to-br from-amber-400 to-amber-500",
+            "bg-gradient-to-br from-rose-400 to-rose-500",
+            "bg-gradient-to-br from-violet-400 to-violet-500",
+            "bg-gradient-to-br from-lime-400 to-lime-500",
+          ]}
+        />
+
+        <ProductShelf
+          title={t("bestSellers") || "Best Sellers"}
+          href="/all-products"
+          products={bestSellers}
+          viewAllLabel={t("viewAll") || "View all"}
+          palette={[
+            "bg-gradient-to-br from-fuchsia-400 to-fuchsia-500",
+            "bg-gradient-to-br from-sky-400 to-sky-500",
+            "bg-gradient-to-br from-emerald-400 to-emerald-500",
+            "bg-gradient-to-br from-orange-400 to-orange-500",
+            "bg-gradient-to-br from-pink-400 to-pink-500",
+          ]}
+        />
+      </div>
     </Layout>
   );
 }
@@ -238,38 +203,37 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
 }) => {
   const lang = locale ?? "th";
 
-  // 1. Hero banners (กรองเฉพาะ banner หลัก ไม่รวม sub banner)
   const rawHero = await prisma.bannerLocale.findMany({
-    where: { 
+    where: {
       locale: lang,
-      banner: { 
+      banner: {
         isNot: {
-          position: "sub"
-        }
-      }
+          position: "sub",
+        },
+      },
     },
     include: { banner: true },
     orderBy: { banner: { order: "asc" } },
   });
+
   const banners: BannerSlide[] = rawHero.map(({ title, sub, banner }) => ({
     title: title ?? "",
     sub: sub ?? "",
     img: banner.imageUrl,
   }));
 
-  // 2. Promotion banners
   const rawPromo = await prisma.bannerLocale.findMany({
     where: { locale: lang, banner: { position: "sub" } },
     include: { banner: true },
     orderBy: { banner: { order: "asc" } },
   });
+
   const subBanners: BannerSlide[] = rawPromo.map(({ title, sub, banner }) => ({
     title: title ?? "",
     sub: sub ?? "",
     img: banner.imageUrl,
   }));
 
-  // helper: fetch localized products
   async function getProducts(where: any, take?: number) {
     const raw = await prisma.product.findMany({
       where,
@@ -277,6 +241,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
       orderBy: { updatedAt: "desc" },
       include: { translations: { where: { locale: lang }, take: 1 } },
     });
+
     return raw.map((p) => ({
       id: p.id,
       name: p.translations[0]?.name ?? "",
@@ -289,52 +254,61 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
     }));
   }
 
-  // 3. Featured
-  const featured = await getProducts({ isFeatured: true }, 6);
+  const featured = await getProducts({ isFeatured: true }, 10);
+  const onSale = await getProducts({ salePrice: { not: null } }, 10);
 
-  // 4. On Sale
-  const onSale = await getProducts({ salePrice: { not: null } }, 8);
-
-  // 5. Best Sellers
   const top = await prisma.orderItem.groupBy({
     by: ["productId"],
     _sum: { quantity: true },
     orderBy: { _sum: { quantity: "desc" } },
     take: 8,
   });
+
   const bestSellers: Product[] = await Promise.all(
     top.map(async ({ productId }) => {
       const p = await prisma.product.findUnique({
         where: { id: productId },
         include: { translations: { where: { locale: lang }, take: 1 } },
       });
+
+      if (!p) {
+        return {
+          id: productId,
+          name: "",
+          description: "",
+          price: 0,
+          imageUrl: null,
+          stock: 0,
+          salePrice: null,
+          isFeatured: false,
+        };
+      }
+
       return {
-        id: p!.id,
-        name: p!.translations[0]?.name ?? "",
-        description: p!.translations[0]?.description ?? "",
-        price: p!.price,
-        imageUrl: p!.imageUrl,
-        stock: p!.stock,
-        salePrice: p!.salePrice ?? null,
-        isFeatured: p!.isFeatured,
+        id: p.id,
+        name: p.translations[0]?.name ?? "",
+        description: p.translations[0]?.description ?? "",
+        price: p.price,
+        imageUrl: p.imageUrl,
+        stock: p.stock,
+        salePrice: p.salePrice ?? null,
+        isFeatured: p.isFeatured,
       };
     })
   );
 
-  // 6. Categories with product count
   const rawCats = await prisma.categoryLocale.findMany({
     where: { locale: lang },
     include: { category: true },
     orderBy: { name: "asc" },
   });
-  
+
   const categories: Category[] = await Promise.all(
     rawCats.map(async ({ category, name }) => {
-      // นับจำนวนสินค้าในแต่ละหมวดหมู่
       const productCount = await prisma.product.count({
         where: { categoryId: category.id },
       });
-      
+
       return {
         id: category.id,
         name,
@@ -343,11 +317,11 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
     })
   );
 
-  // 7. Legacy SubBanner
   const rawSub = await prisma.subBannerLocale.findFirst({
     where: { locale: lang },
     include: { subBanner: true },
   });
+
   const subBannerData = rawSub
     ? {
         title: rawSub.title,

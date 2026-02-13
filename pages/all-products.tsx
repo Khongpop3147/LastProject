@@ -1,7 +1,6 @@
-// pages/all-products.tsx
 import { GetServerSideProps } from "next";
 import { useRouter } from "next/router";
-import { useState, ChangeEvent } from "react";
+import { useMemo, useState, ChangeEvent } from "react";
 import useTranslation from "next-translate/useTranslation";
 import Layout from "@/components/Layout";
 import ProductCard from "@/components/ProductCard";
@@ -29,56 +28,100 @@ export default function AllProductsPage({
     setSearchTerm(e.target.value);
   };
 
-  const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const cat = e.target.value;
+  const updateQuery = (categoryId: string | null) => {
     const params = new URLSearchParams();
     if (discount) params.set("discount", "1");
-    if (cat) params.set("category", cat);
+    if (categoryId) params.set("category", categoryId);
     router.push(`/all-products?${params.toString()}`);
   };
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleCategoryChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const cat = e.target.value || null;
+    updateQuery(cat);
+  };
+
+  const filtered = useMemo(
+    () =>
+      products.filter((p) =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [products, searchTerm]
   );
 
   return (
     <Layout title={discount ? t("onSale") : t("allProducts")}>
-      <h1 className="text-3xl font-bold mb-4">
-        {discount ? t("onSale") : t("allProducts")}
-      </h1>
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-8">
+        <div className="mb-6">
+          <h1 className="text-3xl lg:text-4xl font-bold mb-2">
+            {discount ? t("onSale") : t("allProducts")}
+          </h1>
+          <p className="text-sm text-gray-500">{filtered.length} products</p>
+        </div>
 
-      {/* Controls */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={handleSearch}
-          placeholder={t("searchPlaceholder")}
-          className="flex-1 border rounded p-2"
-        />
-        <select
-          value={selectedCategory ?? ""}
-          onChange={handleCategoryChange}
-          className="border rounded p-2"
-        >
-          <option value="">{t("allCategories")}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-      </div>
+        <section className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 mb-3">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearch}
+              placeholder={t("searchPlaceholder")}
+              className="w-full border border-gray-200 rounded-lg p-2.5"
+            />
+            <div className="lg:hidden">
+              <select
+                value={selectedCategory ?? ""}
+                onChange={handleCategoryChange}
+                className="w-full border border-gray-200 rounded-lg p-2.5"
+              >
+                <option value="">{t("allCategories")}</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-      {/* Product Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
-        {filtered.length > 0 ? (
-          filtered.map((p) => <ProductCard key={p.id} product={p} />)
-        ) : (
-          <p className="col-span-full text-center text-gray-500">
-            {t("noProductsFound")}
-          </p>
-        )}
+          <div className="hidden lg:flex flex-wrap gap-2">
+            <button
+              onClick={() => updateQuery(null)}
+              className={`px-3 py-1.5 rounded-full text-sm border ${
+                !selectedCategory
+                  ? "bg-blue-600 border-blue-600 text-white"
+                  : "bg-white border-gray-200 text-gray-700 hover:border-blue-300"
+              }`}
+            >
+              {t("allCategories")}
+            </button>
+
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => updateQuery(c.id)}
+                className={`px-3 py-1.5 rounded-full text-sm border ${
+                  selectedCategory === c.id
+                    ? "bg-blue-600 border-blue-600 text-white"
+                    : "bg-white border-gray-200 text-gray-700 hover:border-blue-300"
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section>
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+            {filtered.length > 0 ? (
+              filtered.map((p) => <ProductCard key={p.id} product={p} />)
+            ) : (
+              <p className="col-span-full text-center text-gray-500 py-16 bg-white rounded-2xl border border-gray-100">
+                {t("noProductsFound")}
+              </p>
+            )}
+          </div>
+        </section>
       </div>
     </Layout>
   );
@@ -93,7 +136,6 @@ export const getServerSideProps: GetServerSideProps<AllProductsProps> = async ({
   const discount = query.discount === "1";
   const lang = locale || "th";
 
-  // 1) ดึงหมวดหมู่พร้อม translation ตามภาษาที่เลือก
   const rawCategories = await prisma.category.findMany({
     include: {
       translations: {
@@ -102,6 +144,7 @@ export const getServerSideProps: GetServerSideProps<AllProductsProps> = async ({
       },
     },
   });
+
   const categories: Category[] = rawCategories
     .map((c) => ({
       id: c.id,
@@ -109,12 +152,10 @@ export const getServerSideProps: GetServerSideProps<AllProductsProps> = async ({
     }))
     .sort((a, b) => a.name.localeCompare(b.name, lang));
 
-  // 2) สร้างเงื่อนไขการค้นหาสินค้า
   const whereClause: any = {};
   if (selectedCategory) whereClause.categoryId = selectedCategory;
   if (discount) whereClause.salePrice = { not: null };
 
-  // 3) ดึงสินค้า พร้อม translation
   const rawProducts = await prisma.product.findMany({
     where: whereClause,
     orderBy: { createdAt: "desc" },
@@ -132,6 +173,7 @@ export const getServerSideProps: GetServerSideProps<AllProductsProps> = async ({
       },
     },
   });
+
   const products: Product[] = rawProducts.map((p) => ({
     id: p.id,
     name: p.translations[0]?.name ?? "",

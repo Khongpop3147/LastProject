@@ -52,36 +52,38 @@ export default function QaPage() {
 
   return (
     <Layout title={t("qaTitle")}>
-      <h1 className="text-3xl font-bold mb-4">{t("qaTitle")}</h1>
+      <div className="max-w-6xl mx-auto px-4 md:px-6 lg:px-8 pb-28 md:pb-12">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4">{t("qaTitle")}</h1>
 
-      {/* New question form */}
-      <form onSubmit={submitQuestion} className="mb-8">
-        <textarea
-          value={newQ}
-          onChange={(e) => setNewQ(e.target.value)}
-          placeholder={t("qaPlaceholder")}
-          className="w-full border p-2 rounded mb-2"
-          rows={4}
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-        >
-          {loading ? t("qaSubmitting") : t("qaSubmit")}
-        </button>
-      </form>
+        {/* New question form */}
+        <form onSubmit={submitQuestion} className="mb-10">
+          <textarea
+            value={newQ}
+            onChange={(e) => setNewQ(e.target.value)}
+            placeholder={t("qaPlaceholder")}
+            className="w-full border border-gray-300 p-3 rounded-lg mb-3 text-base"
+            rows={5}
+            required
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+          >
+            {loading ? t("qaSubmitting") : t("qaSubmit")}
+          </button>
+        </form>
 
-      {/* FAQ list */}
-      <h2 className="text-2xl font-semibold mb-4">{t("qaFaqHeading")}</h2>
-      <div className="space-y-4">
-        {staticFaqs.map((f) => (
-          <div key={f.id} className="border p-4 rounded">
-            <p className="font-medium">Q: {f.question}</p>
-            <p className="mt-2">A: {f.answer}</p>
-          </div>
-        ))}
+        {/* FAQ list */}
+        <h2 className="text-2xl font-semibold mb-4">{t("qaFaqHeading")}</h2>
+        <div className="space-y-4">
+          {staticFaqs.map((f) => (
+            <div key={f.id} className="border border-gray-200 p-5 rounded-xl bg-white">
+              <p className="font-medium text-lg">Q: {f.question}</p>
+              <p className="mt-2 text-base">A: {f.answer}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </Layout>
   );

@@ -1,11 +1,14 @@
-// pages/api/products/[id]/feature.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   const rawId = req.query.id;
   const id =
     typeof rawId === "string" ? rawId : Array.isArray(rawId) ? rawId[0] : null;
@@ -19,11 +22,13 @@ export default async function handler(
   }
 
   const { isFeatured } = req.body as { isFeatured: boolean };
-  // อ่าน locale จาก query string (default 'th')
+  if (typeof isFeatured !== "boolean") {
+    return res.status(400).json({ error: "isFeatured must be a boolean" });
+  }
+
   const locale = typeof req.query.locale === "string" ? req.query.locale : "th";
 
   try {
-    // อัปเดต isFeatured แล้ว include translations + category
     const raw = await prisma.product.update({
       where: { id },
       data: { isFeatured },
@@ -33,7 +38,6 @@ export default async function handler(
       },
     });
 
-    // map ให้เป็นรูปแบบที่ frontend ใช้
     const updated = {
       id: raw.id,
       name: raw.translations[0]?.name ?? "",

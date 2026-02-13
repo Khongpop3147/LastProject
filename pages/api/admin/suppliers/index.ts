@@ -1,10 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   if (req.method === "GET") {
     try {
       const list = await prisma.supplier.findMany({
