@@ -3,14 +3,7 @@ import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  ArrowLeft,
-  Heart,
-  Loader2,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Heart, Loader2, Search, Trash2, X } from "lucide-react";
 import useTranslation from "next-translate/useTranslation";
 import { useAuth } from "@/context/AuthContext";
 import { goBackOrPush } from "@/lib/navigation";
@@ -49,18 +42,26 @@ function toCurrency(value: number) {
 }
 
 function getDisplayPrice(product: WishlistProduct) {
-  if (typeof product.salePrice === "number" && product.salePrice < product.price) {
+  if (
+    typeof product.salePrice === "number" &&
+    product.salePrice < product.price
+  ) {
     return product.salePrice;
   }
   return product.price;
 }
 
 function getDiscountPercent(product: WishlistProduct) {
-  if (typeof product.salePrice !== "number" || product.salePrice >= product.price) {
+  if (
+    typeof product.salePrice !== "number" ||
+    product.salePrice >= product.price
+  ) {
     return 0;
   }
 
-  return Math.round(((product.price - product.salePrice) / product.price) * 100);
+  return Math.round(
+    ((product.price - product.salePrice) / product.price) * 100,
+  );
 }
 
 function getWishlistedTimestamp(product: WishlistProduct) {
@@ -150,7 +151,7 @@ export default function WishlistPage() {
         fetch(`/api/products/${product.id}/favorite`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
-        })
+        }),
       );
       await Promise.all(deletePromises);
       setProducts([]);
@@ -200,7 +201,9 @@ export default function WishlistPage() {
   }, [activeFilter, lang, products, searchText, sortBy]);
 
   const hasActiveControls =
-    searchText.trim().length > 0 || activeFilter !== "all" || sortBy !== "latest";
+    searchText.trim().length > 0 ||
+    activeFilter !== "all" ||
+    sortBy !== "latest";
 
   const resetControls = () => {
     setSearchText("");
@@ -341,7 +344,9 @@ export default function WishlistPage() {
 
                     <select
                       value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value as SortKey)}
+                      onChange={(event) =>
+                        setSortBy(event.target.value as SortKey)
+                      }
                       className="ml-auto h-9 min-w-[130px] rounded-xl border border-[#d8d8db] bg-white px-3 text-[13px] font-medium text-[#4b5563] outline-none focus:border-[#2f6ef4]"
                     >
                       <option value="latest">ล่าสุด</option>
@@ -394,7 +399,9 @@ export default function WishlistPage() {
                           >
                             <div className="relative h-[152px] w-full overflow-hidden">
                               <img
-                                src={product.imageUrl ?? "/images/placeholder.png"}
+                                src={
+                                  product.imageUrl ?? "/images/placeholder.png"
+                                }
                                 alt={productName}
                                 className="h-full w-full object-cover"
                               />

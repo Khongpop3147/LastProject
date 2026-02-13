@@ -89,7 +89,9 @@ export default function AccountPage() {
           ? ((await wishlistRes.json()) as { favorites?: unknown[] })
           : { favorites: [] };
 
-        const orders = Array.isArray(ordersJson.orders) ? ordersJson.orders : [];
+        const orders = Array.isArray(ordersJson.orders)
+          ? ordersJson.orders
+          : [];
         const activeOrders = orders.filter((item) => {
           const key = item.status?.toUpperCase();
           return key !== "COMPLETED" && key !== "CANCELLED";
@@ -99,7 +101,11 @@ export default function AccountPage() {
         setEmail(profileJson.user?.email ?? "-");
         setOrderCount(orders.length);
         setActiveOrderCount(activeOrders.length);
-        setWishlistCount(Array.isArray(wishlistJson.favorites) ? wishlistJson.favorites.length : 0);
+        setWishlistCount(
+          Array.isArray(wishlistJson.favorites)
+            ? wishlistJson.favorites.length
+            : 0,
+        );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -128,7 +134,7 @@ export default function AccountPage() {
         subtitle: "สินค้าที่ถูกใจ",
       },
     ],
-    [activeOrderCount]
+    [activeOrderCount],
   );
 
   const accountMenu = useMemo<AccountMenuItem[]>(
@@ -152,7 +158,7 @@ export default function AccountPage() {
         subtitle: "แก้ไขข้อมูลบัญชีของคุณ",
       },
     ],
-    []
+    [],
   );
 
   const supportMenu = useMemo<AccountMenuItem[]>(
@@ -170,21 +176,25 @@ export default function AccountPage() {
         subtitle: "คำถามที่พบบ่อย วิธีใช้งาน",
       },
     ],
-    []
+    [],
   );
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
       <div className="mx-auto w-full max-w-[440px] pb-[110px]">
         <section className="relative bg-gradient-to-br from-[#2f6ef4] to-[#4e8cff] px-4 pb-8 pt-6 text-white">
-          <h1 className="text-[34px] font-extrabold leading-none tracking-tight">บัญชีของฉัน</h1>
+          <h1 className="text-[34px] font-extrabold leading-none tracking-tight">
+            บัญชีของฉัน
+          </h1>
 
           <div className="mt-6 flex items-center gap-4">
             <div className="flex h-[110px] w-[110px] items-center justify-center rounded-full bg-white/16">
               <UserRound className="h-14 w-14 text-white" strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-[27px] font-bold leading-tight">{name}</p>
+              <p className="truncate text-[27px] font-bold leading-tight">
+                {name}
+              </p>
               <p className="truncate text-[17px] text-white/90">{email}</p>
             </div>
           </div>
@@ -194,16 +204,28 @@ export default function AccountPage() {
           <div className="rounded-[24px] border border-[#d8d8d8] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
-                <p className="text-[30px] font-extrabold leading-tight text-[#2f6ef4]">{orderCount}</p>
-                <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">คำสั่งซื้อ</p>
+                <p className="text-[30px] font-extrabold leading-tight text-[#2f6ef4]">
+                  {orderCount}
+                </p>
+                <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">
+                  คำสั่งซื้อ
+                </p>
               </div>
               <div>
-                <p className="text-[30px] font-extrabold leading-tight text-[#2f6ef4]">{wishlistCount}</p>
-                <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">รายการโปรด</p>
+                <p className="text-[30px] font-extrabold leading-tight text-[#2f6ef4]">
+                  {wishlistCount}
+                </p>
+                <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">
+                  รายการโปรด
+                </p>
               </div>
               <div>
-                <p className="text-[30px] font-extrabold leading-tight text-[#f59e0b]">{activeOrderCount}</p>
-                <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">กำลังดำเนินการ</p>
+                <p className="text-[30px] font-extrabold leading-tight text-[#f59e0b]">
+                  {activeOrderCount}
+                </p>
+                <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">
+                  กำลังดำเนินการ
+                </p>
               </div>
             </div>
           </div>
@@ -222,11 +244,15 @@ export default function AccountPage() {
             <div className="flex h-[56px] w-[56px] items-center justify-center rounded-2xl bg-[#fff1f1] text-[#ef4444]">
               <LogOut className="h-8 w-8" />
             </div>
-            <span className="text-[24px] font-bold leading-tight text-[#ef4444]">ออกจากระบบ</span>
+            <span className="text-[24px] font-bold leading-tight text-[#ef4444]">
+              ออกจากระบบ
+            </span>
           </button>
 
           {loading ? (
-            <p className="text-center text-[16px] text-[#6b7280]">กำลังโหลดข้อมูลบัญชี...</p>
+            <p className="text-center text-[16px] text-[#6b7280]">
+              กำลังโหลดข้อมูลบัญชี...
+            </p>
           ) : null}
         </main>
       </div>
@@ -236,10 +262,18 @@ export default function AccountPage() {
   );
 }
 
-function MenuSection({ title, items }: { title: string; items: AccountMenuItem[] }) {
+function MenuSection({
+  title,
+  items,
+}: {
+  title: string;
+  items: AccountMenuItem[];
+}) {
   return (
     <section>
-      <h2 className="mb-2 px-1 text-[24px] font-extrabold leading-none text-[#374151]">{title}</h2>
+      <h2 className="mb-2 px-1 text-[24px] font-extrabold leading-none text-[#374151]">
+        {title}
+      </h2>
       <div className="overflow-hidden rounded-[20px] border border-[#e3e4e7] bg-white">
         {items.map((item, index) => {
           const Icon = item.icon;

@@ -8,7 +8,9 @@ export async function addFavorite(userId: string, productId: string) {
 
 export async function removeFavorite(userId: string, productId: string) {
   // use deleteMany to be idempotent
-  const result = await prisma.favorite.deleteMany({ where: { userId, productId } });
+  const result = await prisma.favorite.deleteMany({
+    where: { userId, productId },
+  });
   return result.count > 0;
 }
 
