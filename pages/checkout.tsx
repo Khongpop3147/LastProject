@@ -149,8 +149,8 @@ export default function CheckoutPage() {
         ? ((await cartRes.json()) as { items?: CartItem[] })
         : { items: [] };
       const addressesJson = addressesRes.ok
-        ? ((await addressesRes.json()) as { items?: AddressItem[] })
-        : { items: [] };
+        ? ((await addressesRes.json()) as { addresses?: AddressItem[] })
+        : { addresses: [] };
       const profileJson = profileRes.ok
         ? ((await profileRes.json()) as ProfileResponse)
         : {};
@@ -159,7 +159,7 @@ export default function CheckoutPage() {
         : {};
 
       const nextItems = cartJson.items ?? [];
-      const nextAddresses = addressesJson.items ?? [];
+      const nextAddresses = addressesJson.addresses ?? [];
 
       setItems(nextItems);
       setAddresses(nextAddresses);
