@@ -79,21 +79,23 @@ export default function Layout({
         />
       )}
 
-      <main className="flex-grow w-full max-w-full mx-auto py-4 mt-16 sm:mt-20 md:mt-24 pb-20 md:pb-0 overflow-x-hidden">
+      <main className="flex-grow w-full max-w-full mx-auto py-4 mt-16 sm:mt-20 md:mt-24 pb-20 md:pb-4 overflow-x-hidden">
         {children}
       </main>
 
       <Footer />
 
-      {/* Bottom Navigation - Mobile Only */}
+      {/* Bottom Navigation - Mobile Only (hidden on md and above) */}
       {!hideBottomNav && (
-        <MobileShopBottomNav
-          activePath={
-            router.pathname === "/all-products"
-              ? "/all-products"
-              : router.pathname
-          }
-        />
+        <div className="block md:hidden">
+          <MobileShopBottomNav
+            activePath={
+              router.pathname === "/all-products"
+                ? "/all-products"
+                : router.pathname
+            }
+          />
+        </div>
       )}
     </div>
   );

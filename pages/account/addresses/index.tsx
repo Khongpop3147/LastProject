@@ -186,9 +186,9 @@ export default function AddressesPage() {
 
   return (
     <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px]">
-        <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-          <div className="flex h-[84px] items-center px-4">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
+        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+          <div className="flex h-[84px] md:h-[92px] items-center px-4 md:px-6">
             <button
               type="button"
               aria-label="ย้อนกลับ"

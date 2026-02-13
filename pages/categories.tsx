@@ -5,12 +5,7 @@ import { useRouter } from "next/router";
 import { prisma } from "@/lib/prisma";
 import { goBackOrPush } from "@/lib/navigation";
 import MobileShopBottomNav from "@/components/MobileShopBottomNav";
-import {
-  ArrowLeft,
-  ChevronRight,
-  Heart,
-  Settings,
-} from "lucide-react";
+import { ArrowLeft, ChevronRight, Heart, Settings } from "lucide-react";
 
 type CategoryProduct = {
   id: string;
@@ -51,9 +46,9 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
       </Head>
 
       <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px]">
-          <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-            <div className="flex h-[80px] items-center px-4">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-6xl">
+          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+            <div className="flex h-[80px] md:h-[88px] items-center px-4 md:px-6">
               <button
                 type="button"
                 aria-label="ย้อนกลับ"
@@ -91,7 +86,9 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                       <div className="flex items-center gap-3">
                         <div className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-lg">
                           <img
-                            src={section.coverImage ?? "/images/placeholder.png"}
+                            src={
+                              section.coverImage ?? "/images/placeholder.png"
+                            }
                             alt={section.name}
                             className="h-full w-full object-cover"
                           />
@@ -101,7 +98,8 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                             {section.name}
                           </h2>
                           <p className="mt-1 text-[14px] text-[#6b7280]">
-                            {section.productCount.toLocaleString("th-TH")} รายการ
+                            {section.productCount.toLocaleString("th-TH")}{" "}
+                            รายการ
                           </p>
                         </div>
                       </div>
@@ -131,7 +129,9 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                         >
                           <div className="relative h-[128px]">
                             <img
-                              src={product.imageUrl ?? "/images/placeholder.png"}
+                              src={
+                                product.imageUrl ?? "/images/placeholder.png"
+                              }
                               alt={product.name}
                               className="h-full w-full object-cover"
                             />
@@ -143,7 +143,9 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                                   : "bg-[#2bb673]"
                               }`}
                             >
-                              {hasDiscount ? `ลด ${product.discountPercent}%` : "ใหม่"}
+                              {hasDiscount
+                                ? `ลด ${product.discountPercent}%`
+                                : "ใหม่"}
                             </span>
 
                             <div className="absolute bottom-1.5 right-1.5 rounded-full bg-white/95 p-1.5 shadow">
@@ -166,7 +168,6 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                                 </span>
                               )}
                             </div>
-
                           </div>
                         </Link>
                       );
@@ -184,9 +185,9 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<CategoriesPageProps> = async ({
-  locale,
-}) => {
+export const getServerSideProps: GetServerSideProps<
+  CategoriesPageProps
+> = async ({ locale }) => {
   const lang = locale ?? "th";
 
   const rawCategories = await prisma.category.findMany({
@@ -212,7 +213,7 @@ export const getServerSideProps: GetServerSideProps<CategoriesPageProps> = async
           salePrice && salePrice < product.price
             ? Math.max(
                 1,
-                Math.round(((product.price - salePrice) / product.price) * 100)
+                Math.round(((product.price - salePrice) / product.price) * 100),
               )
             : 0;
 

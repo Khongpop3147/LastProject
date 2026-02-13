@@ -218,9 +218,9 @@ export default function WishlistPage() {
       </Head>
 
       <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px]">
-          <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-            <div className="flex h-[80px] items-center px-4">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
+          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+            <div className="flex h-[80px] md:h-[88px] items-center px-4 md:px-6">
               <button
                 type="button"
                 aria-label="ย้อนกลับ"
@@ -230,7 +230,7 @@ export default function WishlistPage() {
                 <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
               </button>
 
-              <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
+              <h1 className="ml-4 text-[28px] md:text-[30px] font-extrabold leading-none tracking-tight text-black">
                 รายการโปรด
               </h1>
 
@@ -384,7 +384,7 @@ export default function WishlistPage() {
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
                       {visibleProducts.map((product) => {
                         const discountPercent = getDiscountPercent(product);
                         const hasDiscount = discountPercent > 0;
@@ -467,7 +467,10 @@ export default function WishlistPage() {
             )}
           </main>
         </div>
-        <MobileShopBottomNav activePath="/wishlist" />
+
+        <div className="md:hidden">
+          <MobileShopBottomNav activePath="/wishlist" />
+        </div>
       </div>
     </>
   );

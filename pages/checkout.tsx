@@ -385,9 +385,9 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px]">
-        <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-          <div className="flex h-[82px] items-center px-4">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
+        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+          <div className="flex h-[82px] md:h-[92px] items-center px-4 md:px-6">
             <button
               type="button"
               aria-label="ย้อนกลับ"
@@ -396,13 +396,13 @@ export default function CheckoutPage() {
             >
               <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
             </button>
-            <h1 className="ml-4 text-[30px] font-extrabold leading-none tracking-tight text-black">
+            <h1 className="ml-4 text-[30px] md:text-[32px] font-extrabold leading-none tracking-tight text-black">
               ชำระเงิน
             </h1>
           </div>
         </header>
 
-        <main className="space-y-4 px-4 pb-[195px] pt-4">
+        <main className="space-y-4 md:space-y-5 px-4 md:px-6 pb-[195px] md:pb-12 pt-4 md:pt-6">
           {loading ? (
             <section className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center text-[17px] text-[#6b7280]">
               กำลังโหลดข้อมูล...
@@ -677,7 +677,7 @@ export default function CheckoutPage() {
       </div>
 
       <div
-        className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_14px_rgba(0,0,0,0.08)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_14px_rgba(0,0,0,0.08)]"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
       >
         <div className="mx-auto w-full max-w-[440px] px-4 pb-1 pt-2">

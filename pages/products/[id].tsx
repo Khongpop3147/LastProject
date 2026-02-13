@@ -235,10 +235,10 @@ export default function ProductPage({ product }: ProductPageProps) {
 
   return (
     <Layout title={product.name}>
-      <div className="min-h-screen bg-[#f3f3f4] pb-[186px]">
-        <div className="mx-auto w-full max-w-[440px]">
-          <header className="sticky top-0 z-50 border-b border-[#d5d8de] bg-[#f3f3f4]">
-            <div className="flex h-[78px] items-center px-4">
+      <div className="min-h-screen bg-[#f3f3f4] pb-[186px] md:pb-12">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
+          <header className="sticky top-16 sm:top-20 md:top-24 z-50 border-b border-[#d5d8de] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+            <div className="flex h-[78px] md:h-[88px] items-center px-4 md:px-6">
               <button
                 onClick={handleBack}
                 aria-label="ย้อนกลับ"
@@ -496,7 +496,7 @@ export default function ProductPage({ product }: ProductPageProps) {
         </div>
 
         <div
-          className="fixed left-0 right-0 z-50 border-t border-[#d5d8de] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+          className="lg:hidden fixed left-0 right-0 z-50 border-t border-[#d5d8de] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
           style={{ bottom: "calc(84px + env(safe-area-inset-bottom))" }}
         >
           <div className="mx-auto flex w-full max-w-[440px] items-center gap-3 px-4 py-3">

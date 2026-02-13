@@ -224,9 +224,9 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px]">
-        <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-          <div className="flex h-[84px] items-center px-4">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
+        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+          <div className="flex h-[84px] md:h-[92px] items-center px-4 md:px-6">
             <button
               type="button"
               aria-label="ย้อนกลับ"
@@ -236,13 +236,13 @@ export default function OrdersPage() {
               <ArrowLeft className="h-7 w-7" strokeWidth={2.25} />
             </button>
 
-            <h1 className="ml-4 text-[30px] font-extrabold leading-none tracking-tight text-black">
+            <h1 className="ml-4 text-[30px] md:text-[32px] font-extrabold leading-none tracking-tight text-black">
               ประวัติคำสั่งซื้อ
             </h1>
           </div>
         </header>
 
-        <main className="space-y-3 px-4 pb-[120px] pt-4">
+        <main className="space-y-3 md:space-y-4 px-4 md:px-6 pb-[120px] md:pb-12 pt-4 md:pt-6">
           {" "}
           {uploadError && (
             <div className="rounded-xl border border-[#ffc9c9] bg-[#fff2f2] px-4 py-3 text-[16px] text-[#db4f4f]">

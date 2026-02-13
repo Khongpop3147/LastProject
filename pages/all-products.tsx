@@ -261,9 +261,9 @@ export default function AllProductsPage({
       </Head>
 
       <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px]">
-          <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-            <div className="flex items-center gap-2 px-2.5 py-2.5">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
+          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+            <div className="flex items-center gap-2 px-2.5 md:px-6 py-2.5 md:py-4">
               <div className="relative flex-1">
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9ca3af]"
@@ -308,7 +308,7 @@ export default function AllProductsPage({
             </div>
           </header>
 
-          <main className="px-3 pb-[102px] pt-3">
+          <main className="px-3 md:px-6 pb-[102px] md:pb-8 pt-3 md:pt-6">
             {showAdvanced ? (
               <section className="space-y-4 pb-4">
                 <div>
@@ -519,7 +519,7 @@ export default function AllProductsPage({
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
                     {filteredProducts.length === 0 ? (
                       <div className="col-span-2 rounded-2xl border border-dashed border-[#cfd3db] bg-white p-5 text-center text-[16px] text-[#6b7280]">
                         ยังไม่มีสินค้าให้แสดง

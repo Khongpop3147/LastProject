@@ -221,9 +221,9 @@ export default function QaPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px]">
-        <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-          <div className="flex h-[92px] items-center px-4">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
+        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+          <div className="flex h-[92px] md:h-[100px] items-center px-4 md:px-6">
             <button
               type="button"
               aria-label="ย้อนกลับ"
@@ -244,7 +244,7 @@ export default function QaPage() {
           </div>
         </header>
 
-        <main className="space-y-4 px-4 pb-[120px] pt-4">
+        <main className="space-y-4 px-4 md:px-6 pb-[120px] md:pb-12 pt-4 md:pt-6">
           <section className="rounded-[24px] bg-gradient-to-br from-[#2f6ef4] to-[#4e8cff] p-4 text-white shadow-[0_10px_20px_rgba(47,110,244,0.25)]">
             <div className="flex items-start gap-3">
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-white/20">
@@ -495,7 +495,9 @@ export default function QaPage() {
         </main>
       </div>
 
-      <MobileShopBottomNav activePath="/account" />
+      <div className="md:hidden">
+        <MobileShopBottomNav activePath="/account" />
+      </div>
     </div>
   );
 }

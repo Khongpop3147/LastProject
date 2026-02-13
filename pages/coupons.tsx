@@ -83,9 +83,9 @@ export default function CouponsPage({ coupons }: CouponsPageProps) {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f4f5f7] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px]">
-        <header className="sticky top-0 z-40 border-b border-[#d7d9df] bg-[#f4f5f7]">
-          <div className="flex h-[84px] items-center px-4">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
+        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#d7d9df] bg-[#f4f5f7] md:bg-white md:shadow-sm">
+          <div className="flex h-[84px] md:h-[92px] items-center px-4 md:px-6">
             <button
               type="button"
               aria-label="ย้อนกลับ"
@@ -106,7 +106,7 @@ export default function CouponsPage({ coupons }: CouponsPageProps) {
           </div>
         </header>
 
-        <main className="space-y-3 px-4 pb-[116px] pt-4">
+        <main className="space-y-3 md:space-y-4 px-4 md:px-6 pb-[116px] md:pb-12 pt-4 md:pt-6">
           <section className="rounded-2xl border border-[#d8dce5] bg-white p-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -201,7 +201,9 @@ export default function CouponsPage({ coupons }: CouponsPageProps) {
                       <div className="flex items-center justify-between gap-2">
                         <span>จำนวนสิทธิ์คงเหลือ</span>
                         <span className="font-semibold text-[#1f2937]">
-                          {remaining === null ? "ไม่จำกัด" : `${remaining} ครั้ง`}
+                          {remaining === null
+                            ? "ไม่จำกัด"
+                            : `${remaining} ครั้ง`}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-2">
@@ -245,7 +247,9 @@ export default function CouponsPage({ coupons }: CouponsPageProps) {
   );
 }
 
-export const getServerSideProps: GetServerSideProps<CouponsPageProps> = async () => {
+export const getServerSideProps: GetServerSideProps<
+  CouponsPageProps
+> = async () => {
   const raw = await prisma.coupon.findMany({
     orderBy: [{ expiresAt: "asc" }, { code: "asc" }],
   });

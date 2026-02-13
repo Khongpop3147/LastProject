@@ -181,33 +181,38 @@ export default function AccountPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px] pb-[110px]">
-        <section className="relative bg-gradient-to-br from-[#2f6ef4] to-[#4e8cff] px-4 pb-8 pt-6 text-white">
-          <h1 className="text-[34px] font-extrabold leading-none tracking-tight">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl pb-[110px] md:pb-12">
+        <section className="relative bg-gradient-to-br from-[#2f6ef4] to-[#4e8cff] px-4 md:px-6 pb-8 md:pb-10 pt-6 md:pt-8 text-white">
+          <h1 className="text-[34px] md:text-[38px] font-extrabold leading-none tracking-tight">
             บัญชีของฉัน
           </h1>
 
-          <div className="mt-6 flex items-center gap-4">
-            <div className="flex h-[110px] w-[110px] items-center justify-center rounded-full bg-white/16">
-              <UserRound className="h-14 w-14 text-white" strokeWidth={2} />
+          <div className="mt-6 flex items-center gap-4 md:gap-5">
+            <div className="flex h-[110px] w-[110px] md:h-[120px] md:w-[120px] items-center justify-center rounded-full bg-white/16">
+              <UserRound
+                className="h-14 w-14 md:h-16 md:w-16 text-white"
+                strokeWidth={2}
+              />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-[27px] font-bold leading-tight">
+              <p className="truncate text-[27px] md:text-[30px] font-bold leading-tight">
                 {name}
               </p>
-              <p className="truncate text-[17px] text-white/90">{email}</p>
+              <p className="truncate text-[17px] md:text-[18px] text-white/90">
+                {email}
+              </p>
             </div>
           </div>
         </section>
 
-        <section className="relative z-10 -mt-2 px-4">
-          <div className="rounded-[24px] border border-[#d8d8d8] bg-white p-4 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
-            <div className="grid grid-cols-3 gap-2 text-center">
+        <section className="relative z-10 -mt-2 px-4 md:px-6">
+          <div className="rounded-[24px] border border-[#d8d8d8] bg-white p-4 md:p-5 shadow-[0_8px_24px_rgba(0,0,0,0.08)]">
+            <div className="grid grid-cols-3 gap-2 md:gap-4 text-center">
               <div>
-                <p className="text-[30px] font-extrabold leading-tight text-[#2f6ef4]">
+                <p className="text-[30px] md:text-[34px] font-extrabold leading-tight text-[#2f6ef4]">
                   {orderCount}
                 </p>
-                <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">
+                <p className="mt-1 text-[16px] md:text-[17px] leading-tight text-[#4b5563]">
                   คำสั่งซื้อ
                 </p>
               </div>

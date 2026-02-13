@@ -84,11 +84,15 @@ function toCurrency(value: number) {
 }
 
 function toOrderRef(id: string) {
-  return `#${id.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase()}`;
+  return `#${id
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(-8)
+    .toUpperCase()}`;
 }
 
 function resolveProductName(item: OrderItem) {
-  if (item.product.translations?.[0]?.name) return item.product.translations[0].name;
+  if (item.product.translations?.[0]?.name)
+    return item.product.translations[0].name;
   if (item.product.name) return item.product.name;
   return "สินค้า";
 }
@@ -197,9 +201,9 @@ export default function OrderTrackingPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px]">
-        <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-          <div className="flex h-[84px] items-center px-4">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
+        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+          <div className="flex h-[84px] md:h-[92px] items-center px-4 md:px-6">
             <button
               type="button"
               aria-label="ย้อนกลับ"
@@ -241,7 +245,9 @@ export default function OrderTrackingPage() {
           ) : (
             <>
               <section className="rounded-2xl border border-[#d8d8d8] bg-white p-4">
-                <h2 className="text-[24px] font-extrabold text-[#111827]">สถานะการจัดส่ง</h2>
+                <h2 className="text-[24px] font-extrabold text-[#111827]">
+                  สถานะการจัดส่ง
+                </h2>
 
                 {order.status.toUpperCase() === "CANCELLED" ? (
                   <p className="mt-2 rounded-xl bg-[#ffeef0] px-3 py-2 text-[16px] font-semibold text-[#e44a59]">
@@ -256,7 +262,10 @@ export default function OrderTrackingPage() {
                       const pending = currentRank < rank;
 
                       return (
-                        <div key={step.key} className="relative flex items-start gap-3">
+                        <div
+                          key={step.key}
+                          className="relative flex items-start gap-3"
+                        >
                           {index !== STEPS.length - 1 ? (
                             <div
                               className={`absolute left-[21px] top-10 h-[38px] w-1 rounded-full ${
@@ -270,8 +279,8 @@ export default function OrderTrackingPage() {
                               done
                                 ? "bg-[#22c55e] text-white"
                                 : active
-                                ? "bg-[#74a8ff] text-white"
-                                : "bg-[#e5e7eb] text-[#6b7280]"
+                                  ? "bg-[#74a8ff] text-white"
+                                  : "bg-[#e5e7eb] text-[#6b7280]"
                             }`}
                           >
                             {done ? (
@@ -329,7 +338,9 @@ export default function OrderTrackingPage() {
                       >
                         <div className="h-[74px] w-[74px] flex-shrink-0 overflow-hidden rounded-xl border border-[#e5e7eb]">
                           <img
-                            src={item.product.imageUrl || "/images/placeholder.png"}
+                            src={
+                              item.product.imageUrl || "/images/placeholder.png"
+                            }
                             alt={name}
                             className="h-full w-full object-cover"
                           />
@@ -338,7 +349,9 @@ export default function OrderTrackingPage() {
                           <h3 className="line-clamp-2 text-[18px] font-semibold leading-tight text-[#111827]">
                             {name}
                           </h3>
-                          <p className="text-[15px] text-[#6b7280]">จำนวน {item.quantity} ชิ้น</p>
+                          <p className="text-[15px] text-[#6b7280]">
+                            จำนวน {item.quantity} ชิ้น
+                          </p>
                           <p className="text-[24px] font-extrabold leading-none text-[#2f6ef4]">
                             {toCurrency(item.priceAtPurchase * item.quantity)}
                           </p>
@@ -352,13 +365,17 @@ export default function OrderTrackingPage() {
               <section className="rounded-2xl border border-[#d8d8d8] bg-white p-4">
                 <div className="mb-1 flex items-center">
                   <MapPin className="h-6 w-6 text-[#2f6ef4]" />
-                  <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">ที่อยู่จัดส่ง</h2>
+                  <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">
+                    ที่อยู่จัดส่ง
+                  </h2>
                 </div>
                 <p className="text-[18px] font-semibold text-[#1f2937]">
                   {order.recipient}
                   {line2Meta.phone ? ` ${line2Meta.phone}` : ""}
                 </p>
-                <p className="text-[16px] leading-tight text-[#4b5563]">{formatAddress(order)}</p>
+                <p className="text-[16px] leading-tight text-[#4b5563]">
+                  {formatAddress(order)}
+                </p>
               </section>
             </>
           )}

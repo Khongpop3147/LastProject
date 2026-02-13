@@ -59,9 +59,9 @@ export default function SimpleCollectionPage({
       </Head>
 
       <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px]">
-          <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-            <div className="flex h-[80px] items-center px-4">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
+          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+            <div className="flex h-[80px] md:h-[88px] items-center px-4 md:px-6">
               <button
                 type="button"
                 aria-label="ย้อนกลับ"
@@ -71,21 +71,25 @@ export default function SimpleCollectionPage({
                 <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
               </button>
 
-              <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
+              <h1 className="ml-4 text-[28px] md:text-[30px] font-extrabold leading-none tracking-tight text-black">
                 {title}
               </h1>
             </div>
           </header>
 
-          <main className="px-4 pb-[102px] pt-3">
+          <main className="px-4 md:px-6 pb-[102px] md:pb-12 pt-3 md:pt-4">
             {introText ? (
               <div className="mb-4 rounded-2xl bg-[#eadbc4] px-4 py-3 text-[16px] text-[#7a6543]">
                 {introText}
               </div>
             ) : null}
 
-            <p className="mb-3 text-[17px] text-[#9d8ca2]">
-              ทั้งหมด <span className="text-[36px] font-bold text-[#2f2f2f]">{products.length}</span> รายการ
+            <p className="mb-3 text-[17px] md:text-[18px] text-[#9d8ca2]">
+              ทั้งหมด{" "}
+              <span className="text-[36px] md:text-[38px] font-bold text-[#2f2f2f]">
+                {products.length}
+              </span>{" "}
+              รายการ
             </p>
 
             {products.length === 0 ? (
@@ -98,7 +102,9 @@ export default function SimpleCollectionPage({
                   <ProductCard
                     key={product.id}
                     product={product}
-                    backgroundColor={cardBackgrounds[idx % cardBackgrounds.length]}
+                    backgroundColor={
+                      cardBackgrounds[idx % cardBackgrounds.length]
+                    }
                     showBadge={resolveBadge(badgeMode, product, idx)}
                   />
                 ))}

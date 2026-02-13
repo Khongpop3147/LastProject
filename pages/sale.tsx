@@ -59,7 +59,8 @@ export default function SalePage({
   initialFilter,
 }: SalePageProps) {
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState<DiscountFilter>(initialFilter);
+  const [activeFilter, setActiveFilter] =
+    useState<DiscountFilter>(initialFilter);
   const [nowTs, setNowTs] = useState<number>(() => Date.now());
 
   useEffect(() => {
@@ -90,7 +91,9 @@ export default function SalePage({
 
   const filteredProducts = useMemo(() => {
     if (activeFilter === "all") return products;
-    return products.filter((product) => product.discountBucket === activeFilter);
+    return products.filter(
+      (product) => product.discountBucket === activeFilter,
+    );
   }, [products, activeFilter]);
 
   const sectionTitle =
@@ -114,8 +117,8 @@ export default function SalePage({
       </Head>
 
       <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px]">
-          <header className="overflow-hidden bg-gradient-to-b from-[#f42b67] to-[#e62a8d] pb-4 pt-2 text-white">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
+          <header className="overflow-hidden bg-gradient-to-b from-[#f42b67] to-[#e62a8d] pb-4 md:pb-5 pt-2 md:pt-3 text-white">
             <div className="flex items-center px-4">
               <button
                 type="button"
@@ -127,8 +130,12 @@ export default function SalePage({
               </button>
 
               <div className="ml-3">
-                <h1 className="text-[44px] font-extrabold leading-none">Flash Sale</h1>
-                <p className="mt-1 text-[16px] text-white/95">ลดราคาพิเศษ จำนวนจำกัด!</p>
+                <h1 className="text-[44px] font-extrabold leading-none">
+                  Flash Sale
+                </h1>
+                <p className="mt-1 text-[16px] text-white/95">
+                  ลดราคาพิเศษ จำนวนจำกัด!
+                </p>
               </div>
             </div>
 
@@ -184,7 +191,9 @@ export default function SalePage({
                   <ProductCard
                     key={product.id}
                     product={product}
-                    backgroundColor={cardBackgrounds[idx % cardBackgrounds.length]}
+                    backgroundColor={
+                      cardBackgrounds[idx % cardBackgrounds.length]
+                    }
                     showBadge="sale"
                   />
                 ))}
@@ -219,7 +228,7 @@ export const getServerSideProps: GetServerSideProps<SalePageProps> = async ({
     .map((p) => {
       const discountPercent = Math.max(
         1,
-        Math.round(((p.price - (p.salePrice as number)) / p.price) * 100)
+        Math.round(((p.price - (p.salePrice as number)) / p.price) * 100),
       );
 
       return {
@@ -229,14 +238,15 @@ export const getServerSideProps: GetServerSideProps<SalePageProps> = async ({
       };
     });
 
-  const discountQuery = typeof query.discount === "string" ? query.discount : "";
+  const discountQuery =
+    typeof query.discount === "string" ? query.discount : "";
   const numeric = Number(discountQuery);
   const initialFilter: DiscountFilter =
     discountQuery === "all"
       ? "all"
       : [10, 20, 30, 40, 50].includes(numeric)
-      ? (numeric as DiscountFilter)
-      : 20;
+        ? (numeric as DiscountFilter)
+        : 20;
 
   const now = new Date();
   const configuredEnd = process.env.FLASH_SALE_END_AT;

@@ -91,21 +91,24 @@ export default function SuccessPage() {
       </Head>
 
       <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto flex min-h-screen w-full max-w-[440px] flex-col px-4 pb-[112px] pt-4">
-          <section className="rounded-[26px] border border-[#dbe2ef] bg-white p-5 shadow-[0_10px_26px_rgba(31,65,129,0.12)]">
-            <div className="mx-auto flex h-[88px] w-[88px] items-center justify-center rounded-full bg-[#e8f8ef] text-[#1a9a4c]">
-              <CheckCircle2 className="h-12 w-12" strokeWidth={2.3} />
+        <div className="mx-auto flex min-h-screen w-full max-w-[440px] md:max-w-5xl flex-col px-4 md:px-6 pb-[112px] md:pb-12 pt-4 md:pt-6">
+          <section className="rounded-[26px] border border-[#dbe2ef] bg-white p-5 md:p-6 shadow-[0_10px_26px_rgba(31,65,129,0.12)]">
+            <div className="mx-auto flex h-[88px] w-[88px] md:h-[100px] md:w-[100px] items-center justify-center rounded-full bg-[#e8f8ef] text-[#1a9a4c]">
+              <CheckCircle2
+                className="h-12 w-12 md:h-14 md:w-14"
+                strokeWidth={2.3}
+              />
             </div>
 
-            <h1 className="mt-3 text-center text-[40px] font-extrabold leading-none text-[#1a9a4c]">
+            <h1 className="mt-3 text-center text-[40px] md:text-[44px] font-extrabold leading-none text-[#1a9a4c]">
               สั่งซื้อสำเร็จ
             </h1>
-            <p className="mt-2 text-center text-[18px] leading-snug text-[#4b5563]">
+            <p className="mt-2 text-center text-[18px] md:text-[19px] leading-snug text-[#4b5563]">
               ขอบคุณสำหรับคำสั่งซื้อของคุณ
               {totalAmount && (
                 <>
                   <br />
-                  <span className="text-[24px] font-bold text-[#1f2937]">
+                  <span className="text-[24px] md:text-[26px] font-bold text-[#1f2937]">
                     ยอดชำระ: ฿{Number(totalAmount).toLocaleString("th-TH")}
                   </span>
                 </>
@@ -113,10 +116,10 @@ export default function SuccessPage() {
             </p>
 
             {showUploadForm && (
-              <div className="mt-4 rounded-2xl border border-[#fbbf24] bg-[#fffbeb] p-4">
+              <div className="mt-4 rounded-2xl border border-[#fbbf24] bg-[#fffbeb] p-4 md:p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <AlertCircle className="h-6 w-6 text-[#f59e0b]" />
-                  <h2 className="text-[20px] font-bold text-[#92400e]">
+                  <h2 className="text-[20px] md:text-[21px] font-bold text-[#92400e]">
                     อัปโหลดสลิปโอนเงิน
                   </h2>
                 </div>

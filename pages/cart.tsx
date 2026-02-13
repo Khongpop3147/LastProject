@@ -316,9 +316,9 @@ export default function CartPage() {
         </Head>
 
         <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-          <div className="mx-auto w-full max-w-[440px]">
-            <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-              <div className="flex h-[80px] items-center px-4">
+          <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
+            <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+              <div className="flex h-[80px] md:h-[100px] items-center px-4 md:px-6">
                 <button
                   type="button"
                   aria-label="ย้อนกลับ"
@@ -328,13 +328,13 @@ export default function CartPage() {
                   <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
                 </button>
 
-                <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
+                <h1 className="ml-4 text-[28px] md:text-[32px] font-extrabold leading-none tracking-tight text-black">
                   ตะกร้า
                 </h1>
               </div>
             </header>
 
-            <main className="px-4 pb-8">
+            <main className="px-4 md:px-6 pb-8 md:pb-12">
               <section className="flex min-h-[500px] flex-col items-center justify-center text-center">
                 <div className="mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#dedede]">
                   <ShoppingCart
@@ -358,7 +358,9 @@ export default function CartPage() {
             </main>
           </div>
 
-          <MobileShopBottomNav activePath="/cart" />
+          <div className="md:hidden">
+            <MobileShopBottomNav activePath="/cart" />
+          </div>
         </div>
       </>
     );
@@ -371,9 +373,9 @@ export default function CartPage() {
       </Head>
 
       <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px]">
-          <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
-            <div className="flex h-[80px] items-center px-4">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
+          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+            <div className="flex h-[80px] md:h-[100px] items-center justify-between px-4 md:px-6">
               <button
                 type="button"
                 aria-label="ย้อนกลับ"
@@ -397,7 +399,7 @@ export default function CartPage() {
             </div>
           </header>
 
-          <main className="px-4 pb-[164px]">
+          <main className="px-4 md:px-6 pb-[164px] md:pb-12">
             {loading ? (
               <div className="flex h-[420px] items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-[#2f6ef4]" />
@@ -424,7 +426,7 @@ export default function CartPage() {
                 </Link>
               </section>
             ) : (
-              <>
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 md:gap-8">
                 <section className="space-y-4 pt-2">
                   {groupedBySeller.map((group) => (
                     <div
@@ -581,14 +583,88 @@ export default function CartPage() {
                     </div>
                   ))}
                 </section>
-              </>
+
+                {/* Desktop Summary Sidebar */}
+                <aside className="hidden lg:block">
+                  <div className="sticky top-32 rounded-[20px] border border-[#dddddd] bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
+                    <h2 className="text-[20px] font-bold text-[#2f2f2f] mb-4">
+                      สรุปคำสั่งซื้อ
+                    </h2>
+
+                    {isEditing ? (
+                      <>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center justify-between text-[15px]">
+                            <span className="text-[#6b7280]">เลือกแล้ว</span>
+                            <span className="font-semibold">
+                              {selectedItemsCount} รายการ
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[16px]">
+                            <span className="font-bold text-[#2f2f2f]">
+                              รวม
+                            </span>
+                            <span className="font-bold text-[#f05a2b]">
+                              {toCurrency(selectedTotal)}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={selectedItemsCount === 0}
+                          onClick={removeSelectedItems}
+                          className="w-full rounded-xl bg-[#ff5858] py-3 text-[17px] font-semibold text-white hover:bg-[#e94949] disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                        >
+                          ลบสินค้าที่เลือก
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center justify-between text-[15px] text-[#6b7280]">
+                            <span>ราคาสินค้า</span>
+                            <span className="text-[#4b5563] font-medium">
+                              {toCurrency(selectedTotal)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-[15px] text-[#6b7280]">
+                            <span>ค่าจัดส่ง</span>
+                            <span className="font-semibold text-[#27b05f]">
+                              ฟรี
+                            </span>
+                          </div>
+                          <div className="border-t border-[#e0e0e0] pt-3 mt-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[18px] font-bold text-[#2f2f2f]">
+                                รวมทั้งหมด
+                              </span>
+                              <span className="text-[26px] font-extrabold text-[#2f6ef4]">
+                                {toCurrency(selectedTotal)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={selectedItemsCount === 0}
+                          onClick={() => router.push("/checkout")}
+                          className="w-full rounded-xl bg-[#2f6ef4] py-3 text-[17px] font-semibold text-white hover:bg-[#2558c7] disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                        >
+                          สั่งสินค้า
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </aside>
+              </div>
             )}
           </main>
         </div>
 
         {!loading && items.length > 0 && (
           <div
-            className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)] lg:hidden"
             style={{
               paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)",
             }}
@@ -649,7 +725,9 @@ export default function CartPage() {
         )}
 
         {(loading || items.length === 0) && (
-          <MobileShopBottomNav activePath="/cart" />
+          <div className="md:hidden">
+            <MobileShopBottomNav activePath="/cart" />
+          </div>
         )}
       </div>
     </>
