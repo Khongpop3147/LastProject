@@ -217,7 +217,7 @@ export default function AddressEditorPage() {
       };
 
       const endpoint = isCreateMode ? "/api/addresses" : `/api/addresses/${addressId}`;
-      const method = isCreateMode ? "POST" : "PATCH";
+      const method = isCreateMode ? "POST" : "PUT";
 
       const res = await fetch(endpoint, {
         method,

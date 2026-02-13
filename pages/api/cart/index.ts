@@ -4,7 +4,7 @@ import { getUserFromRequest } from "@/lib/auth";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   // ตรวจ token และดึง user
   const user = await getUserFromRequest(req);
@@ -15,7 +15,8 @@ export default async function handler(
   // GET /api/cart → ดึงรายการในตะกร้า
   if (req.method === "GET") {
     const locale =
-      typeof req.query.locale === "string" && ["th", "en"].includes(req.query.locale)
+      typeof req.query.locale === "string" &&
+      ["th", "en"].includes(req.query.locale)
         ? req.query.locale
         : "th";
 
@@ -40,9 +41,9 @@ export default async function handler(
         rawItems.flatMap((item) =>
           item.product.translations
             .map((translation) => translation.name?.trim())
-            .filter((name): name is string => Boolean(name))
-        )
-      )
+            .filter((name): name is string => Boolean(name)),
+        ),
+      ),
     );
 
     const supplierNameByProductName = new Map<string, string>();
@@ -60,7 +61,7 @@ export default async function handler(
         if (!supplierNameByProductName.has(supplier.productName)) {
           supplierNameByProductName.set(
             supplier.productName,
-            supplier.companyName
+            supplier.companyName,
           );
         }
       }

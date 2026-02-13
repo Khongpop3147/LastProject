@@ -4,7 +4,7 @@ import { getUserFromRequest } from "@/lib/auth";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   const user = await getUserFromRequest(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -15,10 +15,10 @@ export default async function handler(
     try {
       // ตรวจสอบว่า cart item นี้เป็นของ user หรือไม่
       const cartItem = await prisma.cartItem.findFirst({
-        where: { 
+        where: {
           id: id as string,
-          cart: { userId: user.id }
-        }
+          cart: { userId: user.id },
+        },
       });
 
       if (!cartItem) {
