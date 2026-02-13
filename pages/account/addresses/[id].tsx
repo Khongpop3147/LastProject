@@ -129,9 +129,10 @@ export default function AddressEditorPage() {
           return;
         }
 
-        const data = (await res.json()) as AddressItem;
+        const response = (await res.json()) as { address: AddressItem };
         if (cancelled) return;
 
+        const data = response.address;
         const line2Meta = parseAddressLine2(data.line2);
         const meta = getAddressMeta(data.id);
 
