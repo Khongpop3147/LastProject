@@ -3,7 +3,10 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getUserFromRequest } from "@/lib/auth";
 import * as productService from "@/services/productService";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
   const { id } = req.query as { id: string };
 
   const user = await getUserFromRequest(req);
