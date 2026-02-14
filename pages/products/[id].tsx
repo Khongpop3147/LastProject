@@ -13,21 +13,12 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout";
 import QuantitySelector from "@/components/QuantitySelector";
-import ProductOptions from "@/components/ProductOptions";
 import { prisma } from "@/lib/prisma";
 import { useAuth } from "@/context/AuthContext";
 import { calculateDeliveryDate } from "@/lib/shippingUtils";
 import { goBackOrPush } from "@/lib/navigation";
 import type { ProductLocale } from "@prisma/client";
 import { isInWishlist, toggleWishlist } from "@/lib/wishlist";
-
-interface ProductOption {
-  id: string;
-  label: string;
-  value: string;
-  color?: string;
-  disabled?: boolean;
-}
 
 interface ProductPageProps {
   product: {
@@ -80,8 +71,6 @@ export default function ProductPage({ product }: ProductPageProps) {
   const { token, user } = useAuth();
 
   // State management
-  const [selectedOption, setSelectedOption] = useState<string | null>("pink");
-  const [selectedSize, setSelectedSize] = useState<string | null>("M");
   const [selectedShipping, setSelectedShipping] = useState<string>("standard");
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -179,24 +168,6 @@ export default function ProductPage({ product }: ProductPageProps) {
   const visibleDescriptionLines = isDescriptionExpanded
     ? finalDescriptionLines
     : finalDescriptionLines.slice(0, 3);
-
-  // Product options
-  const productOptions: ProductOption[] = [
-    { id: "1", label: "ชมพู", value: "pink", color: "#f78090" },
-    { id: "2", label: "เหลือง", value: "yellow", color: "#f4c542" },
-    { id: "3", label: "แดง", value: "red", color: "#d0011b" },
-    { id: "4", label: "ม่วง", value: "purple", color: "#9b59b6" },
-  ];
-
-  // Size options
-  const sizeOptions: ProductOption[] = [
-    { id: "s", label: "S", value: "S" },
-    { id: "m", label: "M", value: "M" },
-    { id: "l", label: "L", value: "L" },
-    { id: "xl", label: "XL", value: "XL" },
-    { id: "xxl", label: "XXL", value: "XXL", disabled: true },
-    { id: "xxxl", label: "XXXL", value: "XXXL", disabled: true },
-  ];
 
   // Handlers
   const requireLogin = () => {
@@ -438,57 +409,6 @@ export default function ProductPage({ product }: ProductPageProps) {
                     : "ดูรายละเอียดเพิ่มเติม"}
                 </button>
               ) : null}
-            </section>
-
-            <section>
-              <ProductOptions
-                title="เลือก สี"
-                options={productOptions}
-                selectedValue={selectedOption}
-                onSelect={setSelectedOption}
-                type="color"
-              />
-
-              <ProductOptions
-                title="ไซซ์"
-                options={sizeOptions}
-                selectedValue={selectedSize}
-                onSelect={setSelectedSize}
-                type="text"
-              />
-            </section>
-
-            <section>
-              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
-                ข้อมูลเพิ่มเติม
-              </h2>
-
-              {product.material ? (
-                <div className="mb-3">
-                  <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">
-                    วัสดุ
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {product.material.split(",").map((mat, idx) => (
-                      <span
-                        key={idx}
-                        className="rounded-lg bg-[#f2dfe2] px-3 py-1.5 text-[16px] font-medium text-[#374151]"
-                      >
-                        {mat.trim()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="mb-3">
-                <h3 className="mb-2 text-[20px] font-semibold text-[#1f2937]">
-                  ผลิตจาก
-                </h3>
-                <span className="inline-flex rounded-lg bg-[#dfe7f8] px-3 py-1.5 text-[16px] font-medium text-[#374151]">
-                  EU
-                </span>
-              </div>
             </section>
 
             <section>
