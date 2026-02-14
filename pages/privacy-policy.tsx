@@ -1,33 +1,49 @@
 import Layout from "@/components/Layout";
+import useTranslation from "next-translate/useTranslation";
 
 export default function PrivacyPolicyPage() {
+  const { t } = useTranslation("common");
+
   return (
-    <Layout title="ประกาศความเป็นส่วนตัว">
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">ประกาศความเป็นส่วนตัวของลูกค้า</h1>
+    <Layout title={t("privacyPolicy.pageTitle")} hideBottomNav>
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl px-4 md:px-6 pb-8 pt-4 md:pt-8">
+        <article className="rounded-[28px] border border-[#d9e0eb] bg-white p-6 md:p-10 desktop-shell">
+          <h1 className="mb-6 text-3xl font-bold md:text-4xl">
+            {t("privacyPolicy.heading")}
+          </h1>
 
-        <p>
-          บริษัทของเรามุ่งมั่นปกป้องข้อมูลส่วนบุคคลของลูกค้าอย่างเคร่งครัด
-          นโยบายนี้อธิบายถึงการเก็บรวบรวม ใช้ และคุ้มครองข้อมูลของคุณ
-        </p>
+          <p>{t("privacyPolicy.intro")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">การเก็บรวบรวมข้อมูลส่วนบุคคล</h2>
-        <p>เราเก็บข้อมูลเช่น ชื่อ อีเมล ที่อยู่ และข้อมูลการชำระเงินเฉพาะที่จำเป็นสำหรับการให้บริการ</p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("privacyPolicy.collectionHeading")}
+          </h2>
+          <p>{t("privacyPolicy.collectionDesc")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">การใช้ข้อมูล</h2>
-        <p>ข้อมูลที่เก็บรวบรวมจะถูกใช้เพื่อให้บริการที่คุณร้องขอ เช่น การจัดส่งสินค้า การติดต่อสื่อสาร และปรับปรุงบริการ</p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("privacyPolicy.usageHeading")}
+          </h2>
+          <p>{t("privacyPolicy.usageDesc")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">การเก็บรักษาข้อมูล</h2>
-        <p>ข้อมูลของคุณจะถูกเก็บไว้อย่างปลอดภัยและเข้ารหัสในระบบของเรา</p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("privacyPolicy.storageHeading")}
+          </h2>
+          <p>{t("privacyPolicy.storageDesc")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">การเปิดเผยข้อมูลแก่บุคคลภายนอก</h2>
-        <p>เราจะไม่เปิดเผยข้อมูลของคุณแก่บุคคลภายนอกโดยไม่ได้รับความยินยอม เว้นแต่ตามกฎหมายกำหนด</p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("privacyPolicy.disclosureHeading")}
+          </h2>
+          <p>{t("privacyPolicy.disclosureDesc")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">สิทธิของลูกค้า</h2>
-        <p>คุณมีสิทธิ์เข้าถึง แก้ไข และลบข้อมูลส่วนบุคคลของคุณได้ตลอดเวลา โดยติดต่อฝ่ายบริการลูกค้า</p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("privacyPolicy.rightsHeading")}
+          </h2>
+          <p>{t("privacyPolicy.rightsDesc")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">คุ้มครองข้อมูลตามกฎหมาย</h2>
-        <p>เราให้ความสำคัญกับการปฏิบัติตามกฎหมาย PDPA และมาตรฐานสากลในการคุ้มครองข้อมูลส่วนบุคคล</p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("privacyPolicy.legalHeading")}
+          </h2>
+          <p>{t("privacyPolicy.legalDesc")}</p>
+        </article>
       </div>
     </Layout>
   );

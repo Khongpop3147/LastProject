@@ -6,15 +6,21 @@ import SimpleCollectionPage from "@/components/SimpleCollectionPage";
 
 type RecommendedPageProps = {
   products: Product[];
+  title: string;
+  introText: string;
 };
 
-export default function RecommendedPage({ products }: RecommendedPageProps) {
+export default function RecommendedPage({
+  products,
+  title,
+  introText,
+}: RecommendedPageProps) {
   return (
     <SimpleCollectionPage
-      title="สินค้าแนะนำ"
+      title={title}
       activePath="/"
       products={products}
-      introText="สินค้ายอดนิยมที่คัดสรรมาเพื่อคุณภาพ รีวิวและความพึงพอใจของลูกค้า"
+      introText={introText}
       badgeMode="auto"
     />
   );
@@ -24,6 +30,18 @@ export const getServerSideProps: GetServerSideProps<
   RecommendedPageProps
 > = async ({ locale }) => {
   const lang = locale ?? "th";
+  const copy =
+    lang === "en"
+      ? {
+          title: "Recommended",
+          introText:
+            "Curated products with strong quality and customer satisfaction.",
+        }
+      : {
+          title: "สินค้าแนะนำ",
+          introText:
+            "สินค้ายอดนิยมที่คัดสรรมาเพื่อคุณภาพ รีวิวและความพึงพอใจของลูกค้า",
+        };
 
   let raw = await prisma.product.findMany({
     where: { isFeatured: true },
@@ -46,7 +64,9 @@ export const getServerSideProps: GetServerSideProps<
 
   return {
     props: {
-      products: raw.map(mapToProduct),
+      products: raw.map((item) => mapToProduct(item, lang)),
+      title: copy.title,
+      introText: copy.introText,
     },
   };
 };

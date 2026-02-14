@@ -1,6 +1,7 @@
 import type { GetServerSideProps } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import useTranslation from "next-translate/useTranslation";
 import { ArrowLeft, Clock3 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
@@ -23,6 +24,8 @@ type SalePageProps = {
   initialFilter: DiscountFilter;
 };
 
+const numericDiscountFilters = [10, 20, 30, 40, 50] as const;
+
 const cardBackgrounds = [
   "bg-gradient-to-br from-orange-400 to-orange-500",
   "bg-gradient-to-br from-pink-300 to-rose-300",
@@ -39,6 +42,23 @@ const filterTabs: Array<{ key: DiscountFilter; label: string }> = [
   { key: 40, label: "40%" },
   { key: 50, label: "50%" },
 ];
+
+function parseDiscountFilter(
+  value: string | string[] | undefined,
+): DiscountFilter | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (raw === "all") return "all";
+  if (typeof raw !== "string") return null;
+
+  const numeric = Number(raw);
+  if (!Number.isFinite(numeric)) return null;
+
+  return numericDiscountFilters.includes(
+    numeric as (typeof numericDiscountFilters)[number],
+  )
+    ? (numeric as DiscountFilter)
+    : null;
+}
 
 function getDiscountBucket(discountPercent: number): DiscountFilter | 0 {
   if (discountPercent >= 50) return 50;
@@ -59,13 +79,16 @@ export default function SalePage({
   initialFilter,
 }: SalePageProps) {
   const router = useRouter();
-  const [activeFilter, setActiveFilter] =
-    useState<DiscountFilter>(initialFilter);
+  const { t } = useTranslation("common");
+  const [activeFilter, setActiveFilter] = useState<DiscountFilter>(
+    () => parseDiscountFilter(router.query.discount) ?? initialFilter,
+  );
   const [nowTs, setNowTs] = useState<number>(() => Date.now());
 
   useEffect(() => {
-    setActiveFilter(initialFilter);
-  }, [initialFilter]);
+    const filterFromQuery = parseDiscountFilter(router.query.discount);
+    setActiveFilter(filterFromQuery ?? initialFilter);
+  }, [initialFilter, router.query.discount]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -97,17 +120,23 @@ export default function SalePage({
   }, [products, activeFilter]);
 
   const sectionTitle =
-    activeFilter === "all" ? "สินค้า Flash Sale" : `สินค้าลด ${activeFilter}%`;
+    activeFilter === "all" ? t("sale.flashSaleProducts") : t("sale.discountProducts", { pct: activeFilter });
 
   const handleFilterClick = (filter: DiscountFilter) => {
+    if (activeFilter === filter) return;
+
     setActiveFilter(filter);
-    const nextQuery: Record<string, string> = {};
-    if (filter !== "all") {
-      nextQuery.discount = String(filter);
-    }
-    router.replace({ pathname: router.pathname, query: nextQuery }, undefined, {
-      shallow: true,
-    });
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: { discount: String(filter) },
+      },
+      undefined,
+      {
+        shallow: true,
+        scroll: false,
+      },
+    );
   };
 
   return (
@@ -116,15 +145,16 @@ export default function SalePage({
         <title>Flash Sale</title>
       </Head>
 
-      <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
-          <header className="overflow-hidden bg-gradient-to-b from-[#f42b67] to-[#e62a8d] pb-4 md:pb-5 pt-2 md:pt-3 text-white">
+      <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+        <div className="mx-auto w-full max-w-[440px] md:mt-6 md:max-w-7xl desktop-shell">
+          {/* Mobile Header */}
+          <header className="md:hidden overflow-hidden bg-gradient-to-b from-[#f42b67] to-[#e62a8d] pb-4 pt-2 text-white">
             <div className="flex items-center px-4">
               <button
                 type="button"
-                aria-label="ย้อนกลับ"
+                aria-label={t("common.back")}
                 onClick={handleBack}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20 text-white"
+                className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/20 text-white transition-all duration-300 hover:bg-white/30"
               >
                 <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
               </button>
@@ -134,7 +164,7 @@ export default function SalePage({
                   Flash Sale
                 </h1>
                 <p className="mt-1 text-[16px] text-white/95">
-                  ลดราคาพิเศษ จำนวนจำกัด!
+                  {t("sale.specialDiscount")}
                 </p>
               </div>
             </div>
@@ -142,7 +172,7 @@ export default function SalePage({
             <div className="mt-4 flex items-center gap-3 px-4 text-[15px]">
               <div className="flex items-center gap-1">
                 <Clock3 className="h-5 w-5" />
-                สิ้นสุดใน
+                {t("flash.endsIn")}
               </div>
               <div className="flex items-center gap-1">
                 <span className="rounded-lg bg-white px-2 py-0.5 font-bold text-[#2f6ef4]">
@@ -158,35 +188,133 @@ export default function SalePage({
             </div>
           </header>
 
-          <main className="px-3 pb-[102px] pt-3">
-            <div className="mb-3 grid grid-cols-6 rounded-xl bg-[#d9d9db] p-1">
-              {filterTabs.map((tab) => {
-                const active = tab.key === activeFilter;
-                return (
-                  <button
-                    key={String(tab.key)}
-                    type="button"
-                    onClick={() => handleFilterClick(tab.key)}
-                    className={`rounded-lg py-1 text-[14px] font-semibold transition-colors ${
-                      active ? "bg-[#93b7ff] text-[#1d4ed8]" : "text-[#111827]"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+          {/* Desktop Header */}
+          <header className="hidden md:block mb-6 overflow-hidden">
+            <div className="relative rounded-3xl bg-gradient-to-r from-orange-500 via-red-500 to-red-600 p-6 shadow-2xl">
+              {/* Animated Background Decorations */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+
+              <div className="relative z-10 flex items-center justify-between gap-6">
+                {/* Left Side - Title & Timer */}
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h1 className="text-3xl font-extrabold text-white mb-2 drop-shadow-lg">
+                      ⚡ Flash Sale
+                    </h1>
+                    <p className="text-white/90 text-base font-semibold mb-3">
+                      {t("flash.discountUpTo")}
+                    </p>
+
+                    {/* Countdown Timer */}
+                    <div className="flex items-center gap-2">
+                      <Clock3 className="w-5 h-5 text-white animate-pulse" />
+                      <div className="flex items-center gap-2">
+                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
+                          <div className="text-2xl font-black text-red-600">
+                            {format2(hours)}
+                          </div>
+                          <div className="text-xs font-bold text-gray-600 mt-1">
+                            {t("flash.hours")}
+                          </div>
+                        </div>
+                        <span className="text-xl font-bold text-white">:</span>
+                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
+                          <div className="text-2xl font-black text-red-600">
+                            {format2(minutes)}
+                          </div>
+                          <div className="text-xs font-bold text-gray-600 mt-1">
+                            {t("flash.minutes")}
+                          </div>
+                        </div>
+                        <span className="text-xl font-bold text-white">:</span>
+                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
+                          <div className="text-2xl font-black text-red-600">
+                            {format2(seconds)}
+                          </div>
+                          <div className="text-xs font-bold text-gray-600 mt-1">
+                            {t("flash.seconds")}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Side - Back Button */}
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="flex-shrink-0 flex items-center gap-2 px-6 py-3 bg-white text-red-600 font-bold text-base rounded-lg hover:bg-red-50 transition-all duration-300 hover:scale-105 hover:shadow-2xl"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  {t("common.back")}
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <main className="px-3 md:px-6 lg:px-8 pb-[102px] md:pb-8 pt-3 md:pt-0">
+            {/* Filter Tabs */}
+            <div className="mb-6">
+              <div className="flex flex-wrap gap-2 md:gap-3 rounded-2xl bg-white p-3 md:p-4 shadow-sm border border-gray-200">
+                {filterTabs.map((tab) => {
+                  const active = tab.key === activeFilter;
+                  return (
+                    <button
+                      key={String(tab.key)}
+                      type="button"
+                      onClick={() => handleFilterClick(tab.key)}
+                      className={`flex-1 md:flex-none min-w-[80px] md:min-w-[100px] rounded-lg px-4 py-3 text-sm md:text-base font-bold transition-all duration-300 hover:scale-105 hover:shadow-md ${
+                        active
+                          ? "bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg scale-105"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {tab.key === "all" ? t("sale.all") : `${tab.key}%`}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            <h2 className="mb-3 text-[40px] font-extrabold text-[#1f2937]">
-              {sectionTitle}
-            </h2>
+            {/* Section Title */}
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-extrabold text-[#1f2937]">
+                {sectionTitle}
+              </h2>
+              <span className="text-sm md:text-base text-gray-600 font-semibold">
+                {filteredProducts.length} {t("common.items")}
+              </span>
+            </div>
 
+            {/* Products Grid */}
             {filteredProducts.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-[#cccccc] bg-white p-6 text-center text-[#6b7280]">
-                ไม่พบสินค้าในช่วงส่วนลดนี้
+              <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-8 md:p-12 text-center">
+                <div className="text-gray-400 mb-3">
+                  <svg
+                    className="w-16 h-16 mx-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    />
+                  </svg>
+                </div>
+                <p className="text-lg md:text-xl font-bold text-gray-600">
+                  {t("sale.noProducts")}
+                </p>
+                <p className="mt-2 text-sm text-gray-500">
+                  {t("sale.tryOtherDiscount")}
+                </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
                 {filteredProducts.map((product, idx) => (
                   <ProductCard
                     key={product.id}
@@ -195,6 +323,7 @@ export default function SalePage({
                       cardBackgrounds[idx % cardBackgrounds.length]
                     }
                     showBadge="sale"
+                    salePercent={product.discountPercent}
                   />
                 ))}
               </div>
@@ -232,21 +361,13 @@ export const getServerSideProps: GetServerSideProps<SalePageProps> = async ({
       );
 
       return {
-        ...mapToProduct(p),
+        ...mapToProduct(p, lang),
         discountPercent,
         discountBucket: getDiscountBucket(discountPercent),
       };
     });
 
-  const discountQuery =
-    typeof query.discount === "string" ? query.discount : "";
-  const numeric = Number(discountQuery);
-  const initialFilter: DiscountFilter =
-    discountQuery === "all"
-      ? "all"
-      : [10, 20, 30, 40, 50].includes(numeric)
-        ? (numeric as DiscountFilter)
-        : 20;
+  const initialFilter = parseDiscountFilter(query.discount) ?? 20;
 
   const now = new Date();
   const configuredEnd = process.env.FLASH_SALE_END_AT;

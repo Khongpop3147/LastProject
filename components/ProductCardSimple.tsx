@@ -47,7 +47,7 @@ export default function ProductCardSimple({
 
   return (
     <Link href={`/products/${product.id}`}>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative">
+      <div className="relative overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow duration-300 hover:shadow-md">
         <div className="relative w-full aspect-square">
           <Image
             src={product.imageUrl ?? "/images/placeholder.png"}
@@ -69,7 +69,7 @@ export default function ProductCardSimple({
 
           <button
             onClick={handleFavoriteClick}
-            className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+            className="tap-target absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-md transition-transform duration-300 ease-out hover:scale-105"
           >
             <Heart
               className={`w-4 h-4 ${
@@ -80,7 +80,7 @@ export default function ProductCardSimple({
         </div>
 
         <div className="p-3">
-          <h3 className="text-sm font-medium text-gray-800 line-clamp-2 mb-1">
+          <h3 className="overflow-safe mb-1 line-clamp-2 text-sm font-medium text-gray-800">
             {product.name}
           </h3>
 

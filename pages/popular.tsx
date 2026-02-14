@@ -6,15 +6,21 @@ import SimpleCollectionPage from "@/components/SimpleCollectionPage";
 
 type PopularPageProps = {
   products: Product[];
+  title: string;
+  introText: string;
 };
 
-export default function PopularPage({ products }: PopularPageProps) {
+export default function PopularPage({
+  products,
+  title,
+  introText,
+}: PopularPageProps) {
   return (
     <SimpleCollectionPage
-      title="ได้รับความนิยมสูง"
+      title={title}
       activePath="/"
       products={products}
-      introText="สินค้าที่ลูกค้าสั่งซื้อบ่อยที่สุดในช่วงนี้"
+      introText={introText}
       badgeMode="auto"
     />
   );
@@ -24,6 +30,16 @@ export const getServerSideProps: GetServerSideProps<PopularPageProps> = async ({
   locale,
 }) => {
   const lang = locale ?? "th";
+  const copy =
+    lang === "en"
+      ? {
+          title: "Most Popular",
+          introText: "Top products customers order most frequently right now.",
+        }
+      : {
+          title: "ได้รับความนิยมสูง",
+          introText: "สินค้าที่ลูกค้าสั่งซื้อบ่อยที่สุดในช่วงนี้",
+        };
 
   const ranked = await prisma.orderItem.groupBy({
     by: ["productId"],
@@ -46,7 +62,7 @@ export const getServerSideProps: GetServerSideProps<PopularPageProps> = async ({
     products = ids
       .map((id) => byId.get(id))
       .filter((p): p is NonNullable<typeof p> => Boolean(p))
-      .map(mapToProduct);
+      .map((item) => mapToProduct(item, lang));
   } else {
     const fallback = await prisma.product.findMany({
       orderBy: { updatedAt: "desc" },
@@ -55,10 +71,14 @@ export const getServerSideProps: GetServerSideProps<PopularPageProps> = async ({
         translations: { where: { locale: lang }, take: 1 },
       },
     });
-    products = fallback.map(mapToProduct);
+    products = fallback.map((item) => mapToProduct(item, lang));
   }
 
   return {
-    props: { products },
+    props: {
+      products,
+      title: copy.title,
+      introText: copy.introText,
+    },
   };
 };

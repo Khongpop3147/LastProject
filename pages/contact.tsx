@@ -12,9 +12,10 @@ import {
 } from "lucide-react";
 import MobileShopBottomNav from "@/components/MobileShopBottomNav";
 import { goBackOrPush } from "@/lib/navigation";
+import useTranslation from "next-translate/useTranslation";
 
 type ContactCard = {
-  title: string;
+  titleKey: string;
   value: string;
   href: string;
   icon: typeof PhoneCall;
@@ -24,7 +25,7 @@ type ContactCard = {
 
 const CONTACT_CARDS: ContactCard[] = [
   {
-    title: "โทรศัพท์",
+    titleKey: "contactPage.cardPhone",
     value: "02-123-4567",
     href: "tel:021234567",
     icon: PhoneCall,
@@ -32,7 +33,7 @@ const CONTACT_CARDS: ContactCard[] = [
     iconColor: "text-[#22b35f]",
   },
   {
-    title: "LINE Official",
+    titleKey: "contactPage.cardLine",
     value: "@simplyshopthai",
     href: "https://line.me",
     icon: MessageCircle,
@@ -40,7 +41,7 @@ const CONTACT_CARDS: ContactCard[] = [
     iconColor: "text-[#22b35f]",
   },
   {
-    title: "อีเมล",
+    titleKey: "contactPage.cardEmail",
     value: "support@simplyshop.co.th",
     href: "mailto:support@simplyshop.co.th",
     icon: Mail,
@@ -48,7 +49,7 @@ const CONTACT_CARDS: ContactCard[] = [
     iconColor: "text-[#2f6ef4]",
   },
   {
-    title: "Facebook",
+    titleKey: "contactPage.cardFacebook",
     value: "Simply Shop Thai",
     href: "https://facebook.com",
     icon: Facebook,
@@ -72,6 +73,7 @@ const INITIAL_FORM: ContactFormState = {
 };
 
 export default function ContactPage() {
+  const { t } = useTranslation("common");
   const router = useRouter();
   const [form, setForm] = useState<ContactFormState>(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
@@ -79,6 +81,13 @@ export default function ContactPage() {
   const [successMessage, setSuccessMessage] = useState("");
 
   const handleBack = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches
+    ) {
+      router.push("/account/settings");
+      return;
+    }
     goBackOrPush(router, "/account");
   };
 
@@ -99,57 +108,69 @@ export default function ContactPage() {
       const json = (await res.json()) as { error?: string };
 
       if (!res.ok) {
-        setErrorMessage(json.error ?? "ส่งข้อความไม่สำเร็จ");
+        setErrorMessage(json.error ?? t("contactPage.sendFailed"));
         return;
       }
 
-      setSuccessMessage(
-        "ส่งข้อความเรียบร้อยแล้ว ทีมงานจะติดต่อกลับโดยเร็วที่สุด",
-      );
+      setSuccessMessage(t("contactPage.sendSuccess"));
       setForm((prev) => ({ ...prev, subject: "", message: "" }));
     } catch {
-      setErrorMessage("ส่งข้อความไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+      setErrorMessage(t("contactPage.sendFailedRetry"));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px] md:max-w-4xl">
-        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-          <div className="flex h-[92px] md:h-[100px] items-center px-4 md:px-6">
+    <div className="min-h-screen desktop-page overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
+      {/* Mobile Header - Mobile Only */}
+      <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+        <div className="mx-auto w-full max-w-[440px]">
+          <header className="flex h-[66px] items-center px-4">
             <button
               type="button"
-              aria-label="ย้อนกลับ"
+              aria-label={t("common.back")}
               onClick={handleBack}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
             >
-              <ArrowLeft className="h-7 w-7" strokeWidth={2.25} />
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.25} />
             </button>
 
-            <div className="ml-4">
-              <h1 className="text-[30px] font-extrabold leading-none tracking-tight text-black">
-                ติดต่อเรา
+            <div className="ml-3 min-w-0">
+              <h1 className="truncate text-[22px] font-extrabold leading-tight tracking-tight text-black">
+                {t("contactPage.heading")}
               </h1>
-              <p className="text-[16px] text-[#6b7280]">
-                สอบถามข้อมูล แจ้งปัญหา
+              <p className="truncate text-[14px] text-[#6b7280]">
+                {t("contactPage.subtitle")}
               </p>
             </div>
-          </div>
-        </header>
+          </header>
+        </div>
+      </div>
 
-        <main className="space-y-4 px-4 pb-[120px] pt-4">
+      {/* Desktop & Mobile Content */}
+      <div className="mx-auto w-full max-w-[440px] md:max-w-4xl px-4 md:px-6 md:mt-6 md:pt-8 desktop-shell">
+        {/* Desktop Header - Desktop Only */}
+        <div className="hidden md:block mb-6">
+          <h1 className="text-[30px] font-extrabold text-black">
+            {t("contactPage.heading")}
+          </h1>
+          <p className="text-[16px] text-[#6b7280]">
+            {t("contactPage.subtitle")}
+          </p>
+        </div>
+
+        <main className="space-y-4 pb-[120px] md:pb-12 pt-4 md:pt-0">
           <section>
             <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
-              ช่องทางติดต่อ
+              {t("contactPage.channelsHeading")}
             </h2>
             <div className="grid grid-cols-2 gap-3">
               {CONTACT_CARDS.map((item) => {
                 const Icon = item.icon;
                 return (
                   <a
-                    key={item.title}
+                    key={item.titleKey}
                     href={item.href}
                     target="_blank"
                     rel="noreferrer"
@@ -161,7 +182,7 @@ export default function ContactPage() {
                       <Icon className="h-7 w-7" />
                     </div>
                     <p className="line-clamp-1 text-[22px] font-bold leading-tight text-[#111827]">
-                      {item.title}
+                      {t(item.titleKey)}
                     </p>
                     <p className="mt-0.5 line-clamp-2 break-all text-[16px] leading-tight text-[#6b7280]">
                       {item.value}
@@ -176,14 +197,14 @@ export default function ContactPage() {
             <div className="mb-1 flex items-center">
               <Clock3 className="h-6 w-6 text-[#eab308]" />
               <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">
-                เวลาทำการ
+                {t("contactPage.businessHours")}
               </h2>
             </div>
             <p className="text-[17px] leading-tight text-[#4b5563]">
-              จันทร์ - ศุกร์: 09:00 - 18:00 น.
+              {t("contactPage.hoursWeekday")}
             </p>
             <p className="text-[17px] leading-tight text-[#4b5563]">
-              เสาร์ - อาทิตย์: 10:00 - 16:00 น.
+              {t("contactPage.hoursWeekend")}
             </p>
           </section>
 
@@ -191,18 +212,17 @@ export default function ContactPage() {
             <div className="mb-1 flex items-center">
               <MapPin className="h-6 w-6 text-[#2f6ef4]" />
               <h2 className="ml-2 text-[24px] font-extrabold text-[#111827]">
-                ที่อยู่สำนักงาน
+                {t("contactPage.officeAddress")}
               </h2>
             </div>
             <p className="text-[17px] leading-tight text-[#4b5563]">
-              123 อาคารสุขสันต์ ชั้น 15 ถนนสุขุมวิท แขวงคลองเตยเหนือ เขตวัฒนา
-              กรุงเทพมหานคร 10110
+              {t("contactPage.officeAddressDetail")}
             </p>
           </section>
 
           <section className="rounded-2xl border border-[#d8d8d8] bg-white p-4">
             <h2 className="text-[24px] font-extrabold text-[#1f2937]">
-              ส่งข้อความถึงเรา
+              {t("contactPage.formHeading")}
             </h2>
 
             <form onSubmit={handleSubmit} className="mt-2 space-y-2">
@@ -212,7 +232,7 @@ export default function ContactPage() {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, name: event.target.value }))
                 }
-                placeholder="ชื่อ-นามสกุล *"
+                placeholder={t("contactPage.namePlaceholder")}
                 className="h-12 w-full rounded-xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[16px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
               />
               <input
@@ -221,7 +241,7 @@ export default function ContactPage() {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, email: event.target.value }))
                 }
-                placeholder="อีเมล *"
+                placeholder={t("contactPage.emailPlaceholder")}
                 className="h-12 w-full rounded-xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[16px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
               />
               <input
@@ -230,7 +250,7 @@ export default function ContactPage() {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, subject: event.target.value }))
                 }
-                placeholder="หัวข้อ *"
+                placeholder={t("contactPage.subjectPlaceholder")}
                 className="h-12 w-full rounded-xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[16px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
               />
               <textarea
@@ -239,7 +259,7 @@ export default function ContactPage() {
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, message: event.target.value }))
                 }
-                placeholder="รายละเอียดที่ต้องการติดต่อ *"
+                placeholder={t("contactPage.messagePlaceholder")}
                 className="w-full rounded-xl border border-[#d9dee7] bg-[#eef2f8] px-3 py-2 text-[16px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
               />
 
@@ -261,7 +281,9 @@ export default function ContactPage() {
                 className="flex h-12 w-full items-center justify-center rounded-xl bg-[#2f6ef4] text-[18px] font-semibold text-white disabled:opacity-60"
               >
                 <Send className="mr-1 h-5 w-5" />
-                {submitting ? "กำลังส่ง..." : "ส่งข้อความ"}
+                {submitting
+                  ? t("contactPage.sending")
+                  : t("contactPage.sendMessage")}
               </button>
             </form>
           </section>

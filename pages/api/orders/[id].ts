@@ -2,6 +2,27 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { getUserFromToken } from "@/lib/auth";
 
+function parseLocale(value: unknown): "th" | "en" {
+  return value === "en" ? "en" : "th";
+}
+
+function resolveLocalizedName(
+  translations: Array<{ locale: string; name: string }>,
+  orderLocale: "th" | "en",
+  requestedLocale: "th" | "en",
+) {
+  const orderName = translations.find((item) => item.locale === orderLocale)
+    ?.name;
+  if (orderName) return orderName;
+
+  const requestedName = translations.find(
+    (item) => item.locale === requestedLocale,
+  )?.name;
+  if (requestedName) return requestedName;
+
+  return translations[0]?.name ?? (requestedLocale === "en" ? "Product" : "สินค้า");
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -16,10 +37,26 @@ export default async function handler(
   if (!orderId) {
     return res.status(400).json({ error: "Invalid order id" });
   }
+  const requestedLocale = parseLocale(req.query.locale);
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: { include: { product: true } }, coupon: true },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              translations: {
+                where: {
+                  locale: { in: ["th", "en"] },
+                },
+              },
+            },
+          },
+        },
+      },
+      coupon: true,
+    },
   });
 
   if (!order || order.userId !== user.id) {
@@ -27,7 +64,24 @@ export default async function handler(
   }
 
   if (req.method === "GET") {
-    return res.status(200).json({ order });
+    const orderLocale = parseLocale(order.locale);
+    return res.status(200).json({
+      order: {
+        ...order,
+        locale: orderLocale,
+        items: order.items.map((item) => ({
+          ...item,
+          product: {
+            ...item.product,
+            name: resolveLocalizedName(
+              item.product.translations,
+              orderLocale,
+              requestedLocale,
+            ),
+          },
+        })),
+      },
+    });
   }
 
   if (req.method === "PATCH") {

@@ -1,6 +1,6 @@
 import type { GetServerSideProps } from "next";
 import Head from "next/head";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import {
   Search,
@@ -20,6 +20,7 @@ type SortKey = "popular" | "newest" | "priceLowToHigh" | "priceHighToLow";
 type SearchProduct = Product & {
   createdAt: string;
   popularityScore: number;
+  categoryName?: string;
 };
 
 type AllProductsProps = {
@@ -96,6 +97,10 @@ function parseSort(value: unknown): SortKey {
   return "popular";
 }
 
+function normalizeText(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 export default function AllProductsPage({
   products,
   categories,
@@ -106,12 +111,15 @@ export default function AllProductsPage({
   initialDiscountOnly,
   initialShowAdvanced,
 }: AllProductsProps) {
+  const router = useRouter();
+  const { t } = useTranslation("common");
   const [searchTerm, setSearchTerm] = useState(initialQuery);
   const [showAdvanced, setShowAdvanced] = useState(initialShowAdvanced);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState<SortKey>(initialSort);
   const [discountOnly, setDiscountOnly] = useState(initialDiscountOnly);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  const resultSectionRef = useRef<HTMLElement | null>(null);
 
   const priceCeiling = useMemo(() => computePriceCeiling(products), [products]);
   const [maxPrice, setMaxPrice] = useState(() => {
@@ -168,16 +176,43 @@ export default function AllProductsPage({
     return Array.from(new Set([...base, ...fromCategories])).slice(0, 6);
   }, [categories]);
 
-  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const normalizedSearch = normalizeText(searchTerm);
+
+  const moveToResultSection = () => {
+    window.setTimeout(() => {
+      resultSectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 30);
+  };
+
+  const syncQuerySearch = (value: string) => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    if (value) {
+      params.set("q", value);
+    } else {
+      params.delete("q");
+    }
+
+    const next = `${router.pathname}${
+      params.toString().length > 0 ? `?${params.toString()}` : ""
+    }`;
+    router.replace(next, undefined, { shallow: true, scroll: false });
+  };
 
   const filteredProducts = useMemo(() => {
     const list = products.filter((product) => {
-      const name = product.name.toLowerCase();
-      const desc = (product.description ?? "").toLowerCase();
+      const name = normalizeText(product.name);
+      const desc = normalizeText(product.description ?? "");
+      const categoryName = normalizeText(product.categoryName ?? "");
+      const haystack = `${name} ${desc} ${categoryName}`.trim();
+      const searchTerms = normalizedSearch.split(" ").filter(Boolean);
       const hitKeyword =
-        normalizedSearch.length === 0 ||
-        name.includes(normalizedSearch) ||
-        desc.includes(normalizedSearch);
+        searchTerms.length === 0 ||
+        searchTerms.every((term) => haystack.includes(term));
 
       const hitCategory =
         selectedCategory === "all" || product.categoryId === selectedCategory;
@@ -232,9 +267,19 @@ export default function AllProductsPage({
     });
   };
 
+  const submitSearch = (rawValue: string) => {
+    const value = rawValue.trim();
+    setSearchTerm(value);
+    if (value) {
+      commitSearch(value);
+    }
+    setShowAdvanced(false);
+    syncQuerySearch(value);
+    moveToResultSection();
+  };
+
   const applyKeyword = (keyword: string) => {
-    setSearchTerm(keyword);
-    commitSearch(keyword);
+    submitSearch(keyword);
   };
 
   const resetAllFilters = () => {
@@ -257,13 +302,14 @@ export default function AllProductsPage({
   return (
     <>
       <Head>
-        <title>ค้นหาสินค้า</title>
+        <title>{t("allProductsPage.searchProducts")}</title>
       </Head>
 
-      <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
-          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-            <div className="flex items-center gap-2 px-2.5 md:px-6 py-2.5 md:py-4">
+      <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827] md:bg-transparent">
+        {/* Mobile Search Header - Mobile Only */}
+        <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+          <div className="mx-auto w-full max-w-[440px]">
+            <header className="flex items-center gap-2 px-2.5 py-2.5">
               <div className="relative flex-1">
                 <Search
                   className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[#9ca3af]"
@@ -272,11 +318,12 @@ export default function AllProductsPage({
                 <input
                   type="text"
                   value={searchTerm}
-                  placeholder="ค้นหา สินค้า"
+                  placeholder={t("allProductsPage.searchPlaceholder")}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
-                      commitSearch(searchTerm);
+                      event.preventDefault();
+                      submitSearch(searchTerm);
                     }
                   }}
                   className="h-12 w-full rounded-[16px] border border-[#c3ccda] bg-[#dde5f2] pl-10 pr-10 text-[18px] text-[#1f2937] outline-none placeholder:text-[#a6b0c2] focus:border-[#6b92d9]"
@@ -286,7 +333,7 @@ export default function AllProductsPage({
                     type="button"
                     aria-label="ล้างคำค้นหา"
                     onClick={() => setSearchTerm("")}
-                    className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#f0f2f7] text-[#7b8495]"
+                    className="tap-target absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#f0f2f7] text-[#7b8495]"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -295,7 +342,7 @@ export default function AllProductsPage({
 
               <button
                 type="button"
-                aria-label="ตัวกรองขั้นสูง"
+                aria-label={t("common.advancedFilter")}
                 onClick={() => setShowAdvanced((prev) => !prev)}
                 className={`flex h-12 w-12 items-center justify-center rounded-xl ${
                   showAdvanced
@@ -305,15 +352,67 @@ export default function AllProductsPage({
               >
                 <SlidersHorizontal className="h-7 w-7" strokeWidth={2.25} />
               </button>
+            </header>
+          </div>
+        </div>
+
+        {/* Desktop & Mobile Content */}
+        <div className="app-page-container">
+          {/* Desktop Search Header - Desktop Only */}
+          <header className="hidden md:block pt-6 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-2xl">
+                <Search
+                  className="pointer-events-none absolute left-4 top-1/2 h-6 w-6 -translate-y-1/2 text-[#9ca3af]"
+                  strokeWidth={2.25}
+                />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  placeholder={t("allProductsPage.searchFullPlaceholder")}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      submitSearch(searchTerm);
+                    }
+                  }}
+                  className="h-14 w-full rounded-2xl border border-[#c3ccda] bg-white pl-12 pr-12 text-[18px] text-[#1f2937] outline-none placeholder:text-[#a6b0c2] focus:border-[#2f6ef4] focus:ring-2 focus:ring-[#2f6ef4]/20 transition-all"
+                />
+                {searchTerm.trim().length > 0 ? (
+                  <button
+                    type="button"
+                    aria-label="ล้างคำค้นหา"
+                    onClick={() => setSearchTerm("")}
+                    className="tap-target absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#f0f2f7] text-[#7b8495] transition-colors hover:bg-[#e1e4ea]"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                ) : null}
+              </div>
+
+              <button
+                type="button"
+                aria-label={t("common.advancedFilter")}
+                onClick={() => setShowAdvanced((prev) => !prev)}
+                className={`flex h-14 px-6 items-center justify-center gap-2 rounded-2xl font-semibold transition-colors ${
+                  showAdvanced
+                    ? "bg-[#2f6ef4] text-white"
+                    : "border border-[#c3ccda] bg-white text-[#6b7280] hover:bg-gray-50"
+                }`}
+              >
+                <SlidersHorizontal className="h-6 w-6" strokeWidth={2.25} />
+                <span>{t("common.filter")}</span>
+              </button>
             </div>
           </header>
 
-          <main className="px-3 md:px-6 pb-[102px] md:pb-8 pt-3 md:pt-6">
+          <main className="pb-[102px] md:pb-8 pt-3 md:pt-0">
             {showAdvanced ? (
               <section className="space-y-4 pb-4">
                 <div>
                   <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">
-                    หมวดหมู่
+                    {t("common.category")}
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -346,7 +445,7 @@ export default function AllProductsPage({
 
                 <div>
                   <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">
-                    เรียงตาม
+                    {t("common.sortBy")}
                   </h2>
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -358,7 +457,7 @@ export default function AllProductsPage({
                           : "bg-[#dce3f2] text-[#2f2f2f]"
                       }`}
                     >
-                      ยอดนิยม
+                      {t("common.popular")}
                     </button>
                     <button
                       type="button"
@@ -369,7 +468,7 @@ export default function AllProductsPage({
                           : "bg-[#dce3f2] text-[#2f2f2f]"
                       }`}
                     >
-                      ใหม่ล่าสุด
+                      {t("common.latest")}
                     </button>
                     <button
                       type="button"
@@ -380,7 +479,7 @@ export default function AllProductsPage({
                           : "bg-[#dce3f2] text-[#2f2f2f]"
                       }`}
                     >
-                      ราคาต่ำไป-สูง
+                      {t("common.priceLowHigh")}
                     </button>
                     <button
                       type="button"
@@ -391,7 +490,7 @@ export default function AllProductsPage({
                           : "bg-[#dce3f2] text-[#2f2f2f]"
                       }`}
                     >
-                      ราคาสูงไป-ต่ำ
+                      {t("common.priceHighLow")}
                     </button>
                     <button
                       type="button"
@@ -402,14 +501,16 @@ export default function AllProductsPage({
                           : "bg-[#dce3f2] text-[#2f2f2f]"
                       }`}
                     >
-                      เฉพาะลดราคา
+                      {t("common.onlyOnSale")}
                     </button>
                   </div>
                 </div>
 
                 <div>
                   <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">
-                    ช่วงราคา: ฿0 - {toCurrency(maxPrice)}
+                    {t("common.priceRange", {
+                      max: maxPrice.toLocaleString("th-TH"),
+                    })}
                   </h2>
                   <input
                     type="range"
@@ -420,7 +521,7 @@ export default function AllProductsPage({
                     onChange={(event) =>
                       setMaxPrice(Number(event.target.value))
                     }
-                    className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#d1d5db] accent-[#2f6ef4]"
+                    className="min-h-0 h-2 w-full cursor-pointer appearance-none rounded-lg bg-[#d1d5db] accent-[#2f6ef4]"
                   />
                 </div>
               </section>
@@ -435,10 +536,10 @@ export default function AllProductsPage({
                   />
                 </div>
                 <h2 className="text-[32px] font-extrabold leading-tight text-black">
-                  ไม่พบสินค้า
+                  {t("allProductsPage.noProducts")}
                 </h2>
                 <p className="mt-1 text-[18px] text-[#6b7280]">
-                  ลองค้นหาด้วยคำอื่น หรือดูหมวดหมู่สินค้า
+                  {t("allProductsPage.noProductsDesc")}
                 </p>
                 <button
                   type="button"
@@ -455,7 +556,7 @@ export default function AllProductsPage({
                     <section className="pb-2">
                       <div className="mb-2 flex items-center justify-between">
                         <h2 className="text-[20px] font-extrabold text-[#1f2937]">
-                          ประวัติการค้นหา
+                          {t("common.searchHistory")}
                         </h2>
                         {searchHistory.length > 0 ? (
                           <button
@@ -464,7 +565,7 @@ export default function AllProductsPage({
                             className="flex items-center gap-1 text-[17px] text-[#ef6b6b]"
                           >
                             <Trash2 className="h-4 w-4" />
-                            ลบทิ้งหมด
+                            {t("common.clearAll")}
                           </button>
                         ) : null}
                       </div>
@@ -484,14 +585,14 @@ export default function AllProductsPage({
                         </div>
                       ) : (
                         <p className="text-[16px] text-[#9ca3af]">
-                          ยังไม่มีประวัติการค้นหา
+                          {t("common.noSearchHistory")}
                         </p>
                       )}
                     </section>
 
                     <section className="pb-2 pt-3">
                       <h2 className="mb-2 text-[20px] font-extrabold text-[#1f2937]">
-                        แนะนำ
+                        {t("common.suggested")}
                       </h2>
                       <div className="flex flex-wrap gap-2">
                         {suggestedKeywords.map((item) => (
@@ -509,20 +610,22 @@ export default function AllProductsPage({
                   </>
                 ) : null}
 
-                <section className="pt-2">
+                <section ref={resultSectionRef} className="pt-2">
                   <div className="mb-2 flex items-end justify-between">
                     <h2 className="text-[24px] font-extrabold text-[#1f2937]">
-                      สำรวจสินค้า
+                      {t("common.explore")}
                     </h2>
                     <p className="text-[15px] text-[#6b7280]">
-                      ทั้งหมด {filteredProducts.length} รายการ
+                      {t("common.totalItems", {
+                        count: filteredProducts.length,
+                      })}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
                     {filteredProducts.length === 0 ? (
                       <div className="col-span-2 rounded-2xl border border-dashed border-[#cfd3db] bg-white p-5 text-center text-[16px] text-[#6b7280]">
-                        ยังไม่มีสินค้าให้แสดง
+                        {t("common.noProductsToShow")}
                       </div>
                     ) : (
                       filteredProducts.map((product, idx) => (
@@ -560,6 +663,8 @@ export const getServerSideProps: GetServerSideProps<AllProductsProps> = async ({
   query,
 }) => {
   const lang = locale ?? "th";
+  const fallbackCategoryName = lang === "en" ? "Category" : "หมวดหมู่";
+  const fallbackProductName = lang === "en" ? "Product" : "สินค้า";
   const initialQuery = typeof query.q === "string" ? query.q : "";
   const initialCategory =
     typeof query.category === "string" && query.category.length > 0
@@ -598,12 +703,15 @@ export const getServerSideProps: GetServerSideProps<AllProductsProps> = async ({
     soldByProduct.set(item.productId, item._sum.quantity ?? 0);
   }
 
+  const categoryNameById = new Map<string, string>();
   const categories: Category[] = rawCategories
     .map((category) => {
       const localized =
         category.translations.find((item) => item.locale === lang)?.name ||
         category.translations[0]?.name ||
-        "หมวดหมู่";
+        fallbackCategoryName;
+
+      categoryNameById.set(category.id, localized);
 
       return {
         id: category.id,
@@ -620,13 +728,16 @@ export const getServerSideProps: GetServerSideProps<AllProductsProps> = async ({
 
     return {
       id: product.id,
-      name: localized?.name ?? "สินค้า",
+      name: localized?.name ?? fallbackProductName,
       description: localized?.description ?? "",
       price: product.price,
       imageUrl: product.imageUrl,
       stock: product.stock,
       salePrice: product.salePrice,
       categoryId: product.categoryId ?? undefined,
+      categoryName: product.categoryId
+        ? (categoryNameById.get(product.categoryId) ?? "")
+        : "",
       isFeatured: product.isFeatured,
       createdAt: product.createdAt.toISOString(),
       popularityScore: soldByProduct.get(product.id) ?? 0,

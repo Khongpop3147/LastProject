@@ -40,22 +40,28 @@ interface CartItem {
   };
 }
 
-function resolveName(product: CartItem["product"], locale: string) {
+function resolveName(
+  product: CartItem["product"],
+  locale: string,
+  fallback: string = "Product",
+) {
   const exact = product.translations?.find(
     (item) => item.locale === locale,
   )?.name;
   if (exact) return exact;
   if (product.translations?.[0]?.name) return product.translations[0].name;
-  return product.name || "สินค้า";
+  return product.name || fallback;
 }
 
-function toCurrency(value: number) {
-  return `฿${value.toLocaleString("th-TH")}`;
+function toCurrency(value: number, locale: "th" | "en") {
+  const formatterLocale = locale === "en" ? "en-US" : "th-TH";
+  return `฿${value.toLocaleString(formatterLocale)}`;
 }
 
 export default function CartPage() {
   const router = useRouter();
-  const { lang } = useTranslation("common");
+  const { t, lang } = useTranslation("common");
+  const locale: "th" | "en" = lang === "en" ? "en" : "th";
   const { token } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,7 +122,7 @@ export default function CartPage() {
     if (!item) return;
 
     if (quantity > item.product.stock) {
-      alert(`สินค้าในคลังมีเพียง ${item.product.stock} ชิ้น`);
+      alert(t("cart.stockOnly", { stock: item.product.stock }));
       return;
     }
 
@@ -135,7 +141,7 @@ export default function CartPage() {
       );
     } else {
       const err = await res.json();
-      alert("เกิดข้อผิดพลาด: " + err.error);
+      alert(t("cart.error") + err.error);
     }
   };
 
@@ -223,7 +229,7 @@ export default function CartPage() {
   const groupedBySeller = useMemo(() => {
     const groups = new Map<string, CartItem[]>();
     for (const item of items) {
-      const seller = item.sellerName?.trim() || "ร้านทั่วไป";
+      const seller: string = item.sellerName?.trim() || t("cart.generalStore");
       if (!groups.has(seller)) {
         groups.set(seller, []);
       }
@@ -249,7 +255,7 @@ export default function CartPage() {
           selectedCount === groupItems.length && groupItems.length > 0,
       };
     });
-  }, [items, selectedItemIds]);
+  }, [items, selectedItemIds, t]);
 
   const selectedItemsCount = items.filter((item) =>
     selectedItemIds.has(item.id),
@@ -312,29 +318,40 @@ export default function CartPage() {
     return (
       <>
         <Head>
-          <title>ตะกร้า</title>
+          <title>{t("cart.page")}</title>
         </Head>
 
-        <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-          <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
-            <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-              <div className="flex h-[80px] md:h-[100px] items-center px-4 md:px-6">
+        <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+          {/* Mobile Header - Mobile Only */}
+          <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+            <div className="mx-auto w-full max-w-[440px]">
+              <header className="flex h-[80px] items-center px-4">
                 <button
                   type="button"
-                  aria-label="ย้อนกลับ"
+                  aria-label={t("cart.goBack")}
                   onClick={handleBack}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dce1ea] text-[#222b3a]"
                 >
                   <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
                 </button>
 
-                <h1 className="ml-4 text-[28px] md:text-[32px] font-extrabold leading-none tracking-tight text-black">
-                  ตะกร้า
+                <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
+                  {t("cart.page")}
                 </h1>
-              </div>
-            </header>
+              </header>
+            </div>
+          </div>
 
-            <main className="px-4 md:px-6 pb-8 md:pb-12">
+          {/* Desktop & Mobile Content */}
+          <div className="app-page-container md:mt-8 md:pt-6 desktop-shell">
+            {/* Desktop Header - Desktop Only */}
+            <div className="hidden md:block mb-6">
+              <h1 className="text-[32px] font-extrabold text-black md:text-teal-900">
+                {t("cart.page")}
+              </h1>
+            </div>
+
+            <main className="pb-8 md:pb-12">
               <section className="flex min-h-[500px] flex-col items-center justify-center text-center">
                 <div className="mb-4 flex h-[80px] w-[80px] items-center justify-center rounded-full bg-[#dedede]">
                   <ShoppingCart
@@ -343,16 +360,16 @@ export default function CartPage() {
                   />
                 </div>
                 <h2 className="text-[32px] font-extrabold leading-tight text-black">
-                  ไม่มีสินค้า
+                  {t("cart.noProducts")}
                 </h2>
                 <p className="mt-1 text-[15px] text-[#6b7280]">
-                  ไม่มีสินค้าในตะกร้า
+                  {t("cart.noItems")}
                 </p>
                 <Link
                   href="/login"
-                  className="mt-3 rounded-2xl bg-[#2f6ef4] px-8 py-2.5 text-[16px] font-medium text-white"
+                  className="mt-3 rounded-2xl bg-teal-600 px-8 py-2.5 text-[16px] font-medium text-white md:hover:bg-teal-700 md:transition-colors"
                 >
-                  เข้าสู่ระบบ
+                  {t("cart.login")}
                 </Link>
               </section>
             </main>
@@ -369,16 +386,17 @@ export default function CartPage() {
   return (
     <>
       <Head>
-        <title>ตะกร้า</title>
+        <title>{t("cart.page")}</title>
       </Head>
 
-      <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
-          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-            <div className="flex h-[80px] md:h-[100px] items-center justify-between px-4 md:px-6">
+      <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+        {/* Mobile Header - Only on Mobile */}
+        <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+          <div className="mx-auto w-full max-w-[440px]">
+            <header className="flex h-[80px] items-center justify-between px-4">
               <button
                 type="button"
-                aria-label="ย้อนกลับ"
+                aria-label={t("cart.goBack")}
                 onClick={handleBack}
                 className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dce1ea] text-[#222b3a]"
               >
@@ -386,7 +404,8 @@ export default function CartPage() {
               </button>
 
               <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
-                ตะกร้า{items.length > 0 ? ` (${cartQuantityCount})` : ""}
+                {t("cart.page")}
+                {items.length > 0 ? ` (${cartQuantityCount})` : ""}
               </h1>
 
               <button
@@ -394,15 +413,33 @@ export default function CartPage() {
                 onClick={handleToggleEdit}
                 className="ml-auto text-[20px] text-[#2f2f2f]"
               >
-                {isEditing ? "เสร็จสิ้น" : "แก้ไข"}
+                {isEditing ? t("cart.done") : t("cart.edit")}
               </button>
-            </div>
-          </header>
+            </header>
+          </div>
+        </div>
 
-          <main className="px-4 md:px-6 pb-[164px] md:pb-12">
+        {/* Desktop & Mobile Content */}
+        <div className="app-page-container md:mt-8 md:pt-6 desktop-shell">
+          {/* Desktop Header - Only on Desktop */}
+          <div className="hidden md:flex items-center justify-between mb-6">
+            <h1 className="text-[32px] font-extrabold text-black md:text-teal-900">
+              {t("cart.title")}
+              {items.length > 0 ? ` (${cartQuantityCount})` : ""}
+            </h1>
+            <button
+              type="button"
+              onClick={handleToggleEdit}
+              className="px-4 py-2 text-[18px] text-teal-700 hover:bg-teal-50 rounded-lg transition-colors"
+            >
+              {isEditing ? t("cart.done") : t("cart.edit")}
+            </button>
+          </div>
+
+          <main className="pb-[164px] md:pb-12">
             {loading ? (
               <div className="flex h-[420px] items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-[#2f6ef4]" />
+                <Loader2 className="h-10 w-10 animate-spin text-teal-700" />
               </div>
             ) : items.length === 0 ? (
               <section className="flex min-h-[500px] flex-col items-center justify-center text-center">
@@ -413,16 +450,16 @@ export default function CartPage() {
                   />
                 </div>
                 <h2 className="text-[32px] font-extrabold leading-tight text-black">
-                  ไม่มีสินค้า
+                  {t("cart.noProducts")}
                 </h2>
                 <p className="mt-1 text-[15px] text-[#6b7280]">
-                  ไม่มีสินค้าในตะกร้า
+                  {t("cart.noItems")}
                 </p>
                 <Link
                   href="/all-products"
-                  className="mt-3 rounded-2xl bg-[#2f6ef4] px-8 py-2.5 text-[16px] font-medium text-white"
+                  className="mt-3 rounded-2xl bg-teal-600 px-8 py-2.5 text-[16px] font-medium text-white md:hover:bg-teal-700 md:transition-colors"
                 >
-                  ไปดูสินค้า
+                  {t("cart.goShopping")}
                 </Link>
               </section>
             ) : (
@@ -431,7 +468,7 @@ export default function CartPage() {
                   {groupedBySeller.map((group) => (
                     <div
                       key={group.sellerName}
-                      className="overflow-hidden rounded-[20px] border border-[#dddddd] bg-white shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
+                      className="overflow-hidden rounded-[20px] border border-[#dddddd] bg-white shadow-[0_2px_4px_rgba(0,0,0,0.08)] md:hover:shadow-md md:transition-shadow"
                     >
                       <div className="flex items-center gap-2 border-b border-[#efefef] px-3 py-3">
                         {isEditing ? (
@@ -441,7 +478,7 @@ export default function CartPage() {
                             onChange={() =>
                               toggleSellerSelected(group.sellerName)
                             }
-                            className="h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
+                            className="h-5 w-5 flex-shrink-0 accent-teal-600"
                           />
                         ) : null}
                         <Store className="h-4 w-4 flex-shrink-0 text-[#666]" />
@@ -458,6 +495,7 @@ export default function CartPage() {
                           const productName = resolveName(
                             item.product,
                             lang || "th",
+                            t("cart.product"),
                           );
                           const hasDiscount =
                             typeof item.product.salePrice === "number" &&
@@ -473,7 +511,7 @@ export default function CartPage() {
                                   type="checkbox"
                                   checked={selectedItemIds.has(item.id)}
                                   onChange={() => toggleItemSelected(item.id)}
-                                  className="mt-9 h-5 w-5 flex-shrink-0 accent-[#f25d3d]"
+                                  className="mt-9 h-5 w-5 flex-shrink-0 accent-teal-600"
                                 />
                               ) : null}
 
@@ -542,18 +580,18 @@ export default function CartPage() {
                                 <div className="mt-2 flex items-end justify-between gap-2">
                                   <div className="min-w-0 flex items-end gap-1">
                                     <span className="text-[30px] font-extrabold leading-none text-[#f05a2b]">
-                                      {toCurrency(unit)}
+                                      {toCurrency(unit, locale)}
                                     </span>
                                     {hasDiscount && (
                                       <span className="truncate text-[15px] text-[#b3b3b3] line-through">
-                                        {toCurrency(item.product.price)}
+                                        {toCurrency(item.product.price, locale)}
                                       </span>
                                     )}
                                   </div>
 
                                   <button
                                     type="button"
-                                    aria-label="ลบออกจากตะกร้า"
+                                    aria-label={t("cart.removeFromCart")}
                                     onClick={() => removeItem(item.id)}
                                     className={`ml-1 flex-shrink-0 rounded-full p-1 hover:bg-[#fff1ef] ${
                                       isEditing ? "" : "hidden"
@@ -576,8 +614,8 @@ export default function CartPage() {
                         onClick={() => router.push("/coupons")}
                         className="flex w-full items-center gap-2 border-t border-[#efefef] px-3 py-3 text-left text-[18px] text-[#666]"
                       >
-                        <Ticket className="h-5 w-5 text-[#f25d3d]" />
-                        เพิ่มโค้ดร้านค้า
+                        <Ticket className="h-5 w-5 text-teal-600" />
+                        {t("cart.addStoreCode")}
                         <ChevronRight className="ml-auto h-5 w-5 text-[#9a9a9a]" />
                       </button>
                     </div>
@@ -586,26 +624,27 @@ export default function CartPage() {
 
                 {/* Desktop Summary Sidebar */}
                 <aside className="hidden lg:block">
-                  <div className="sticky top-32 rounded-[20px] border border-[#dddddd] bg-white p-5 shadow-[0_2px_8px_rgba(0,0,0,0.08)]">
-                    <h2 className="text-[20px] font-bold text-[#2f2f2f] mb-4">
-                      สรุปคำสั่งซื้อ
+                  <div className="sticky top-32 rounded-[20px] border border-[#dddddd] bg-white p-5 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.08)] md:shadow-[0_4px_12px_rgba(0,0,0,0.08)]">
+                    <h2 className="text-[20px] font-bold text-[#2f2f2f] md:text-teal-900 mb-4">
+                      {t("cart.orderSummary")}
                     </h2>
 
                     {isEditing ? (
                       <>
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center justify-between text-[15px]">
-                            <span className="text-[#6b7280]">เลือกแล้ว</span>
-                            <span className="font-semibold">
-                              {selectedItemsCount} รายการ
+                            <span className="text-[#6b7280]">
+                              {t("cart.selected", {
+                                count: selectedItemsCount,
+                              })}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[16px]">
                             <span className="font-bold text-[#2f2f2f]">
-                              รวม
+                              {t("cart.total")}
                             </span>
                             <span className="font-bold text-[#f05a2b]">
-                              {toCurrency(selectedTotal)}
+                              {toCurrency(selectedTotal, locale)}
                             </span>
                           </div>
                         </div>
@@ -615,31 +654,31 @@ export default function CartPage() {
                           onClick={removeSelectedItems}
                           className="w-full rounded-xl bg-[#ff5858] py-3 text-[17px] font-semibold text-white hover:bg-[#e94949] disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                         >
-                          ลบสินค้าที่เลือก
+                          {t("cart.deleteSelected")}
                         </button>
                       </>
                     ) : (
                       <>
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center justify-between text-[15px] text-[#6b7280]">
-                            <span>ราคาสินค้า</span>
+                            <span>{t("cart.productPrice")}</span>
                             <span className="text-[#4b5563] font-medium">
-                              {toCurrency(selectedTotal)}
+                              {toCurrency(selectedTotal, locale)}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-[15px] text-[#6b7280]">
-                            <span>ค่าจัดส่ง</span>
+                            <span>{t("cart.shipping")}</span>
                             <span className="font-semibold text-[#27b05f]">
-                              ฟรี
+                              {t("cart.free")}
                             </span>
                           </div>
                           <div className="border-t border-[#e0e0e0] pt-3 mt-3">
                             <div className="flex items-center justify-between">
                               <span className="text-[18px] font-bold text-[#2f2f2f]">
-                                รวมทั้งหมด
+                                {t("cart.grandTotal")}
                               </span>
-                              <span className="text-[26px] font-extrabold text-[#2f6ef4]">
-                                {toCurrency(selectedTotal)}
+                              <span className="text-[26px] font-extrabold text-teal-700 md:text-[28px]">
+                                {toCurrency(selectedTotal, locale)}
                               </span>
                             </div>
                           </div>
@@ -649,9 +688,9 @@ export default function CartPage() {
                           type="button"
                           disabled={selectedItemsCount === 0}
                           onClick={() => router.push("/checkout")}
-                          className="w-full rounded-xl bg-[#2f6ef4] py-3 text-[17px] font-semibold text-white hover:bg-[#2558c7] disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                          className="w-full rounded-xl bg-teal-600 py-3 text-[17px] font-semibold text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
                         >
-                          สั่งสินค้า
+                          {t("cart.placeOrder")}
                         </button>
                       </>
                     )}
@@ -673,9 +712,11 @@ export default function CartPage() {
               {isEditing ? (
                 <>
                   <div className="mb-2 flex items-center justify-between text-[15px] text-[#6b7280]">
-                    <span>เลือกแล้ว {selectedItemsCount} รายการ</span>
+                    <span>
+                      {t("cart.selected", { count: selectedItemsCount })}
+                    </span>
                     <span className="font-semibold text-[#f05a2b]">
-                      {toCurrency(selectedTotal)}
+                      {toCurrency(selectedTotal, locale)}
                     </span>
                   </div>
                   <button
@@ -684,28 +725,30 @@ export default function CartPage() {
                     onClick={removeSelectedItems}
                     className="w-full rounded-2xl bg-[#ff5858] py-2.5 text-[18px] font-medium leading-none text-white hover:bg-[#e94949] disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    ลบสินค้าที่เลือก
+                    {t("cart.deleteSelected")}
                   </button>
                 </>
               ) : (
                 <>
                   <div className="space-y-0.5">
                     <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
-                      <span>ราคาสินค้า</span>
+                      <span>{t("cart.productPrice")}</span>
                       <span className="text-[#4b5563]">
-                        {toCurrency(selectedTotal)}
+                        {toCurrency(selectedTotal, locale)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
-                      <span>ค่าจัดส่ง</span>
-                      <span className="font-medium text-[#27b05f]">ฟรี</span>
+                      <span>{t("cart.shipping")}</span>
+                      <span className="font-medium text-[#27b05f]">
+                        {t("cart.free")}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between pt-0.5">
                       <span className="text-[17px] font-extrabold text-[#2f2f2f]">
-                        รวมทั้งหมด
+                        {t("cart.grandTotal")}
                       </span>
-                      <span className="text-[24px] font-extrabold text-[#2f6ef4]">
-                        {toCurrency(selectedTotal)}
+                      <span className="text-[24px] font-extrabold text-teal-700">
+                        {toCurrency(selectedTotal, locale)}
                       </span>
                     </div>
                   </div>
@@ -714,9 +757,9 @@ export default function CartPage() {
                     type="button"
                     disabled={selectedItemsCount === 0}
                     onClick={() => router.push("/checkout")}
-                    className="mt-2 w-full rounded-2xl bg-[#2f6ef4] py-2.5 text-[18px] font-medium leading-none text-white hover:bg-[#2558c7] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-2 w-full rounded-2xl bg-teal-600 py-2.5 text-[18px] font-medium leading-none text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    สั่งสินค้า
+                    {t("cart.placeOrder")}
                   </button>
                 </>
               )}

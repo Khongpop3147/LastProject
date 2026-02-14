@@ -2,6 +2,7 @@ import type { GetServerSideProps } from "next";
 import Link from "next/link";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import useTranslation from "next-translate/useTranslation";
 import { prisma } from "@/lib/prisma";
 import { goBackOrPush } from "@/lib/navigation";
 import MobileShopBottomNav from "@/components/MobileShopBottomNav";
@@ -34,6 +35,7 @@ function toCurrency(value: number) {
 
 export default function CategoriesPage({ sections }: CategoriesPageProps) {
   const router = useRouter();
+  const { t } = useTranslation("common");
 
   const handleBack = () => {
     goBackOrPush(router, "/");
@@ -42,16 +44,17 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
   return (
     <>
       <Head>
-        <title>หมวดหมู่ทั้งหมด</title>
+        <title>{t("categoriesPage.title")}</title>
       </Head>
 
-      <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px] md:max-w-6xl">
-          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-            <div className="flex h-[80px] md:h-[88px] items-center px-4 md:px-6">
+      <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827] md:bg-transparent">
+        {/* Mobile Header - Mobile Only */}
+        <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+          <div className="mx-auto w-full max-w-[440px]">
+            <header className="flex h-[80px] items-center px-4">
               <button
                 type="button"
-                aria-label="ย้อนกลับ"
+                aria-label={t("categoriesPage.back")}
                 onClick={handleBack}
                 className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dce1ea] text-[#222b3a]"
               >
@@ -59,24 +62,42 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
               </button>
 
               <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
-                หมวดหมู่ทั้งหมด
+                {t("categoriesPage.title")}
               </h1>
 
               <button
                 type="button"
-                aria-label="ตั้งค่า"
+                aria-label={t("categoriesPage.settings")}
                 onClick={() => router.push("/all-products?advanced=1")}
                 className="ml-auto rounded-full p-1 text-[#4b5563]"
               >
                 <Settings className="h-8 w-8" />
               </button>
-            </div>
-          </header>
+            </header>
+          </div>
+        </div>
 
-          <main className="space-y-6 px-4 pb-[104px] pt-3">
+        {/* Desktop & Mobile Content */}
+        <div className="mx-auto w-full max-w-[440px] px-4 md:max-w-7xl md:px-6 md:pt-6">
+          {/* Desktop Header - Desktop Only */}
+          <div className="hidden md:flex items-center justify-between mb-6">
+            <h1 className="text-[28px] font-extrabold text-black">
+              {t("categoriesPage.title")}
+            </h1>
+            <button
+              type="button"
+              aria-label={t("categoriesPage.settings")}
+              onClick={() => router.push("/all-products?advanced=1")}
+              className="rounded-full p-1 text-[#4b5563] hover:bg-gray-100"
+            >
+              <Settings className="h-8 w-8" />
+            </button>
+          </div>
+
+          <main className="space-y-6 pb-[104px] md:pb-12 pt-3 md:pt-0">
             {sections.length === 0 ? (
               <section className="rounded-2xl border border-dashed border-[#cccccc] bg-white p-6 text-center text-[#6b7280]">
-                ยังไม่มีหมวดหมู่สินค้า
+                {t("categoriesPage.empty")}
               </section>
             ) : (
               sections.map((section) => (
@@ -99,7 +120,7 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                           </h2>
                           <p className="mt-1 text-[14px] text-[#6b7280]">
                             {section.productCount.toLocaleString("th-TH")}{" "}
-                            รายการ
+                            {t("categoriesPage.items")}
                           </p>
                         </div>
                       </div>
@@ -109,12 +130,12 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                       href={`/all-products?category=${section.id}`}
                       className="ml-3 flex flex-shrink-0 items-center gap-1 text-[16px] font-semibold text-[#2f6ef4]"
                     >
-                      ดูทั้งหมด
+                      {t("categoriesPage.viewAll")}
                       <ChevronRight className="h-4 w-4" />
                     </Link>
                   </div>
 
-                  <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+                  <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide md:grid md:gap-4 md:overflow-visible md:[grid-template-columns:repeat(auto-fit,minmax(190px,1fr))]">
                     {section.products.map((product) => {
                       const displayPrice = product.salePrice ?? product.price;
                       const hasDiscount =
@@ -125,9 +146,9 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                         <Link
                           key={product.id}
                           href={`/products/${product.id}`}
-                          className="w-[128px] flex-shrink-0 overflow-hidden rounded-[18px] border border-[#d8d8d8] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.14)]"
+                          className="w-[148px] flex-shrink-0 overflow-hidden rounded-[18px] border border-[#d8d8d8] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.14)] md:w-auto"
                         >
-                          <div className="relative h-[128px]">
+                          <div className="relative h-[148px] md:h-[200px]">
                             <img
                               src={
                                 product.imageUrl ?? "/images/placeholder.png"
@@ -144,8 +165,10 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                               }`}
                             >
                               {hasDiscount
-                                ? `ลด ${product.discountPercent}%`
-                                : "ใหม่"}
+                                ? t("categoriesPage.discount", {
+                                    percent: product.discountPercent,
+                                  })
+                                : t("categoriesPage.new")}
                             </span>
 
                             <div className="absolute bottom-1.5 right-1.5 rounded-full bg-white/95 p-1.5 shadow">
@@ -153,13 +176,13 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
                             </div>
                           </div>
 
-                          <div className="px-2 py-2">
-                            <h3 className="line-clamp-2 min-h-[38px] text-[14px] font-semibold leading-snug text-[#1f2937]">
+                          <div className="px-2 py-2 md:px-3 md:py-3">
+                            <h3 className="line-clamp-2 min-h-[38px] text-[14px] font-semibold leading-snug text-[#1f2937] md:min-h-[44px] md:text-[15px]">
                               {product.name}
                             </h3>
 
                             <div className="mt-1 flex items-end gap-1">
-                              <span className="text-[24px] font-bold leading-none text-[#2f6ef4]">
+                              <span className="text-[24px] font-bold leading-none text-[#2f6ef4] md:text-[26px]">
                                 {toCurrency(displayPrice)}
                               </span>
                               {hasDiscount && (
@@ -179,7 +202,9 @@ export default function CategoriesPage({ sections }: CategoriesPageProps) {
           </main>
         </div>
 
-        <MobileShopBottomNav activePath="/all-products" />
+        <div className="md:hidden">
+          <MobileShopBottomNav activePath="/all-products" />
+        </div>
       </div>
     </>
   );
@@ -189,6 +214,8 @@ export const getServerSideProps: GetServerSideProps<
   CategoriesPageProps
 > = async ({ locale }) => {
   const lang = locale ?? "th";
+  const fallbackCategoryName = lang === "en" ? "Category" : "หมวดหมู่";
+  const fallbackProductName = lang === "en" ? "Product" : "สินค้า";
 
   const rawCategories = await prisma.category.findMany({
     include: {
@@ -219,7 +246,7 @@ export const getServerSideProps: GetServerSideProps<
 
         return {
           id: product.id,
-          name: product.translations[0]?.name ?? "สินค้า",
+          name: product.translations[0]?.name ?? fallbackProductName,
           price: product.price,
           salePrice,
           imageUrl: product.imageUrl,
@@ -229,7 +256,7 @@ export const getServerSideProps: GetServerSideProps<
 
       return {
         id: category.id,
-        name: name || "หมวดหมู่",
+        name: name || fallbackCategoryName,
         productCount: category._count.products,
         coverImage: products[0]?.imageUrl ?? null,
         products,

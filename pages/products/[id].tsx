@@ -1,8 +1,16 @@
 import { GetServerSideProps } from "next";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { ArrowLeft, Heart, Share2, Package, Check } from "lucide-react";
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  Package,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Layout from "@/components/Layout";
 import QuantitySelector from "@/components/QuantitySelector";
 import ProductOptions from "@/components/ProductOptions";
@@ -35,6 +43,38 @@ interface ProductPageProps {
   } | null;
 }
 
+function extractProductImages(imageUrl: string | null): string[] {
+  if (!imageUrl) return ["/images/placeholder.png"];
+
+  const raw = imageUrl.trim();
+  if (!raw) return ["/images/placeholder.png"];
+
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        const list = parsed
+          .map((item) => String(item || "").trim())
+          .filter(Boolean);
+        if (list.length > 0) return Array.from(new Set(list));
+      }
+    } catch {
+      // fallback below
+    }
+  }
+
+  const byDelimiter = raw
+    .split(/\r?\n|\s*\|\s*|\s*;\s*|\s*,\s*/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (byDelimiter.length > 0) {
+    return Array.from(new Set(byDelimiter));
+  }
+
+  return [raw];
+}
+
 export default function ProductPage({ product }: ProductPageProps) {
   const router = useRouter();
   const { token, user } = useAuth();
@@ -49,9 +89,29 @@ export default function ProductPage({ product }: ProductPageProps) {
   const [loading, setLoading] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState("");
   const [distanceKm] = useState(100);
+  const galleryImages = useMemo(
+    () => extractProductImages(product?.imageUrl ?? null),
+    [product?.imageUrl],
+  );
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const activeImage =
+    galleryImages[selectedImageIndex] || galleryImages[0] || "/images/placeholder.png";
+  const hasMultipleImages = galleryImages.length > 1;
+  const otherImageItems = useMemo(
+    () =>
+      galleryImages
+        .map((img, index) => ({ img, index }))
+        .filter(({ index }) => index !== selectedImageIndex),
+    [galleryImages, selectedImageIndex],
+  );
 
   const handleBack = () => {
-    goBackOrPush(router, "/");
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
+      router.push("/all-products");
+      return;
+    }
+
+    goBackOrPush(router, "/all-products");
   };
 
   // Calculate delivery date when shipping method changes
@@ -67,6 +127,10 @@ export default function ProductPage({ product }: ProductPageProps) {
     if (!product?.id) return;
     setIsWishlisted(isInWishlist(product.id, user?.id));
   }, [product?.id, user?.id]);
+
+  useEffect(() => {
+    setSelectedImageIndex(0);
+  }, [product?.id, galleryImages.length]);
 
   if (!product) {
     return (
@@ -176,6 +240,20 @@ export default function ProductPage({ product }: ProductPageProps) {
     }
   };
 
+  const showPreviousImage = () => {
+    if (!hasMultipleImages) return;
+    setSelectedImageIndex((prev) =>
+      prev === 0 ? galleryImages.length - 1 : prev - 1,
+    );
+  };
+
+  const showNextImage = () => {
+    if (!hasMultipleImages) return;
+    setSelectedImageIndex((prev) =>
+      prev === galleryImages.length - 1 ? 0 : prev + 1,
+    );
+  };
+
   const addToCart = async (redirect: "cart" | "checkout" | "none") => {
     if (!requireLogin()) return;
     if (product.stock === 0) return;
@@ -197,37 +275,10 @@ export default function ProductPage({ product }: ProductPageProps) {
 
       if (redirect === "cart") router.push("/cart");
       if (redirect === "checkout") router.push("/checkout");
-      if (redirect === "none") alert("Added to cart");
+      if (redirect === "none") alert("เพิ่มสินค้าลงตะกร้าแล้ว");
     } catch (error) {
       console.error(error);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddToCart = async () => {
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-    if (isOutOfStock) return;
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/cart", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ productId: product.id, quantity }),
-      });
-      if (res.ok) {
-        router.push("/checkout");
-      }
-    } catch (error) {
-      console.error(error);
+      alert("เพิ่มสินค้าไม่สำเร็จ กรุณาลองใหม่");
     } finally {
       setLoading(false);
     }
@@ -235,10 +286,11 @@ export default function ProductPage({ product }: ProductPageProps) {
 
   return (
     <Layout title={product.name}>
-      <div className="min-h-screen bg-[#f3f3f4] pb-[186px] md:pb-12">
-        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
-          <header className="sticky top-16 sm:top-20 md:top-24 z-50 border-b border-[#d5d8de] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-            <div className="flex h-[78px] md:h-[88px] items-center px-4 md:px-6">
+      <div className="min-h-screen desktop-page bg-[#f3f3f4] pb-[186px] md:pb-12">
+        {/* Mobile Header - Only on Mobile */}
+        <div className="md:hidden sticky top-0 z-50 border-b border-[#d5d8de] bg-[#f3f3f4]">
+          <div className="mx-auto w-full max-w-[440px]">
+            <div className="flex h-[78px] items-center px-4">
               <button
                 onClick={handleBack}
                 aria-label="ย้อนกลับ"
@@ -268,24 +320,79 @@ export default function ProductPage({ product }: ProductPageProps) {
                 </button>
               </div>
             </div>
-          </header>
-
-          <div className="relative h-[300px] w-full bg-gradient-to-br from-yellow-400 to-yellow-500 sm:h-[340px]">
-            <Image
-              src={product.imageUrl || "/images/placeholder.png"}
-              alt={product.name}
-              fill
-              className="object-cover"
-              priority
-            />
-            {hasDiscount && (
-              <div className="absolute right-4 top-4 rounded-2xl bg-gradient-to-r from-[#f05a2b] to-[#ec3ea8] px-4 py-2 text-[20px] font-bold text-white shadow-md">
-                ลด {discountPercent}%
-              </div>
-            )}
           </div>
+        </div>
 
-          <main className="space-y-5 px-4 py-4">
+        {/* Desktop & Mobile Content */}
+        <div className="app-page-container md:pt-6 desktop-shell">
+          <div className="md:grid md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:items-start md:gap-8 md:px-6 md:py-6">
+            <section className="md:sticky md:top-28">
+              <div className="relative h-[300px] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-400 to-yellow-500 sm:h-[340px] md:h-[620px] md:rounded-3xl">
+                <Image
+                  src={activeImage}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 768px) 100vw, 52vw"
+                />
+                {hasMultipleImages ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={showPreviousImage}
+                      aria-label="รูปก่อนหน้า"
+                      className="absolute left-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 p-2 text-[#1f2937] shadow-md backdrop-blur-sm transition hover:bg-white"
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={showNextImage}
+                      aria-label="รูปถัดไป"
+                      className="absolute right-3 top-1/2 z-20 -translate-y-1/2 rounded-full bg-white/90 p-2 text-[#1f2937] shadow-md backdrop-blur-sm transition hover:bg-white"
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </button>
+                  </>
+                ) : null}
+                {hasDiscount && (
+                  <div className="absolute right-4 top-4 rounded-2xl bg-gradient-to-r from-[#f05a2b] to-[#ec3ea8] px-4 py-2 text-[20px] font-bold text-white shadow-md">
+                    ลด {discountPercent}%
+                  </div>
+                )}
+              </div>
+
+              {otherImageItems.length > 0 ? (
+                <div className="mt-3 rounded-2xl border border-[#d8dde8] bg-white/90 p-3 md:p-4">
+                  <p className="mb-2 text-[15px] font-semibold text-[#6b7280]">
+                    รูปอื่นๆ
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {otherImageItems.map(({ img, index }) => (
+                      <button
+                        key={`${img}-${index}`}
+                        type="button"
+                        onClick={() => setSelectedImageIndex(index)}
+                        aria-label={`ดูรูปที่ ${index + 1}`}
+                        className="relative aspect-square overflow-hidden rounded-xl border border-[#d1d5db] transition hover:border-[#2f6ef4]"
+                      >
+                        <Image
+                          src={img}
+                          alt={`${product.name} รูปที่ ${index + 1}`}
+                          fill
+                          sizes="(max-width: 768px) 28vw, 16vw"
+                          className="object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            {/* Product Details */}
+            <main className="space-y-5 py-4 md:space-y-4 md:py-0">
             <section>
               <div className="mb-2 flex items-end gap-3">
                 <span className="text-[36px] font-extrabold leading-none text-[#2f6ef4]">
@@ -298,7 +405,7 @@ export default function ProductPage({ product }: ProductPageProps) {
                 ) : null}
               </div>
 
-              <h1 className="text-[28px] font-extrabold leading-tight text-[#111827]">
+              <h1 className="overflow-safe break-words text-[28px] font-extrabold leading-tight text-[#111827]">
                 {product.name}
               </h1>
             </section>
@@ -315,7 +422,7 @@ export default function ProductPage({ product }: ProductPageProps) {
                     className="flex items-start gap-2 text-[18px] leading-relaxed text-[#374151]"
                   >
                     <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#9ca3af]" />
-                    <span>{line}</span>
+                    <span className="overflow-safe break-words">{line}</span>
                   </li>
                 ))}
               </ul>
@@ -492,11 +599,55 @@ export default function ProductPage({ product }: ProductPageProps) {
                 disabled={isOutOfStock}
               />
             </section>
-          </main>
+
+            {/* Desktop Action Buttons */}
+            <section className="hidden md:flex gap-3 pt-4">
+              <button
+                onClick={handleWishlist}
+                aria-label="เพิ่มในรายการโปรด"
+                className="flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-[#2f6ef4] px-6 text-[18px] font-bold text-[#2f6ef4] hover:bg-[#2f6ef4] hover:text-white transition-colors"
+              >
+                <Heart
+                  className={`h-6 w-6 ${
+                    isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : ""
+                  }`}
+                />
+                {isWishlisted ? "ลบจากรายการโปรด" : "เพิ่มในรายการโปรด"}
+              </button>
+              <button
+                onClick={() => {
+                  void addToCart("none");
+                }}
+                disabled={loading || isOutOfStock}
+                className="flex h-14 flex-1 items-center justify-center rounded-xl border-2 border-[#2f6ef4] px-6 text-[18px] font-bold text-[#2f6ef4] disabled:opacity-40 hover:bg-blue-50 transition-colors"
+              >
+                {loading ? "กำลังเพิ่ม..." : "เพิ่มลงตะกร้า"}
+              </button>
+              <button
+                onClick={() => {
+                  void addToCart("checkout");
+                }}
+                disabled={loading || isOutOfStock}
+                className={`flex h-14 flex-1 items-center justify-center rounded-xl px-6 text-[18px] font-bold ${
+                  isOutOfStock
+                    ? "bg-[#d1d5db] text-[#6b7280]"
+                    : "bg-[#2f6ef4] text-white hover:bg-[#2558c7] transition-colors"
+                }`}
+              >
+                {isOutOfStock
+                  ? "สินค้าหมด"
+                  : loading
+                    ? "กำลังเพิ่ม..."
+                    : "ซื้อเลย"}
+              </button>
+            </section>
+            </main>
+          </div>
         </div>
 
+        {/* Mobile Bottom Bar */}
         <div
-          className="lg:hidden fixed left-0 right-0 z-50 border-t border-[#d5d8de] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+          className="md:hidden fixed left-0 right-0 z-50 border-t border-[#d5d8de] bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
           style={{ bottom: "calc(84px + env(safe-area-inset-bottom))" }}
         >
           <div className="mx-auto flex w-full max-w-[440px] items-center gap-3 px-4 py-3">
@@ -515,37 +666,19 @@ export default function ProductPage({ product }: ProductPageProps) {
             </button>
 
             <button
-              onClick={async () => {
-                if (!token) {
-                  router.push("/login");
-                  return;
-                }
-                if (isOutOfStock) return;
-
-                try {
-                  const res = await fetch("/api/cart", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({ productId: product.id, quantity }),
-                  });
-                  if (res.ok) {
-                    alert("เพิ่มสินค้าลงตะกร้าแล้ว");
-                  }
-                } catch (error) {
-                  console.error(error);
-                }
+              onClick={() => {
+                void addToCart("none");
               }}
-              disabled={isOutOfStock}
+              disabled={loading || isOutOfStock}
               className="flex-1 rounded-2xl border-2 border-[#2f6ef4] py-3 text-[18px] font-bold text-[#2f6ef4] disabled:opacity-40"
             >
-              เพิ่มลงตะกร้า
+              {loading ? "กำลังเพิ่ม..." : "เพิ่มลงตะกร้า"}
             </button>
 
             <button
-              onClick={handleAddToCart}
+              onClick={() => {
+                void addToCart("checkout");
+              }}
               disabled={loading || isOutOfStock}
               className={`flex-1 rounded-2xl py-3 text-[18px] font-bold ${
                 isOutOfStock
@@ -605,3 +738,4 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
     },
   };
 };
+

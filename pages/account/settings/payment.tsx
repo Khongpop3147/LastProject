@@ -114,31 +114,40 @@ export default function PaymentSettingsPage() {
   }, [loadData]);
 
   const handleBack = () => {
-    goBackOrPush(router, fromCheckout ? "/checkout" : "/account");
+    const defaultFallback = fromCheckout ? "/checkout" : "/account";
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches &&
+      !fromCheckout
+    ) {
+      router.push("/account/settings");
+      return;
+    }
+    goBackOrPush(router, defaultFallback);
   };
 
   const bankTransferUsedCount =
     methods.find((m) => m.id === "bank_transfer")?.usedCount ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
-        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-          <div className="flex h-[92px] md:h-[100px] items-center px-4 md:px-6">
+    <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl desktop-shell">
+        <header className="sticky top-0 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+          <div className="flex h-[66px] md:h-[100px] items-center px-4 md:px-6">
             <button
               type="button"
               aria-label="ย้อนกลับ"
               onClick={handleBack}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
+              className="flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
             >
-              <ArrowLeft className="h-7 w-7" strokeWidth={2.25} />
+              <ArrowLeft className="h-5 w-5 md:h-7 md:w-7" strokeWidth={2.25} />
             </button>
 
-            <div className="ml-4">
-              <h1 className="text-[30px] font-extrabold leading-none tracking-tight text-black">
+            <div className="ml-3 md:ml-4">
+              <h1 className="text-[22px] md:text-[30px] font-extrabold leading-tight md:leading-none tracking-tight text-black">
                 ตั้งค่า
               </h1>
-              <p className="text-[16px] text-[#6b7280]">วิธีชำระเงิน</p>
+              <p className="text-[14px] md:text-[16px] text-[#6b7280]">วิธีชำระเงิน</p>
             </div>
           </div>
         </header>
@@ -221,3 +230,4 @@ export default function PaymentSettingsPage() {
     </div>
   );
 }
+

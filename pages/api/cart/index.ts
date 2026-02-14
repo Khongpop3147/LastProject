@@ -16,6 +16,8 @@ export default async function handler(
   }
 
   const locale = parseLocale(req.query.locale);
+  const fallbackProductName = locale === "en" ? "Product" : "สินค้า";
+  const fallbackSellerName = locale === "en" ? "General Store" : "ร้านทั่วไป";
 
   if (req.method === "GET") {
     const cart = await prisma.cart.findUnique({
@@ -69,12 +71,12 @@ export default async function handler(
       const localized =
         item.product.translations.find((t) => t.locale === locale) ||
         item.product.translations[0];
-      const name = localized?.name ?? "สินค้า";
+      const name = localized?.name ?? fallbackProductName;
       const description = localized?.description ?? "";
       const sellerName =
         item.product.translations
           .map((t) => supplierNameByProductName.get(t.name))
-          .find((value): value is string => Boolean(value)) || "ร้านทั่วไป";
+          .find((value): value is string => Boolean(value)) || fallbackSellerName;
 
       return {
         id: item.id,

@@ -75,52 +75,58 @@ export default function AccountSettingsProfilePage() {
 
   return (
     <Layout title={t("settings.profile")}>
-      <div className="max-w-xl mx-auto px-4 py-8 min-h-screen">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">{t("settings.profile")}</h1>
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl px-4 md:px-6 pb-[120px] md:pb-8 pt-4 md:pt-8">
+        <div className="rounded-[28px] border border-[#d9e0eb] bg-white p-5 md:p-8 desktop-shell">
+          <h1 className="mb-6 text-3xl font-bold text-gray-900 md:text-4xl">
+            {t("settings.profile")}
+          </h1>
 
-        <section className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="mb-5">
-            <div className="w-20 h-20 rounded-full border border-gray-200 bg-blue-50 text-blue-700 flex items-center justify-center text-2xl font-bold">
-              {(name || user?.name || "U").trim().charAt(0).toUpperCase()}
+          <section className="rounded-2xl border border-gray-100 bg-white p-5">
+            <div className="mb-5">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full border border-gray-200 bg-blue-50 text-2xl font-bold text-blue-700">
+                {(name || user?.name || "U").trim().charAt(0).toUpperCase()}
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            <input
-              type="text"
-              className="w-full border border-gray-300 rounded-lg p-3 text-base"
-              placeholder={t("settings.name")}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              type="email"
-              className="w-full border border-gray-300 rounded-lg p-3 text-base"
-              placeholder={t("settings.email")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              type="password"
-              className="w-full border border-gray-300 rounded-lg p-3 text-base"
-              placeholder={t("settings.passwordPlaceholder")}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+            <div className="space-y-3">
+              <input
+                type="text"
+                className="w-full rounded-lg border border-gray-300 p-3 text-base"
+                placeholder={t("settings.name")}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <input
+                type="email"
+                className="w-full rounded-lg border border-gray-300 p-3 text-base"
+                placeholder={t("settings.email")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <input
+                type="password"
+                className="w-full rounded-lg border border-gray-300 p-3 text-base"
+                placeholder={t("settings.passwordPlaceholder")}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
 
-          {message ? <p className="text-green-700 text-sm mt-3">{message}</p> : null}
-          {error ? <p className="text-red-600 text-sm mt-3">{error}</p> : null}
+            {message ? (
+              <p className="mt-3 text-sm text-green-700">{message}</p>
+            ) : null}
+            {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
 
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saving}
-            className="mt-5 w-full bg-blue-600 text-white rounded-xl py-3 font-semibold hover:bg-blue-700 disabled:opacity-60"
-          >
-            {saving ? t("settings.saving") : t("settings.save")}
-          </button>
-        </section>
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="mt-5 w-full rounded-xl bg-blue-600 py-3 font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              {saving ? t("settings.saving") : t("settings.save")}
+            </button>
+          </section>
+        </div>
       </div>
     </Layout>
   );

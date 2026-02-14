@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import useTranslation from "next-translate/useTranslation";
 import Cookies from "js-cookie";
 import {
   ArrowLeft,
@@ -59,8 +60,9 @@ function getAuthToken(token: string | null) {
   return token ?? Cookies.get("token") ?? "";
 }
 
-function toCurrency(value: number) {
-  return `฿${value.toLocaleString("th-TH")}`;
+function toCurrency(value: number, locale: "th" | "en" = "th") {
+  const formatterLocale = locale === "en" ? "en-US" : "th-TH";
+  return `฿${value.toLocaleString(formatterLocale)}`;
 }
 
 function getDisplayPrice(item: CartItem) {
@@ -71,7 +73,9 @@ function getDisplayPrice(item: CartItem) {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { t, lang } = useTranslation("common");
   const { token } = useAuth();
+  const locale = lang === "en" ? "en" : "th";
 
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -82,8 +86,8 @@ export default function CheckoutPage() {
 
   const [shippingMethod, setShippingMethod] =
     useState<ShippingMethod>("standard");
-  const [paymentMethod, setPaymentMethod] =
-    useState<PaymentMethod>("bank_transfer");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
+  const [bankSlipFile, setBankSlipFile] = useState<File | null>(null);
   const [deliveryBaseFee, setDeliveryBaseFee] = useState<number | null>(null);
   const [deliveryLoading, setDeliveryLoading] = useState(false);
   const [deliveryError, setDeliveryError] = useState("");
@@ -130,7 +134,7 @@ export default function CheckoutPage() {
     try {
       const [cartRes, addressesRes, profileRes, methodsRes] = await Promise.all(
         [
-          fetch("/api/cart?locale=th", {
+          fetch(`/api/cart?locale=${locale}`, {
             headers: { Authorization: `Bearer ${authToken}` },
           }),
           fetch("/api/addresses", {
@@ -195,7 +199,7 @@ export default function CheckoutPage() {
     } finally {
       setLoading(false);
     }
-  }, [router, token]);
+  }, [locale, router, token]);
 
   useEffect(() => {
     loadPageData();
@@ -230,7 +234,7 @@ export default function CheckoutPage() {
         if (!res.ok) {
           if (cancelled) return;
           setDeliveryBaseFee(null);
-          setDeliveryError(data.error ?? "ไม่สามารถคำนวณค่าจัดส่งได้");
+          setDeliveryError(data.error ?? t("checkout.cannotCalcDelivery"));
           return;
         }
 
@@ -242,7 +246,7 @@ export default function CheckoutPage() {
       } catch {
         if (!cancelled) {
           setDeliveryBaseFee(null);
-          setDeliveryError("ไม่สามารถคำนวณค่าจัดส่งได้");
+          setDeliveryError(t("checkout.cannotCalcDelivery"));
         }
       } finally {
         if (!cancelled) setDeliveryLoading(false);
@@ -265,7 +269,7 @@ export default function CheckoutPage() {
 
     const code = couponCode.trim();
     if (!code) {
-      setCouponError("กรุณากรอกรหัสคูปอง");
+      setCouponError(t("checkout.couponEmpty"));
       return;
     }
 
@@ -290,7 +294,7 @@ export default function CheckoutPage() {
     };
     if (!res.ok) {
       setDiscountAmount(0);
-      setCouponError(json.error ?? "ใช้คูปองไม่สำเร็จ");
+      setCouponError(json.error ?? t("checkout.couponFailed"));
       return;
     }
 
@@ -300,17 +304,22 @@ export default function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setOrderError("");
     if (items.length === 0) {
-      setOrderError("ไม่มีสินค้าในตะกร้า");
+      setOrderError(t("checkout.noCartItems"));
       return;
     }
 
     if (!selectedAddress) {
-      setOrderError("กรุณาเลือกที่อยู่จัดส่ง");
+      setOrderError(t("checkout.selectAddress"));
       return;
     }
 
     if (deliveryLoading) {
-      setOrderError("กำลังคำนวณค่าจัดส่ง กรุณารอสักครู่");
+      setOrderError(t("checkout.calcWait"));
+      return;
+    }
+
+    if (paymentMethod === "bank_transfer" && !bankSlipFile) {
+      setOrderError(t("checkout.attachSlip"));
       return;
     }
 
@@ -328,33 +337,40 @@ export default function CheckoutPage() {
         priceAtPurchase: getDisplayPrice(item),
       }));
 
-      const payload = {
-        items: JSON.stringify(orderItems),
-        recipient: selectedAddress.recipient,
-        line1: selectedAddress.line1,
-        line2: selectedAddress.line2 ?? "",
-        line3: "",
-        city: selectedAddress.city,
-        postalCode: selectedAddress.postalCode,
-        country: selectedAddress.country || "ไทย",
-        destinationProvince: selectedAddress.city,
-        deliveryFee,
-        paymentMethod,
-        couponCode: couponCode.trim() || undefined,
-      };
+      const formData = new FormData();
+      formData.append("items", JSON.stringify(orderItems));
+      formData.append("recipient", selectedAddress.recipient);
+      formData.append("line1", selectedAddress.line1);
+      formData.append("line2", selectedAddress.line2 ?? "");
+      formData.append("line3", "");
+      formData.append("city", selectedAddress.city);
+      formData.append("postalCode", selectedAddress.postalCode);
+      formData.append(
+        "country",
+        selectedAddress.country || t("checkout.defaultCountry"),
+      );
+      formData.append("destinationProvince", selectedAddress.city);
+      formData.append("deliveryFee", String(deliveryFee));
+      formData.append("paymentMethod", paymentMethod);
+      formData.append("locale", locale);
+      if (couponCode.trim()) {
+        formData.append("couponCode", couponCode.trim());
+      }
+      if (paymentMethod === "bank_transfer" && bankSlipFile) {
+        formData.append("slipFile", bankSlipFile, bankSlipFile.name);
+      }
 
-      const res = await fetch("/api/admin/orders", {
+      const res = await fetch(`/api/admin/orders?locale=${locale}`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       const json = (await res.json()) as { error?: string; id?: string };
       if (!res.ok) {
-        setOrderError(json.error ?? "สร้างคำสั่งซื้อไม่สำเร็จ");
+        setOrderError(json.error ?? t("checkout.orderFailed"));
         return;
       }
 
@@ -384,10 +400,11 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
-        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-          <div className="flex h-[82px] md:h-[92px] items-center px-4 md:px-6">
+    <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+      {/* Mobile Header - Mobile Only */}
+      <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+        <div className="mx-auto w-full max-w-[440px]">
+          <header className="flex h-[82px] items-center px-4">
             <button
               type="button"
               aria-label="ย้อนกลับ"
@@ -396,16 +413,26 @@ export default function CheckoutPage() {
             >
               <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
             </button>
-            <h1 className="ml-4 text-[30px] md:text-[32px] font-extrabold leading-none tracking-tight text-black">
-              ชำระเงิน
+            <h1 className="ml-4 text-[30px] font-extrabold leading-none tracking-tight text-black">
+              {t("checkout.title")}
             </h1>
-          </div>
-        </header>
+          </header>
+        </div>
+      </div>
 
-        <main className="space-y-4 md:space-y-5 px-4 md:px-6 pb-[195px] md:pb-12 pt-4 md:pt-6">
+      {/* Desktop & Mobile Content */}
+      <div className="app-page-container-narrow md:mt-8 md:pt-6 desktop-shell">
+        {/* Desktop Header - Desktop Only */}
+        <div className="hidden md:block mb-6">
+          <h1 className="text-[32px] font-extrabold text-black">
+            {t("checkout.title")}
+          </h1>
+        </div>
+
+        <main className="space-y-4 md:space-y-5 pb-[195px] md:pb-12 pt-4 md:pt-0">
           {loading ? (
             <section className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center text-[17px] text-[#6b7280]">
-              กำลังโหลดข้อมูล...
+              {t("checkout.loading")}
             </section>
           ) : (
             <>
@@ -413,15 +440,15 @@ export default function CheckoutPage() {
                 <div className="mb-1 flex items-center">
                   <MapPin className="h-6 w-6 text-[#2f6ef4]" />
                   <h2 className="ml-2 text-[20px] font-bold text-[#1f2937]">
-                    ที่อยู่จัดส่ง
+                    {t("checkout.addressHeading")}
                   </h2>
                   <button
                     type="button"
                     onClick={() =>
-                      router.push("/account/addresses?from=checkout")
+                      router.push("/account/addresses/select?from=checkout")
                     }
                     className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1f66ea] text-white"
-                    aria-label="แก้ไขที่อยู่"
+                    aria-label={t("checkout.editAddress")}
                   >
                     <Pencil className="h-5 w-5" />
                   </button>
@@ -445,7 +472,7 @@ export default function CheckoutPage() {
                     }
                     className="rounded-xl border border-[#2f6ef4] bg-white px-4 py-2 text-[17px] font-semibold text-[#2f6ef4]"
                   >
-                    เพิ่มที่อยู่จัดส่ง
+                    {t("checkout.addAddress")}
                   </button>
                 )}
               </section>
@@ -454,15 +481,15 @@ export default function CheckoutPage() {
                 <div className="mb-1 flex items-center">
                   <Phone className="h-6 w-6 text-[#2f6ef4]" />
                   <h2 className="ml-2 text-[20px] font-bold text-[#1f2937]">
-                    ข้อมูลติดต่อ
+                    {t("checkout.contactInfo")}
                   </h2>
                   <button
                     type="button"
                     onClick={() =>
-                      router.push("/account/addresses?from=checkout")
+                      router.push("/account/addresses/select?from=checkout")
                     }
                     className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1f66ea] text-white"
-                    aria-label="แก้ไขข้อมูลติดต่อ"
+                    aria-label={t("checkout.editContactInfo")}
                   >
                     <Pencil className="h-5 w-5" />
                   </button>
@@ -477,7 +504,7 @@ export default function CheckoutPage() {
 
               <section>
                 <h2 className="mb-2 text-[26px] font-extrabold text-[#1f2937]">
-                  สินค้า ({items.length} รายการ)
+                  {t("checkout.itemsCount", { count: items.length })}
                 </h2>
 
                 <div className="space-y-3">
@@ -503,10 +530,10 @@ export default function CheckoutPage() {
                             {item.product.name}
                           </h3>
                           <p className="text-[16px] text-[#6b7280]">
-                            จำนวน {item.quantity} ชิ้น
+                            {t("checkout.qtyPieces", { qty: item.quantity })}
                           </p>
                           <p className="text-[26px] font-extrabold leading-none text-[#2f6ef4]">
-                            {toCurrency(unitPrice * item.quantity)}
+                            {toCurrency(unitPrice * item.quantity, locale)}
                           </p>
                         </div>
                       </article>
@@ -517,7 +544,7 @@ export default function CheckoutPage() {
 
               <section>
                 <h2 className="mb-2 text-[26px] font-extrabold text-[#1f2937]">
-                  วิธีจัดส่ง
+                  {t("checkout.shippingMethod")}
                 </h2>
                 <div className="space-y-2">
                   <button
@@ -542,9 +569,11 @@ export default function CheckoutPage() {
                     <Truck className="mr-2 h-6 w-6 text-[#22c55e]" />
                     <div className="text-left">
                       <p className="text-[18px] font-semibold text-[#1f2937]">
-                        จัดส่งปกติ
+                        {t("checkout.standardShipping")}
                       </p>
-                      <p className="text-[18px] text-[#6b7280]">3 - 5 วัน</p>
+                      <p className="text-[18px] text-[#6b7280]">
+                        {t("checkout.standardDays")}
+                      </p>
                     </div>
                     <span className="ml-auto text-[18px] font-bold text-[#22b35f]">
                       {deliveryLoading
@@ -553,7 +582,7 @@ export default function CheckoutPage() {
                           ? "-"
                           : deliveryBaseFee === 0
                             ? "ฟรี"
-                            : toCurrency(deliveryBaseFee)}
+                            : toCurrency(deliveryBaseFee, locale)}
                     </span>
                   </button>
 
@@ -579,16 +608,18 @@ export default function CheckoutPage() {
                     <Truck className="mr-2 h-6 w-6 text-[#22c55e]" />
                     <div className="text-left">
                       <p className="text-[18px] font-semibold text-[#1f2937]">
-                        จัดส่งด่วน
+                        {t("checkout.expressShipping")}
                       </p>
-                      <p className="text-[18px] text-[#6b7280]">1 - 2 วัน</p>
+                      <p className="text-[18px] text-[#6b7280]">
+                        {t("checkout.expressDays")}
+                      </p>
                     </div>
                     <span className="ml-auto text-[18px] font-bold text-[#1f2937]">
                       {deliveryLoading
                         ? "..."
                         : deliveryBaseFee === null
                           ? "-"
-                          : toCurrency(deliveryBaseFee + 50)}
+                          : toCurrency(deliveryBaseFee + 50, locale)}
                     </span>
                   </button>
                 </div>
@@ -602,7 +633,7 @@ export default function CheckoutPage() {
               <section>
                 <div className="mb-2 flex items-center">
                   <h2 className="text-[26px] font-extrabold text-[#1f2937]">
-                    วิธีชำระเงิน
+                    {t("checkout.paymentMethod")}
                   </h2>
                   <button
                     type="button"
@@ -610,7 +641,7 @@ export default function CheckoutPage() {
                       router.push("/account/settings/payment?from=checkout")
                     }
                     className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-[#1f66ea] text-white"
-                    aria-label="แก้ไขวิธีชำระเงิน"
+                    aria-label={t("checkout.editPayment")}
                   >
                     <Pencil className="h-5 w-5" />
                   </button>
@@ -619,18 +650,24 @@ export default function CheckoutPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("bank_transfer")}
+                    onClick={() => {
+                      setPaymentMethod("bank_transfer");
+                      setOrderError("");
+                    }}
                     className={`rounded-full px-4 py-2 text-[16px] font-semibold ${
                       paymentMethod === "bank_transfer"
                         ? "bg-[#dce4ff] text-[#2f6ef4]"
                         : "bg-[#e5e7eb] text-[#1f2937]"
                     }`}
                   >
-                    โอนผ่านธนาคาร
+                    {t("checkout.payBank")}
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("cod")}
+                    onClick={() => {
+                      setPaymentMethod("cod");
+                      setOrderError("");
+                    }}
                     className={`rounded-full px-4 py-2 text-[16px] font-semibold ${
                       paymentMethod === "cod"
                         ? "bg-[#dce4ff] text-[#2f6ef4]"
@@ -638,9 +675,32 @@ export default function CheckoutPage() {
                     }`}
                   >
                     <Wallet className="mr-1 inline h-4 w-4" />
-                    เก็บเงินปลายทาง
+                    {t("checkout.payCod")}
                   </button>
                 </div>
+
+                {paymentMethod === "bank_transfer" ? (
+                  <div className="mt-3 rounded-xl border border-[#d7dbe5] bg-white p-3">
+                    <label className="mb-1 block text-[16px] font-semibold text-[#1f2937]">
+                      {t("checkout.attachSlipLabel")}
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => {
+                        const file = event.target.files?.[0] ?? null;
+                        setBankSlipFile(file);
+                        setOrderError("");
+                      }}
+                      className="w-full rounded-lg border border-[#cfd5e3] bg-[#f8fafc] px-3 py-2 text-[14px] text-[#1f2937]"
+                    />
+                    <p className="mt-1 text-[13px] text-[#6b7280]">
+                      {bankSlipFile
+                        ? `ไฟล์ที่เลือก: ${bankSlipFile.name}`
+                        : t("checkout.slipRequired")}
+                    </p>
+                  </div>
+                ) : null}
               </section>
 
               <section>
@@ -648,7 +708,7 @@ export default function CheckoutPage() {
                   <input
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
-                    placeholder="กรอกรหัสคูปอง"
+                    placeholder={t("checkout.couponPlaceholder")}
                     className="h-11 flex-1 rounded-lg border border-[#9098a7] bg-[#f4f4f4] px-3 text-[16px] text-[#1f2937] outline-none"
                   />
                   <button
@@ -656,7 +716,7 @@ export default function CheckoutPage() {
                     onClick={handleApplyCoupon}
                     className="h-11 rounded-lg border border-[#2f6ef4] px-4 text-[16px] font-semibold text-[#2f6ef4]"
                   >
-                    ใช้คูปอง
+                    {t("checkout.useCoupon")}
                   </button>
                 </div>
                 {couponError ? (
@@ -671,23 +731,80 @@ export default function CheckoutPage() {
                   {orderError}
                 </section>
               ) : null}
+
+              <section className="hidden md:block rounded-2xl border border-[#d8d8d8] bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[16px] text-[#6b7280]">
+                    <span>{t("checkout.productPrice")}</span>
+                    <span>{toCurrency(subtotal, locale)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[16px] text-[#6b7280]">
+                    <span>{t("checkout.deliveryFee")}</span>
+                    <span
+                      className={
+                        selectedAddress && deliveryFee === 0
+                          ? "font-semibold text-[#22b35f]"
+                          : ""
+                      }
+                    >
+                      {!selectedAddress
+                        ? "-"
+                        : deliveryFee === 0
+                          ? "ฟรี"
+                            : toCurrency(deliveryFee, locale)}
+                    </span>
+                  </div>
+                  {discountAmount > 0 ? (
+                    <div className="flex items-center justify-between text-[16px] text-[#6b7280]">
+                      <span>{t("checkout.discountLabel")}</span>
+                      <span className="font-semibold text-[#2f6ef4]">
+                        - {toCurrency(discountAmount, locale)}
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[24px] font-extrabold text-[#1f2937]">
+                      {t("checkout.grandTotal")}
+                    </span>
+                    <span className="text-[30px] font-extrabold leading-none text-[#2f6ef4]">
+                      {toCurrency(grandTotal, locale)}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={
+                    loading ||
+                    placingOrder ||
+                    !selectedAddress ||
+                    items.length === 0
+                  }
+                  onClick={handlePlaceOrder}
+                  className="mt-3 w-full rounded-2xl bg-[#2f6ef4] py-3 text-[22px] font-semibold leading-none text-white disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {placingOrder
+                    ? t("checkout.payProcessing")
+                    : t("checkout.title")}
+                </button>
+              </section>
             </>
           )}
         </main>
       </div>
 
       <div
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_14px_rgba(0,0,0,0.08)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white shadow-[0_-4px_14px_rgba(0,0,0,0.08)]"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
       >
         <div className="mx-auto w-full max-w-[440px] px-4 pb-1 pt-2">
           <div className="space-y-0.5">
             <div className="flex items-center justify-between text-[16px] text-[#6b7280]">
-              <span>ราคาสินค้า</span>
-              <span>{toCurrency(subtotal)}</span>
+              <span>{t("checkout.productPrice")}</span>
+              <span>{toCurrency(subtotal, locale)}</span>
             </div>
             <div className="flex items-center justify-between text-[16px] text-[#6b7280]">
-              <span>ค่าจัดส่ง</span>
+              <span>{t("checkout.deliveryFee")}</span>
               <span
                 className={
                   selectedAddress && deliveryFee === 0
@@ -699,23 +816,23 @@ export default function CheckoutPage() {
                   ? "-"
                   : deliveryFee === 0
                     ? "ฟรี"
-                    : toCurrency(deliveryFee)}
+                    : toCurrency(deliveryFee, locale)}
               </span>
             </div>
             {discountAmount > 0 ? (
               <div className="flex items-center justify-between text-[16px] text-[#6b7280]">
-                <span>ส่วนลด</span>
+                <span>{t("checkout.discountLabel")}</span>
                 <span className="font-semibold text-[#2f6ef4]">
-                  - {toCurrency(discountAmount)}
+                  - {toCurrency(discountAmount, locale)}
                 </span>
               </div>
             ) : null}
             <div className="flex items-center justify-between pt-0.5">
               <span className="text-[24px] font-extrabold text-[#1f2937]">
-                รวมทั้งหมด
+                {t("checkout.grandTotal")}
               </span>
               <span className="text-[30px] font-extrabold leading-none text-[#2f6ef4]">
-                {toCurrency(grandTotal)}
+                {toCurrency(grandTotal, locale)}
               </span>
             </div>
           </div>
@@ -728,7 +845,7 @@ export default function CheckoutPage() {
             onClick={handlePlaceOrder}
             className="mt-2 w-full rounded-2xl bg-[#2f6ef4] py-2.5 text-[24px] font-semibold leading-none text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {placingOrder ? "กำลังชำระเงิน..." : "ชำระเงิน"}
+            {placingOrder ? t("checkout.payProcessing") : t("checkout.title")}
           </button>
         </div>
       </div>

@@ -9,36 +9,67 @@ interface CategoryCarouselProps {
   categories?: Category[];
 }
 
-export default function CategoryCarousel({ categories = [] }: CategoryCarouselProps) {
+export default function CategoryCarousel({
+  categories = [],
+}: CategoryCarouselProps) {
   const { t } = useTranslation("common");
   const displayCategories = categories.slice(0, 16);
 
   return (
-    <div className="grid grid-cols-4 gap-3 md:grid-cols-6 md:gap-4 lg:grid-cols-8">
-      {displayCategories.map((cat) => (
-        <Link
-          key={cat.id}
-          href={`/all-products?category=${cat.id}`}
-          className="flex flex-col items-center group"
-        >
-          <div className="w-full aspect-square rounded-xl md:rounded-2xl border border-gray-100 bg-white p-2 shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5">
-            <div className="mx-auto mb-1.5 h-10 w-10 md:h-12 md:w-12 overflow-hidden rounded-full border border-gray-100 bg-gray-50">
+    <>
+      {/* Mobile: รูปวงกลมแบบง่าย 4 คอลัมน์ */}
+      <div className="grid grid-cols-4 gap-3 md:hidden">
+        {displayCategories.map((cat) => (
+          <Link
+            key={cat.id}
+            href={`/all-products?category=${cat.id}`}
+            className="flex flex-col items-center group"
+          >
+            <div className="mb-2 h-16 w-16 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 transition-all duration-300 group-hover:border-blue-400 group-hover:scale-110 group-hover:shadow-lg">
               <img
                 src={cat.imageUrl ?? "/images/placeholder.png"}
                 alt={cat.name}
                 className="h-full w-full object-cover"
               />
             </div>
+            <p className="overflow-safe line-clamp-2 text-center text-xs font-medium text-gray-700 transition-colors duration-300 group-hover:text-blue-600">
+              {cat.name}
+            </p>
+          </Link>
+        ))}
+      </div>
 
-            <div className="text-center">
-              <p className="line-clamp-1 md:line-clamp-2 text-[11px] md:text-sm font-semibold text-gray-800">{cat.name}</p>
-              <p className="mt-0.5 text-[10px] md:text-xs text-gray-500">
-                {cat.productCount ? `${cat.productCount} ${t("unit.items") || "รายการ"}` : `0 ${t("unit.items") || "รายการ"}`}
-              </p>
+      {/* Desktop: การ์ดใหญ่แบบเต็ม */}
+      <div className="hidden grid-cols-5 gap-5 md:grid lg:grid-cols-6">
+        {displayCategories.map((cat) => (
+          <Link
+            key={cat.id}
+            href={`/all-products?category=${cat.id}`}
+            className="flex h-full flex-col group"
+          >
+            <div className="flex h-full flex-col items-center justify-between p-5 rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-blue-400 hover:shadow-xl hover:-translate-y-1">
+              <div className="mb-3 h-20 w-20 flex-shrink-0 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 group-hover:border-blue-400 transition-all duration-300 group-hover:scale-110">
+                <img
+                  src={cat.imageUrl ?? "/images/placeholder.png"}
+                  alt={cat.name}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+
+              <div className="text-center w-full flex flex-col">
+                <p className="overflow-safe mb-1 min-h-[3rem] line-clamp-2 text-base font-bold text-gray-900 transition-colors duration-300 group-hover:text-blue-600">
+                  {cat.name}
+                </p>
+                <p className="text-sm text-gray-600 font-medium transition-colors duration-300 group-hover:text-gray-800">
+                  {cat.productCount
+                    ? `${cat.productCount} ${t("unit.items") || "รายการ"}`
+                    : `0 ${t("unit.items") || "รายการ"}`}
+                </p>
+              </div>
             </div>
-          </div>
-        </Link>
-      ))}
-    </div>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }

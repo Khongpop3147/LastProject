@@ -5,20 +5,32 @@ import { AuthProvider } from "../context/AuthContext";
 import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import Router from "next/router";
+import { useRouter } from "next/router";
 import { Loader2, RotateCcw, Smartphone } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import appWithI18n from "next-translate/appWithI18n";
+import i18nConfig from "../i18n.json";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 // สร้าง instance เดียวตลอดแอป
 const queryClient = new QueryClient();
 
-// เปลี่ยนเป็น import จาก next-translate-plugin
-import appWithI18n from "next-translate/appWithI18n";
-import i18nConfig from "../i18n.json";
+const desktopChromeHiddenPathnames = new Set(["/debug"]);
+const desktopChromeHiddenPrefixes = ["/admin"];
+const DESKTOP_CHROME_OFFSET_CLASS = "md:pt-[156px]";
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
   const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
   const loaderDelayRef = useRef<number | null>(null);
+  const showDesktopChrome =
+    !desktopChromeHiddenPathnames.has(router.pathname) &&
+    !desktopChromeHiddenPrefixes.some(
+      (prefix) =>
+        router.pathname === prefix || router.pathname.startsWith(`${prefix}/`),
+    );
 
   useEffect(() => {
     const handleRouteChangeStart = (nextUrl: string) => {
@@ -96,7 +108,17 @@ function MyApp({ Component, pageProps }: AppProps) {
       {/* ครอบด้วย React Query provider */}
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Component {...pageProps} />
+          {showDesktopChrome ? <Navbar /> : null}
+
+          <div
+            className={
+              showDesktopChrome ? DESKTOP_CHROME_OFFSET_CLASS : undefined
+            }
+          >
+            <Component {...pageProps} key={router.asPath} />
+          </div>
+
+          {showDesktopChrome ? <Footer /> : null}
           {isMobileLandscape ? (
             <div className="fixed inset-0 z-[260] flex items-center justify-center bg-[#f8faff] px-6">
               <div
@@ -144,5 +166,4 @@ function MyApp({ Component, pageProps }: AppProps) {
   );
 }
 
-// ห่อด้วย HOC จาก plugin
 export default appWithI18n(MyApp as any, i18nConfig);

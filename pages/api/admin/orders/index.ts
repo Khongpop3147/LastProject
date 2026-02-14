@@ -12,6 +12,10 @@ export const config = {
   api: { bodyParser: false },
 };
 
+function parseLocale(value: unknown): "th" | "en" {
+  return value === "en" ? "en" : "th";
+}
+
 async function moveUploadedFile(src: string, dest: string) {
   try {
     await fs.promises.rename(src, dest);
@@ -125,12 +129,8 @@ export default async function handler(
         }
       }
 
-      // ดึง locale จาก query string ถ้ามี (default "th")
-      const locale =
-        typeof req.query.locale === "string" &&
-        ["th", "en"].includes(req.query.locale)
-          ? req.query.locale
-          : "th";
+      // ล็อก locale จาก client เพื่อใช้ตลอดการสร้าง order ครั้งนี้
+      const locale = parseLocale(getFirst(fields.locale) ?? req.query.locale);
 
       const normalizedItems: {
         productId: string;
@@ -303,6 +303,7 @@ export default async function handler(
         const createdOrder = await tx.order.create({
           data: {
             userId: user.id,
+            locale,
             recipient,
             line1,
             line2,

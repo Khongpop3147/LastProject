@@ -45,6 +45,7 @@ export default function CheckoutPaymentPage() {
   const { t, lang } = useTranslation("common");
   const { token } = useAuth();
   const router = useRouter();
+  const locale: "th" | "en" = lang === "en" ? "en" : "th";
 
   const [items, setItems] = useState<CartItem[]>([]);
   const [address, setAddress] = useState<AddressPayload | null>(null);
@@ -84,14 +85,14 @@ export default function CheckoutPaymentPage() {
     }
 
     setLoading(true);
-    fetch(`/api/cart?locale=${lang}`, {
+    fetch(`/api/cart?locale=${locale}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then((data) => setItems(data.items || []))
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [token, router, lang]);
+  }, [token, router, locale]);
 
   useEffect(() => {
     if (paymentMethod === "credit_card" && !stripeEnabled) {
@@ -197,12 +198,13 @@ export default function CheckoutPaymentPage() {
     fd.append("deliveryFee", String(deliveryFee ?? 0));
     Object.entries(address).forEach(([k, v]) => fd.append(k, v));
     fd.append("paymentMethod", method);
+    fd.append("locale", locale);
     if (couponCode.trim()) fd.append("couponCode", couponCode.trim());
     if (method === "bank_transfer" && slipFile) {
       fd.append("slipFile", slipFile, slipFile.name);
     }
 
-    return fetch("/api/admin/orders", {
+    return fetch(`/api/admin/orders?locale=${locale}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: fd,
@@ -211,29 +213,34 @@ export default function CheckoutPaymentPage() {
 
   if (loading || !address) {
     return (
-      <Layout title={t("checkout.title")}>
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-8">
-          <p>{t("checkout.loading")}</p>
+      <Layout title={t("checkout.title")} hideBottomNav>
+        <div className="app-page-container-narrow pb-8 pt-4 md:pt-8">
+          <div className="rounded-[28px] border border-[#d9e0eb] bg-white p-6 desktop-shell">
+            <p>{t("checkout.loading")}</p>
+          </div>
         </div>
       </Layout>
     );
   }
 
   return (
-    <Layout title={t("checkout.title")}>
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl lg:text-4xl font-bold">{t("checkout.paymentHeading")}</h1>
-          <button
-            type="button"
-            onClick={() => router.push("/checkout")}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            {t("checkout.stepAddress")}
-          </button>
-        </div>
+    <Layout title={t("checkout.title")} hideBottomNav>
+      <div className="app-page-container-narrow pb-8 pt-4 md:pt-8">
+        <div className="rounded-[28px] border border-[#d9e0eb] bg-white p-4 md:p-8 desktop-shell">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-3xl font-bold lg:text-4xl">
+              {t("checkout.paymentHeading")}
+            </h1>
+            <button
+              type="button"
+              onClick={() => router.push("/checkout")}
+              className="rounded-lg border border-gray-300 px-4 py-2 hover:bg-gray-50"
+            >
+              {t("checkout.stepAddress")}
+            </button>
+          </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
           <section className="bg-white rounded-2xl border border-gray-100 p-5">
             <h2 className="text-xl font-semibold mb-3">{t("checkout.addressHeading")}</h2>
             <p className="text-sm text-gray-700 mb-5">
@@ -298,6 +305,7 @@ export default function CheckoutPaymentPage() {
                     address={address}
                     total={grandTotal}
                     deliveryFee={deliveryFee}
+                    locale={locale}
                   />
                 </Elements>
               </div>
@@ -381,6 +389,7 @@ export default function CheckoutPaymentPage() {
             </section>
           </aside>
         </div>
+        </div>
       </div>
     </Layout>
   );
@@ -391,9 +400,16 @@ type PaymentFormProps = {
   address: AddressPayload;
   total: number;
   deliveryFee: number | null;
+  locale: "th" | "en";
 };
 
-function CreditCardForm({ orderItems, address, total, deliveryFee }: PaymentFormProps) {
+function CreditCardForm({
+  orderItems,
+  address,
+  total,
+  deliveryFee,
+  locale,
+}: PaymentFormProps) {
   const { t } = useTranslation("common");
   const stripe = useStripe();
   const elements = useElements();
@@ -436,7 +452,7 @@ function CreditCardForm({ orderItems, address, total, deliveryFee }: PaymentForm
     }
 
     if (paymentIntent?.status === "succeeded") {
-      const res = await fetch("/api/admin/orders", {
+      const res = await fetch(`/api/admin/orders?locale=${locale}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -447,6 +463,7 @@ function CreditCardForm({ orderItems, address, total, deliveryFee }: PaymentForm
           ...address,
           destinationProvince: address.city,
           deliveryFee: deliveryFee ?? 0,
+          locale,
           paymentMethod: "credit_card",
           slipUrl: null,
         }),

@@ -55,6 +55,14 @@
     overflow-x: hidden;
   }
 
+  @media (min-width: 768px) {
+    body {
+      font-size: 18px;
+      line-height: 1.75;
+      color: #1f2937;
+    }
+  }
+
   #__next {
     width: 100%;
     max-width: 100%;
@@ -79,12 +87,38 @@
     letter-spacing: -0.01em;
   }
 
-  button,
+  button:not(.min-h-0):not(.min-w-0) {
+    font-size: 1rem;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
   input,
   select,
   textarea {
     font-size: 1rem;
     min-height: 44px;
+  }
+
+  @media (min-width: 768px) {
+    button:not(.min-h-0):not(.min-w-0) {
+      font-size: 1.05rem;
+      min-height: 48px;
+      min-width: 48px;
+    }
+
+    input,
+    select,
+    textarea {
+      font-size: 1.05rem;
+      min-height: 48px;
+    }
+  }
+
+  input[type="range"] {
+    min-height: 0;
+    height: 0.5rem;
+    padding: 0;
   }
 
   /* Thai readability mode: larger line-height + Thai-friendly font */
@@ -160,9 +194,19 @@
   html.senior-mode input,
   html.senior-mode select,
   html.senior-mode textarea,
-  html.senior-mode button {
+  html.senior-mode button:not(.min-h-0) {
     font-size: 1rem;
     min-height: 48px;
+  }
+
+  html.senior-mode .tap-target {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  html.senior-mode input[type="range"] {
+    min-height: 0;
+    height: 0.625rem;
   }
 }
 
@@ -183,11 +227,11 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center bg-gradient-to-r from-teal-600 to-teal-700 text-white font-medium py-3 px-6 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200;
+    @apply inline-flex items-center justify-center bg-gradient-to-r from-teal-600 to-teal-700 text-white font-medium py-3 px-6 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center bg-white text-gray-800 font-medium py-3 px-6 rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 border border-gray-200;
+    @apply inline-flex items-center justify-center bg-white text-gray-800 font-medium py-3 px-6 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 border border-gray-200;
   }
 
   .card {
@@ -229,6 +273,114 @@
   .touch-target {
     min-width: 48px;
     min-height: 48px;
+  }
+
+  .tap-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .overflow-safe {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .app-page-container {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 440px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .app-page-container-narrow {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    max-width: 440px;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .app-page-main {
+    padding-top: 0.75rem;
+    padding-bottom: 6.5rem;
+  }
+
+  .desktop-page {
+    position: relative;
+    isolation: isolate;
+  }
+
+  @media (min-width: 768px) {
+    .app-page-container {
+      max-width: 80rem;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+
+    .app-page-container-narrow {
+      max-width: 64rem;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+
+    .app-page-main {
+      padding-top: 1.5rem;
+      padding-bottom: 3rem;
+    }
+
+    .desktop-page {
+      padding: 2rem 1.5rem 2.75rem;
+      background:
+        radial-gradient(
+          1280px 460px at 8% -12%,
+          rgba(47, 110, 244, 0.12),
+          transparent 60%
+        ),
+        radial-gradient(
+          980px 360px at 100% -5%,
+          rgba(15, 118, 110, 0.12),
+          transparent 62%
+        ),
+        #edf2f8;
+    }
+
+    .desktop-shell {
+      border: 1px solid #d3dbe8;
+      border-radius: 30px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      box-shadow:
+        0 20px 50px rgba(15, 23, 42, 0.08),
+        0 2px 8px rgba(15, 23, 42, 0.05);
+    }
+
+    .desktop-shell p,
+    .desktop-shell li,
+    .desktop-shell label {
+      line-height: 1.7;
+    }
+
+    .desktop-shell .text-xs {
+      font-size: 0.86rem;
+      line-height: 1.45;
+    }
+
+    .desktop-shell .text-sm {
+      font-size: 0.98rem;
+      line-height: 1.6;
+    }
+
+    .desktop-shell button:focus-visible,
+    .desktop-shell a:focus-visible,
+    .desktop-shell input:focus-visible,
+    .desktop-shell select:focus-visible,
+    .desktop-shell textarea:focus-visible {
+      outline: 3px solid #93c5fd;
+      outline-offset: 2px;
+    }
   }
 }
 

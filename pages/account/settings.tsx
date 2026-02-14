@@ -40,7 +40,7 @@ export default function AccountSettingsPage() {
 
   const personalItems: SettingItem[] = [
     { label: t("settings.profile"), href: "/account/profile" },
-    { label: t("settings.shippingAddress"), href: "/account/addresses" },
+    { label: t("settings.shippingAddress"), href: "/account/addresses/select" },
   ];
 
   const storeItems: SettingItem[] = [
@@ -57,52 +57,54 @@ export default function AccountSettingsPage() {
 
   return (
     <Layout title={t("settings.title")}>
-      <div className="max-w-3xl mx-auto px-4 py-8 min-h-screen">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl px-4 md:px-6 pb-[120px] md:pb-8 pt-4 md:pt-8">
+        <div className="rounded-[28px] border border-[#d9e0eb] bg-white p-5 md:p-8 desktop-shell">
+          <h1 className="mb-2 text-3xl font-bold text-gray-900 md:text-4xl">
           {t("settings.title")}
-        </h1>
-        {user ? <p className="text-gray-500 mb-6">{user.email}</p> : null}
+          </h1>
+          {user ? <p className="mb-6 text-gray-500">{user.email}</p> : null}
 
-        <section className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <section className="mb-5 rounded-2xl border border-gray-100 bg-white p-4">
+            <h2 className="mb-2 text-xl font-semibold text-gray-900">
             {t("settings.personal")}
-          </h2>
-          <div>
-            {personalItems.map((item) => (
-              <ItemRow key={item.label} item={item} />
-            ))}
-          </div>
-        </section>
+            </h2>
+            <div>
+              {personalItems.map((item) => (
+                <ItemRow key={item.label} item={item} />
+              ))}
+            </div>
+          </section>
 
-        <section className="bg-white rounded-2xl border border-gray-100 p-4 mb-5">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <section className="mb-5 rounded-2xl border border-gray-100 bg-white p-4">
+            <h2 className="mb-2 text-xl font-semibold text-gray-900">
             {t("settings.store")}
-          </h2>
-          <div>
-            {storeItems.map((item) => (
-              <ItemRow key={item.label} item={item} />
-            ))}
-          </div>
-        </section>
+            </h2>
+            <div>
+              {storeItems.map((item) => (
+                <ItemRow key={item.label} item={item} />
+              ))}
+            </div>
+          </section>
 
-        <section className="bg-white rounded-2xl border border-gray-100 p-4">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <section className="rounded-2xl border border-gray-100 bg-white p-4">
+            <h2 className="mb-2 text-xl font-semibold text-gray-900">
             {t("settings.account")}
-          </h2>
-          <div>
-            {accountItems.map((item) => (
-              <ItemRow key={item.label} item={item} />
-            ))}
-          </div>
-          <button
-            onClick={logout}
-            className="mt-4 text-red-600 hover:text-red-700 inline-flex items-center gap-2"
-            type="button"
-          >
-            <LogOut className="w-4 h-4" />
-            {t("settings.logout")}
-          </button>
-        </section>
+            </h2>
+            <div>
+              {accountItems.map((item) => (
+                <ItemRow key={item.label} item={item} />
+              ))}
+            </div>
+            <button
+              onClick={logout}
+              className="mt-4 inline-flex items-center gap-2 text-red-600 hover:text-red-700"
+              type="button"
+            >
+              <LogOut className="h-4 w-4" />
+              {t("settings.logout")}
+            </button>
+          </section>
+        </div>
       </div>
     </Layout>
   );

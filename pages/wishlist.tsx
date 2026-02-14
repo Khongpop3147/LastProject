@@ -72,7 +72,7 @@ function getWishlistedTimestamp(product: WishlistProduct) {
 
 export default function WishlistPage() {
   const router = useRouter();
-  const { lang } = useTranslation("common");
+  const { t, lang } = useTranslation("common");
   const { token } = useAuth();
 
   const [products, setProducts] = useState<WishlistProduct[]>([]);
@@ -142,7 +142,7 @@ export default function WishlistPage() {
 
   const handleClearAll = async () => {
     if (!token || products.length === 0 || clearingAll) return;
-    if (!window.confirm("ต้องการลบรายการโปรดทั้งหมดใช่หรือไม่?")) return;
+    if (!window.confirm(t("wishlist.confirmClearAll"))) return;
 
     setClearingAll(true);
     try {
@@ -214,13 +214,14 @@ export default function WishlistPage() {
   return (
     <>
       <Head>
-        <title>รายการโปรด</title>
+        <title>{t("wishlist.title")}</title>
       </Head>
 
-      <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
-          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-            <div className="flex h-[80px] md:h-[88px] items-center px-4 md:px-6">
+      <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+        {/* Mobile Header - Mobile Only */}
+        <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+          <div className="mx-auto w-full max-w-[440px]">
+            <header className="flex h-[80px] items-center px-4">
               <button
                 type="button"
                 aria-label="ย้อนกลับ"
@@ -230,8 +231,8 @@ export default function WishlistPage() {
                 <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
               </button>
 
-              <h1 className="ml-4 text-[28px] md:text-[30px] font-extrabold leading-none tracking-tight text-black">
-                รายการโปรด
+              <h1 className="ml-4 text-[28px] font-extrabold leading-none tracking-tight text-black">
+                {t("wishlist.title")}
               </h1>
 
               {products.length > 0 ? (
@@ -246,13 +247,38 @@ export default function WishlistPage() {
                   ) : (
                     <Trash2 className="h-4 w-4" />
                   )}
-                  ลบทิ้งหมด
+                  {t("wishlist.clearAll")}
                 </button>
               ) : null}
-            </div>
-          </header>
+            </header>
+          </div>
+        </div>
 
-          <main className="px-4 pb-[98px]">
+        {/* Desktop & Mobile Content */}
+        <div className="app-page-container md:mt-8 md:pt-6 desktop-shell">
+          {/* Desktop Header - Desktop Only */}
+          <div className="hidden md:flex items-center justify-between mb-6">
+            <h1 className="text-[30px] font-extrabold text-black">
+              {t("wishlist.title")}
+            </h1>
+            {products.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="flex items-center gap-2 px-4 py-2 text-[16px] text-[#ff3b30] hover:bg-red-50 rounded-lg transition-colors disabled:opacity-60"
+                disabled={clearingAll}
+              >
+                {clearingAll ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-5 w-5" />
+                )}
+                {t("wishlist.clearAllDesktop")}
+              </button>
+            )}
+          </div>
+
+          <main className="pb-[98px] md:pb-8">
             {loading ? (
               <div className="flex h-[420px] items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-[#2f6ef4]" />
@@ -266,16 +292,16 @@ export default function WishlistPage() {
                   />
                 </div>
                 <h2 className="text-[32px] font-extrabold leading-tight text-black">
-                  ยังไม่มีรายการโปรด
+                  {t("wishlist.emptyTitle")}
                 </h2>
                 <p className="mt-1 text-[15px] text-[#6b7280]">
-                  กดหัวใจเพื่อเพิ่มสินค้าที่ชอบ
+                  {t("wishlist.tapHeart")}
                 </p>
                 <Link
                   href="/all-products"
                   className="mt-3 rounded-2xl bg-[#2f6ef4] px-8 py-2.5 text-[16px] font-medium text-white"
                 >
-                  ไปดูสินค้า
+                  {t("wishlist.goShopping")}
                 </Link>
               </section>
             ) : (
@@ -290,7 +316,7 @@ export default function WishlistPage() {
                       type="text"
                       value={searchText}
                       onChange={(event) => setSearchText(event.target.value)}
-                      placeholder="ค้นหารายการโปรด"
+                      placeholder={t("wishlist.searchPlaceholder")}
                       className="h-11 w-full rounded-xl border border-[#d8d8db] bg-white pl-10 pr-10 text-[15px] text-[#2f2f2f] outline-none placeholder:text-[#9ca3af] focus:border-[#2f6ef4]"
                     />
                     {searchText.trim().length > 0 ? (
@@ -298,7 +324,7 @@ export default function WishlistPage() {
                         type="button"
                         aria-label="ล้างคำค้นหา"
                         onClick={() => setSearchText("")}
-                        className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-[#f0f0f1] text-[#6b7280]"
+                        className="tap-target absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#f0f0f1] text-[#6b7280]"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -327,7 +353,7 @@ export default function WishlistPage() {
                             : "bg-[#e5e7eb] text-[#4b5563]"
                         }`}
                       >
-                        ลดราคา
+                        {t("wishlist.onSale")}
                       </button>
                       <button
                         type="button"
@@ -338,7 +364,7 @@ export default function WishlistPage() {
                             : "bg-[#e5e7eb] text-[#4b5563]"
                         }`}
                       >
-                        พร้อมส่ง
+                        {t("wishlist.inStock")}
                       </button>
                     </div>
 
@@ -349,10 +375,16 @@ export default function WishlistPage() {
                       }
                       className="ml-auto h-9 min-w-[130px] rounded-xl border border-[#d8d8db] bg-white px-3 text-[13px] font-medium text-[#4b5563] outline-none focus:border-[#2f6ef4]"
                     >
-                      <option value="latest">ล่าสุด</option>
-                      <option value="discountHigh">ลดมากสุด</option>
-                      <option value="priceLowToHigh">ราคาต่ำ-สูง</option>
-                      <option value="priceHighToLow">ราคาสูง-ต่ำ</option>
+                      <option value="latest">{t("wishlist.sortLatest")}</option>
+                      <option value="discountHigh">
+                        {t("wishlist.sortDiscount")}
+                      </option>
+                      <option value="priceLowToHigh">
+                        {t("wishlist.sortPriceLow")}
+                      </option>
+                      <option value="priceHighToLow">
+                        {t("wishlist.sortPriceHigh")}
+                      </option>
                     </select>
                   </div>
                 </section>
@@ -360,7 +392,10 @@ export default function WishlistPage() {
                 <section className="pb-2 pt-3">
                   <div className="mb-3 flex items-center justify-between">
                     <p className="text-[14px] text-[#6b7280]">
-                      แสดง {visibleProducts.length} จาก {products.length} รายการ
+                      {t("wishlist.showing", {
+                        shown: visibleProducts.length,
+                        total: products.length,
+                      })}
                     </p>
                     {hasActiveControls ? (
                       <button
@@ -377,10 +412,10 @@ export default function WishlistPage() {
                     <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#d6d6d6] bg-white px-6 text-center">
                       <Search className="h-10 w-10 text-[#9aa1ad]" />
                       <h3 className="mt-3 text-[24px] font-bold text-[#1f2937]">
-                        ไม่พบรายการที่ตรงกัน
+                        {t("wishlist.noMatch")}
                       </h3>
                       <p className="mt-1 text-[14px] text-[#6b7280]">
-                        ลองเปลี่ยนคำค้นหา หรือปรับตัวกรองใหม่
+                        {t("wishlist.noMatchDesc")}
                       </p>
                     </div>
                   ) : (
@@ -420,7 +455,7 @@ export default function WishlistPage() {
 
                               <button
                                 type="button"
-                                aria-label="ลบออกจากรายการโปรด"
+                                aria-label={t("wishlist.removeFromWishlist")}
                                 onClick={(event) => {
                                   event.preventDefault();
                                   event.stopPropagation();
@@ -436,7 +471,7 @@ export default function WishlistPage() {
                             </div>
 
                             <div className="px-3 pb-3 pt-2">
-                              <h3 className="line-clamp-2 min-h-[42px] text-[15px] font-semibold leading-[1.25] text-[#2f2f2f]">
+                              <h3 className="overflow-safe line-clamp-2 min-h-[42px] text-[15px] font-semibold leading-[1.25] text-[#2f2f2f]">
                                 {productName}
                               </h3>
 

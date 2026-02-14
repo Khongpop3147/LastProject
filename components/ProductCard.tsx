@@ -62,17 +62,17 @@ export default function ProductCard({
 
   return (
     <Link href={`/products/${product.id}`}>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 overflow-hidden group">
+      <div className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-[box-shadow,transform] duration-500 ease-out hover:-translate-y-[1px] hover:shadow-lg">
         <div
           className={`relative ${backgroundColor} aspect-square overflow-hidden`}
         >
           {showBadge === "sale" && (
-            <div className="absolute top-2 right-2 bg-red-500/95 text-white text-[11px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm">
+            <div className="absolute top-2 right-2 bg-red-500/95 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg z-10 shadow-sm">
               -{discountPercent}%
             </div>
           )}
           {showBadge === "new" && (
-            <div className="absolute top-2 right-2 bg-teal-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full z-10 shadow-sm">
+            <div className="absolute top-2 right-2 bg-teal-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg z-10 shadow-sm">
               NEW
             </div>
           )}
@@ -81,7 +81,7 @@ export default function ProductCard({
             src={product.imageUrl ?? "/images/placeholder.png"}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
           />
 
           {product.stock === 0 && (
@@ -92,7 +92,7 @@ export default function ProductCard({
 
           <button
             onClick={handleWishlist}
-            className="absolute bottom-2 right-2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all z-10"
+            className="tap-target absolute bottom-2 right-2 z-10 flex h-11 w-11 items-center justify-center rounded-lg bg-white/90 backdrop-blur-sm shadow-md transition-[box-shadow,transform] duration-300 ease-out hover:scale-[1.02] hover:shadow-lg"
           >
             <Heart
               className={`w-4 h-4 ${
@@ -103,7 +103,7 @@ export default function ProductCard({
         </div>
 
         <div className="p-3">
-          <h3 className="text-base md:text-lg font-semibold text-gray-800 line-clamp-2 mb-2 min-h-[46px]">
+          <h3 className="overflow-safe mb-2 min-h-[46px] text-base font-semibold text-gray-800 line-clamp-2 md:text-lg">
             {product.name}
           </h3>
 

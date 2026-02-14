@@ -161,8 +161,8 @@ export default function AddressEditorPage() {
 
   const handleBack = () => {
     const fallback = fromCheckout
-      ? "/account/addresses?from=checkout"
-      : "/account/addresses";
+      ? "/account/addresses/select?from=checkout"
+      : "/account/addresses/select";
     goBackOrPush(router, fallback);
   };
 
@@ -254,41 +254,52 @@ export default function AddressEditorPage() {
         return;
       }
 
-      router.push("/account/addresses");
+      router.push("/account/addresses/select");
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
-        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-          <div className="flex h-[94px] md:h-[102px] items-center px-4 md:px-6">
+    <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+      <div className="app-page-container-narrow desktop-shell">
+        {/* Mobile Header */}
+        <header className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+          <div className="flex h-[66px] items-center px-4">
             <button
               type="button"
               aria-label="ย้อนกลับ"
               onClick={handleBack}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
             >
-              <ArrowLeft className="h-7 w-7" strokeWidth={2.25} />
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.25} />
             </button>
 
-            <div className="ml-4">
-              <h1 className="text-[30px] font-extrabold leading-none tracking-tight text-black">
+            <div className="ml-3 min-w-0">
+              <h1 className="text-[22px] font-extrabold leading-tight tracking-tight text-black">
                 ที่อยู่จัดส่ง
               </h1>
-              <p className="text-[15px] text-[#6b7280]">
+              <p className="truncate text-[13px] text-[#6b7280]">
                 {isCreateMode ? "เพิ่มที่อยู่ใหม่" : "แก้ไขที่อยู่"}
               </p>
             </div>
           </div>
         </header>
 
+        {/* Desktop Header */}
+        <div className="hidden md:block px-6 pt-8 pb-4">
+          <h1 className="text-[32px] font-extrabold text-teal-900">
+            {isCreateMode ? "เพิ่มที่อยู่ใหม่" : "แก้ไขที่อยู่"}
+          </h1>
+          <p className="text-[15px] text-[#6b7280]">
+            กรอกข้อมูลที่อยู่จัดส่งของคุณ
+          </p>
+        </div>
+
         <form
           ref={formRef}
           onSubmit={handleSubmit}
-          className="space-y-3 px-4 pb-[250px] pt-4"
+          className="space-y-3 px-4 pb-[250px] pt-4 md:max-w-2xl md:mx-auto md:px-6 md:pb-12 md:pt-0"
         >
           {loading ? (
             <div className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center text-[17px] text-[#6b7280]">
@@ -322,7 +333,7 @@ export default function AddressEditorPage() {
                         }
                         className={`rounded-2xl border p-3 text-center ${
                           active
-                            ? "border-[#2f6ef4] bg-[#edf3ff] text-[#2f6ef4]"
+                            ? "border-teal-600 bg-teal-50 text-teal-700"
                             : "border-[#cfd5df] bg-white text-[#6b7280]"
                         }`}
                       >
@@ -348,7 +359,7 @@ export default function AddressEditorPage() {
                     value={form.label}
                     onChange={(e) => updateField("label", e.target.value)}
                     placeholder={getAddressTypeDefaultLabel(form.type)}
-                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                   />
                 </div>
 
@@ -361,7 +372,7 @@ export default function AddressEditorPage() {
                     value={form.recipient}
                     onChange={(e) => updateField("recipient", e.target.value)}
                     placeholder="กรอกชื่อ-นามสกุล"
-                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                   />
                 </div>
 
@@ -374,7 +385,7 @@ export default function AddressEditorPage() {
                     value={form.phone}
                     onChange={(e) => updateField("phone", e.target.value)}
                     placeholder="กรอกเบอร์โทรศัพท์"
-                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                   />
                 </div>
 
@@ -386,7 +397,7 @@ export default function AddressEditorPage() {
                     <select
                       value={form.city}
                       onChange={(e) => updateField("city", e.target.value)}
-                      className="h-14 w-full appearance-none rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 pr-10 text-[17px] text-[#2f6ef4] outline-none focus:border-[#2f6ef4]"
+                      className="h-14 w-full appearance-none rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 pr-10 text-[17px] text-teal-700 outline-none focus:border-teal-600"
                     >
                       {provinces.map((province) => (
                         <option key={province} value={province}>
@@ -394,7 +405,7 @@ export default function AddressEditorPage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronRight className="pointer-events-none absolute right-3 top-1/2 h-6 w-6 -translate-y-1/2 text-[#2f6ef4]" />
+                    <ChevronRight className="pointer-events-none absolute right-3 top-1/2 h-6 w-6 -translate-y-1/2 text-teal-700" />
                   </div>
                 </div>
 
@@ -407,7 +418,7 @@ export default function AddressEditorPage() {
                     value={form.line1}
                     onChange={(e) => updateField("line1", e.target.value)}
                     placeholder="กรอกที่อยู่"
-                    className="w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 py-3 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+                    className="w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 py-3 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                   />
                 </div>
 
@@ -421,7 +432,7 @@ export default function AddressEditorPage() {
                       value={form.district}
                       onChange={(e) => updateField("district", e.target.value)}
                       placeholder="กรอกเขต/อำเภอ"
-                      className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+                      className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                     />
                   </div>
                   <div>
@@ -435,7 +446,7 @@ export default function AddressEditorPage() {
                         updateField("subdistrict", e.target.value)
                       }
                       placeholder="กรอกแขวง/ตำบล"
-                      className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+                      className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-3 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                     />
                   </div>
                 </div>
@@ -450,7 +461,7 @@ export default function AddressEditorPage() {
                     value={form.postalCode}
                     onChange={(e) => updateField("postalCode", e.target.value)}
                     placeholder="กรอกรหัสไปรษณีย์"
-                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+                    className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                   />
                 </div>
               </section>
@@ -460,6 +471,28 @@ export default function AddressEditorPage() {
                   {errorMessage}
                 </p>
               ) : null}
+
+              {/* Desktop inline action buttons */}
+              <div className="hidden md:flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="flex flex-1 items-center justify-center rounded-xl border border-teal-600 py-3 text-[18px] font-semibold text-teal-600 hover:bg-teal-50 transition-colors"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex flex-1 items-center justify-center rounded-xl bg-teal-600 py-3 text-[18px] font-semibold text-white hover:bg-teal-700 transition-colors disabled:opacity-60"
+                >
+                  {submitting
+                    ? "กำลังบันทึก..."
+                    : isCreateMode
+                      ? "เพิ่มที่อยู่"
+                      : "บันทึกที่อยู่"}
+                </button>
+              </div>
             </>
           )}
         </form>
@@ -467,7 +500,7 @@ export default function AddressEditorPage() {
 
       {!loading ? (
         <div
-          className="fixed left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white px-4 pt-3 shadow-[0_-6px_20px_rgba(0,0,0,0.08)]"
+          className="md:hidden fixed left-0 right-0 z-50 border-t border-[#d8d8d8] bg-white px-4 pt-3 shadow-[0_-6px_20px_rgba(0,0,0,0.08)]"
           style={{
             bottom: "calc(84px + env(safe-area-inset-bottom))",
             paddingBottom: "12px",
@@ -480,7 +513,7 @@ export default function AddressEditorPage() {
                 formRef.current?.requestSubmit();
               }}
               disabled={submitting}
-              className="w-full rounded-2xl bg-[#2f6ef4] py-3 text-[20px] font-semibold text-white disabled:opacity-60"
+              className="w-full rounded-2xl bg-teal-600 py-3 text-[20px] font-semibold text-white disabled:opacity-60"
             >
               {submitting
                 ? "กำลังบันทึก..."
@@ -491,7 +524,7 @@ export default function AddressEditorPage() {
             <button
               type="button"
               onClick={handleBack}
-              className="w-full rounded-2xl border-2 border-[#2f6ef4] py-3 text-[20px] font-semibold text-[#2f6ef4]"
+              className="w-full rounded-2xl border-2 border-teal-600 py-3 text-[20px] font-semibold text-teal-600"
             >
               ยกเลิก
             </button>
@@ -499,7 +532,7 @@ export default function AddressEditorPage() {
         </div>
       ) : null}
 
-      <MobileShopBottomNav activePath="/cart" />
+      <MobileShopBottomNav activePath="/account" />
     </div>
   );
 }

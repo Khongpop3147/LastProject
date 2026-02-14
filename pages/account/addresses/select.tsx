@@ -1,0 +1,471 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/router";
+import Cookies from "js-cookie";
+import {
+  ArrowLeft,
+  Building2,
+  House,
+  Plus,
+  Star,
+  Trash2,
+  BriefcaseBusiness,
+} from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import MobileShopBottomNav from "@/components/MobileShopBottomNav";
+import { goBackOrPush } from "@/lib/navigation";
+import {
+  clearCheckoutSelectedAddressId,
+  clearDefaultAddressId,
+  getAddressMeta,
+  getAddressTypeDefaultLabel,
+  getCheckoutSelectedAddressId,
+  getDefaultAddressId,
+  removeAddressMeta,
+  setCheckoutSelectedAddressId,
+  setDefaultAddressId,
+} from "@/lib/addressStorage";
+import { composeAddressSummary, parseAddressLine2 } from "@/lib/addressLine2";
+
+type AddressItem = {
+  id: string;
+  recipient: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  postalCode: string;
+  country: string;
+};
+
+function getAuthToken(token: string | null) {
+  return token ?? Cookies.get("token") ?? "";
+}
+
+export default function AddressesPage() {
+  const router = useRouter();
+  const { token } = useAuth();
+  const [addresses, setAddresses] = useState<AddressItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedAddressId, setSelectedAddressIdState] = useState("");
+  const [defaultAddressId, setDefaultAddressIdState] = useState("");
+  const [deletingAddress, setDeletingAddress] = useState<AddressItem | null>(
+    null,
+  );
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const fromCheckout = router.query.from === "checkout";
+
+  const loadAddresses = useCallback(async () => {
+    const authToken = getAuthToken(token);
+    if (!authToken) {
+      router.push("/login");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/addresses", {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        setAddresses([]);
+        return;
+      }
+
+      const data = (await res.json()) as { addresses?: AddressItem[] };
+      const items = data.addresses ?? [];
+      setAddresses(items);
+
+      if (items.length === 0) {
+        setDefaultAddressIdState("");
+        setSelectedAddressIdState("");
+        clearDefaultAddressId();
+        clearCheckoutSelectedAddressId();
+        return;
+      }
+
+      const savedDefaultId = getDefaultAddressId();
+      const nextDefaultId = items.some((item) => item.id === savedDefaultId)
+        ? savedDefaultId
+        : items[0].id;
+
+      setDefaultAddressId(nextDefaultId);
+      setDefaultAddressIdState(nextDefaultId);
+
+      const savedSelectedId = getCheckoutSelectedAddressId();
+      const nextSelectedId = items.some((item) => item.id === savedSelectedId)
+        ? savedSelectedId
+        : nextDefaultId;
+
+      setCheckoutSelectedAddressId(nextSelectedId);
+      setSelectedAddressIdState(nextSelectedId);
+    } finally {
+      setLoading(false);
+    }
+  }, [router, token]);
+
+  useEffect(() => {
+    loadAddresses();
+  }, [loadAddresses]);
+
+  const addressMetaMap = useMemo(() => {
+    return new Map(addresses.map((item) => [item.id, getAddressMeta(item.id)]));
+  }, [addresses]);
+
+  const handleBack = () => {
+    const defaultFallback = fromCheckout ? "/checkout" : "/account";
+    if (
+      typeof window !== "undefined" &&
+      window.matchMedia("(min-width: 768px)").matches &&
+      !fromCheckout
+    ) {
+      router.push("/account/settings");
+      return;
+    }
+    goBackOrPush(router, defaultFallback);
+  };
+
+  const handleSelectForCheckout = (addressId: string) => {
+    setCheckoutSelectedAddressId(addressId);
+    setSelectedAddressIdState(addressId);
+    if (fromCheckout) {
+      router.push("/checkout");
+    }
+  };
+
+  const handleSetDefault = (addressId: string) => {
+    setDefaultAddressId(addressId);
+    setDefaultAddressIdState(addressId);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingAddress) return;
+
+    const authToken = getAuthToken(token);
+    if (!authToken) {
+      router.push("/login");
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/addresses/${deletingAddress.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        return;
+      }
+
+      const nextItems = addresses.filter(
+        (item) => item.id !== deletingAddress.id,
+      );
+      setAddresses(nextItems);
+
+      removeAddressMeta(deletingAddress.id);
+      clearDefaultAddressId(deletingAddress.id);
+      clearCheckoutSelectedAddressId(deletingAddress.id);
+
+      if (nextItems.length > 0) {
+        const nextDefaultId = nextItems[0].id;
+        if (defaultAddressId === deletingAddress.id) {
+          setDefaultAddressId(nextDefaultId);
+          setDefaultAddressIdState(nextDefaultId);
+        }
+
+        if (selectedAddressId === deletingAddress.id) {
+          setCheckoutSelectedAddressId(nextDefaultId);
+          setSelectedAddressIdState(nextDefaultId);
+        }
+      } else {
+        setDefaultAddressIdState("");
+        setSelectedAddressIdState("");
+      }
+
+      setDeletingAddress(null);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+      <div className="app-page-container-narrow desktop-shell">
+        {/* Mobile Header */}
+        <header className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+          <div className="flex h-[66px] items-center px-4">
+            <button
+              type="button"
+              aria-label="ย้อนกลับ"
+              onClick={handleBack}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
+            >
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.25} />
+            </button>
+
+            <div className="ml-3 min-w-0">
+              <h1 className="text-[22px] font-extrabold leading-tight tracking-tight text-black">
+                ที่อยู่จัดส่ง
+              </h1>
+              <p className="text-[14px] text-[#6b7280]">
+                {addresses.length} ที่อยู่
+              </p>
+            </div>
+
+            <button
+              type="button"
+              aria-label="เพิ่มที่อยู่ใหม่"
+              onClick={() =>
+                router.push(
+                  fromCheckout
+                    ? "/account/addresses/new?from=checkout"
+                    : "/account/addresses/new",
+                )
+              }
+              className="ml-auto flex h-10 w-10 items-center justify-center rounded-full bg-teal-600 text-white"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2.5} />
+            </button>
+          </div>
+        </header>
+
+        {/* Desktop Header */}
+        <div className="hidden md:block px-6 pt-8 pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-[32px] font-extrabold text-teal-900">
+                ที่อยู่จัดส่ง
+              </h1>
+              <p className="text-[16px] text-[#6b7280]">
+                {addresses.length} ที่อยู่
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  fromCheckout
+                    ? "/account/addresses/new?from=checkout"
+                    : "/account/addresses/new",
+                )
+              }
+              className="flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-[17px] font-semibold text-white hover:bg-teal-700 transition-colors"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2.5} />
+              เพิ่มที่อยู่ใหม่
+            </button>
+          </div>
+        </div>
+
+        <main className="space-y-4 px-4 pb-[120px] pt-4 md:px-6 md:pb-12 md:pt-0">
+          {loading ? (
+            <div className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center text-[17px] text-[#6b7280]">
+              กำลังโหลดที่อยู่...
+            </div>
+          ) : addresses.length === 0 ? (
+            <section className="rounded-2xl border border-[#d8d8d8] bg-white p-6 text-center">
+              <h2 className="text-[24px] font-extrabold text-[#111827]">
+                ยังไม่มีที่อยู่จัดส่ง
+              </h2>
+              <p className="mt-1 text-[17px] text-[#6b7280]">
+                เพิ่มที่อยู่เพื่อใช้งานหน้าชำระเงิน
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    fromCheckout
+                      ? "/account/addresses/new?from=checkout"
+                      : "/account/addresses/new",
+                  )
+                }
+                className="mt-4 rounded-2xl bg-teal-600 px-8 py-2.5 text-[18px] font-medium text-white md:hover:bg-teal-700 md:transition-colors"
+              >
+                เพิ่มที่อยู่ใหม่
+              </button>
+            </section>
+          ) : (
+            <div className="md:grid md:grid-cols-2 md:gap-4 space-y-4 md:space-y-0">
+              {addresses.map((address) => {
+                const meta = addressMetaMap.get(address.id) ?? {
+                  type: "home" as const,
+                  label: getAddressTypeDefaultLabel("home"),
+                };
+                const parsedLine2 = parseAddressLine2(address.line2);
+                const isDefault = defaultAddressId === address.id;
+                const isSelected =
+                  fromCheckout && selectedAddressId === address.id;
+
+                const Icon =
+                  meta.type === "home"
+                    ? House
+                    : meta.type === "work"
+                      ? BriefcaseBusiness
+                      : Building2;
+
+                return (
+                  <article
+                    key={address.id}
+                    className={`rounded-[24px] border bg-white p-4 shadow-[0_2px_8px_rgba(0,0,0,0.08)] md:hover:shadow-md md:transition-shadow ${
+                      isDefault
+                        ? "border-teal-600"
+                        : isSelected
+                          ? "border-teal-300"
+                          : "border-[#d8d8d8]"
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-[58px] w-[58px] flex-shrink-0 items-center justify-center rounded-[14px] bg-teal-600 text-white">
+                        <Icon className="h-7 w-7" strokeWidth={2.25} />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          {isDefault ? (
+                            <span className="rounded-full bg-teal-50 px-3 py-1 text-[14px] font-semibold text-teal-700">
+                              ค่าเริ่มต้น
+                            </span>
+                          ) : null}
+                          {isSelected ? (
+                            <span className="rounded-full bg-[#f5ecbf] px-3 py-1 text-[14px] font-semibold text-[#9c7a00]">
+                              โปรด
+                            </span>
+                          ) : null}
+                        </div>
+
+                        <h2 className="line-clamp-1 break-words text-[22px] font-extrabold leading-tight text-[#111827]">
+                          {meta.label || getAddressTypeDefaultLabel(meta.type)}
+                        </h2>
+                        <p className="line-clamp-1 break-words text-[18px] font-semibold leading-tight text-[#111827]">
+                          {address.recipient}
+                        </p>
+                        <p className="text-[17px] leading-tight text-[#6b7280]">
+                          {parsedLine2.phone || "-"}
+                        </p>
+                        <p className="mt-0.5 line-clamp-2 text-[16px] leading-tight text-[#6b7280]">
+                          {composeAddressSummary(address)}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        aria-label={
+                          isDefault
+                            ? "ที่อยู่เริ่มต้น"
+                            : "ตั้งเป็นที่อยู่เริ่มต้น"
+                        }
+                        onClick={() => handleSetDefault(address.id)}
+                        className="flex h-10 w-10 items-center justify-center rounded-full"
+                      >
+                        <Star
+                          className={`h-7 w-7 ${
+                            isDefault
+                              ? "fill-[#f4b400] text-[#f4b400]"
+                              : "text-[#9ca3af]"
+                          }`}
+                          strokeWidth={2}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-[1fr_1fr_auto] gap-2">
+                      {fromCheckout ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSelectForCheckout(address.id)}
+                          className={`rounded-xl border px-2 py-2 text-[14px] font-semibold ${
+                            isSelected
+                              ? "border-teal-600 bg-teal-600 text-white"
+                              : "border-teal-600 bg-white text-teal-700"
+                          }`}
+                        >
+                          ใช้ที่อยู่นี้
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetDefault(address.id)}
+                          className={`rounded-xl border px-2 py-2 text-[14px] font-semibold ${
+                            isDefault
+                              ? "border-teal-200 bg-teal-50 text-teal-700"
+                              : "border-teal-600 bg-white text-teal-700"
+                          }`}
+                        >
+                          {isDefault ? "ค่าเริ่มต้น" : "ตั้งค่าเริ่มต้น"}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            fromCheckout
+                              ? `/account/addresses/${address.id}?from=checkout`
+                              : `/account/addresses/${address.id}`,
+                          )
+                        }
+                        className="rounded-xl border border-teal-600 bg-white px-2 py-2 text-[14px] font-semibold text-teal-700"
+                      >
+                        แก้ไข
+                      </button>
+
+                      <button
+                        type="button"
+                        aria-label="ลบที่อยู่"
+                        onClick={() => setDeletingAddress(address)}
+                        className="flex h-[50px] w-[50px] items-center justify-center rounded-xl bg-[#ffe6e6] text-[#f25f5f]"
+                      >
+                        <Trash2 className="h-6 w-6" strokeWidth={2.2} />
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {deletingAddress ? (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/25 px-5">
+          <div className="w-full max-w-[360px] rounded-[28px] bg-white p-6 shadow-[0_14px_40px_rgba(0,0,0,0.2)]">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#ffdfe0] text-[#ff5c5f]">
+              <Trash2 className="h-8 w-8" />
+            </div>
+            <h3 className="text-center text-[26px] font-extrabold text-[#232323]">
+              ลบที่อยู่นี้?
+            </h3>
+            <p className="mt-1 text-center text-[17px] leading-tight text-[#6b7280]">
+              ที่อยู่นี้จะถูกลบออกอย่างถาวร
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingAddress(null)}
+                className="rounded-xl border border-teal-600 py-2.5 text-[18px] font-semibold text-teal-600"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="rounded-xl bg-[#ef3d43] py-2.5 text-[18px] font-semibold text-white disabled:opacity-60"
+              >
+                {deleteLoading ? "กำลังลบ..." : "ลบ"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <MobileShopBottomNav activePath="/account" />
+    </div>
+  );
+}

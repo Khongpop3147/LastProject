@@ -1,7 +1,7 @@
 // components/SubBannerCarousel.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface SubBannerSlide {
@@ -16,43 +16,81 @@ interface SubBannerCarouselProps {
 
 export default function SubBannerCarousel({ slides }: SubBannerCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const total = slides?.length ?? 0;
+
+  useEffect(() => {
+    if (total <= 1) return;
+
+    const timer = window.setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % total);
+    }, 7000);
+
+    return () => window.clearInterval(timer);
+  }, [total]);
+
+  useEffect(() => {
+    if (total === 0) return;
+    setCurrentIndex((prev) => (prev >= total ? 0 : prev));
+  }, [total]);
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? total - 1 : prev - 1));
   };
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === total - 1 ? 0 : prev + 1));
   };
 
-  if (!slides || slides.length === 0) return null;
+  if (total === 0) return null;
 
   const currentSlide = slides[currentIndex];
 
   return (
-    <div 
-      className="relative rounded-2xl overflow-hidden h-32 md:h-40 bg-gradient-to-r from-green-600 to-green-700 bg-cover bg-center transition-all duration-500"
-      style={currentSlide.img ? { backgroundImage: `url(${currentSlide.img})` } : undefined}
-    >
+    <div className="relative rounded-xl overflow-hidden h-28 md:h-36 shadow-md">
+      {slides.map((slide, index) => {
+        const active = index === currentIndex;
+        return (
+          <div
+            key={`${slide.img}-${index}`}
+            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+              active ? "opacity-100" : "opacity-0"
+            }`}
+            style={
+              slide.img ? { backgroundImage: `url(${slide.img})` } : undefined
+            }
+            aria-hidden={!active}
+          />
+        );
+      })}
+
       {/* Dark overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
-      
+      <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-transparent"></div>
+
       <div className="relative h-full flex items-center justify-between px-4 md:px-6">
         {/* Left Content */}
-        <div className="flex-1 text-white z-10">
-          <p className="text-sm md:text-base opacity-90 mb-1"></p>
-          <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1">{currentSlide.title}</h2>
-          <p className="text-sm md:text-base opacity-90 mb-2">{currentSlide.sub}</p>
-          
+        <div
+          key={currentIndex}
+          className="flex-1 text-white z-10 animate-fade-in"
+        >
+          <h2 className="text-base md:text-xl lg:text-2xl font-bold mb-1">
+            {currentSlide.title}
+          </h2>
+          <p className="text-xs md:text-sm opacity-90 mb-2">
+            {currentSlide.sub}
+          </p>
+
           {/* Dots indicator */}
-          <div className="flex gap-1.5">
+          <div className="flex gap-2 items-center">
             {slides.map((_, index) => (
-              <div
+              <button
                 key={index}
-                className={`h-1 rounded-full transition-all ${
-                  index === currentIndex 
-                    ? "w-6 bg-white" 
-                    : "w-1 bg-white/40"
+                type="button"
+                onClick={() => setCurrentIndex(index)}
+                aria-label={`Go to sub banner ${index + 1}`}
+                className={`min-h-0 h-1.5 rounded-full transition-all duration-400 flex-shrink-0 ${
+                  index === currentIndex
+                    ? "w-5 bg-white"
+                    : "w-1.5 bg-white/55 hover:bg-white/75"
                 }`}
               />
             ))}
@@ -61,19 +99,21 @@ export default function SubBannerCarousel({ slides }: SubBannerCarouselProps) {
       </div>
 
       {/* Navigation Arrows */}
-      <button 
+      <button
+        type="button"
         onClick={goToPrevious}
-        className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
+        className="absolute left-2 top-1/2 -translate-y-1/2 min-h-0 w-8 h-8 bg-white/30 hover:bg-white/40 rounded-lg flex items-center justify-center transition-colors z-20"
         aria-label="Previous"
       >
-        <ChevronLeft className="w-5 h-5 text-white" />
+        <ChevronLeft className="w-4 h-4 text-white" />
       </button>
-      <button 
+      <button
+        type="button"
         onClick={goToNext}
-        className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
+        className="absolute right-2 top-1/2 -translate-y-1/2 min-h-0 w-8 h-8 bg-white/30 hover:bg-white/40 rounded-lg flex items-center justify-center transition-colors z-20"
         aria-label="Next"
       >
-        <ChevronRight className="w-5 h-5 text-white" />
+        <ChevronRight className="w-4 h-4 text-white" />
       </button>
     </div>
   );

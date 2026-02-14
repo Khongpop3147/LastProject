@@ -156,28 +156,33 @@ export default function AccountProfilePage() {
   };
 
   const handleBack = () => {
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches) {
+      router.push("/account/settings");
+      return;
+    }
+
     goBackOrPush(router, "/account");
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl">
-        <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-          <div className="flex h-[92px] md:h-[100px] items-center px-4 md:px-6">
+    <div className="min-h-screen desktop-page overflow-x-hidden bg-[#f3f3f4] text-[#111827] md:bg-transparent">
+      <div className="mx-auto w-full max-w-[440px] md:hidden">
+        <header className="sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
+          <div className="flex h-[66px] items-center px-4">
             <button
               type="button"
               aria-label="ย้อนกลับ"
               onClick={handleBack}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dce1ea] text-[#2c3443]"
             >
-              <ArrowLeft className="h-7 w-7" strokeWidth={2.25} />
+              <ArrowLeft className="h-5 w-5" strokeWidth={2.25} />
             </button>
 
-            <div className="ml-4">
-              <h1 className="text-[30px] font-extrabold leading-none tracking-tight text-black">
+            <div className="ml-3 min-w-0">
+              <h1 className="truncate text-[22px] font-extrabold leading-tight tracking-tight text-black">
                 แก้ไขโปรไฟล์
               </h1>
-              <p className="text-[16px] text-[#6b7280]">โปรไฟล์ของคุณ</p>
+              <p className="truncate text-[14px] text-[#6b7280]">โปรไฟล์ของคุณ</p>
             </div>
           </div>
         </header>
@@ -272,9 +277,122 @@ export default function AccountProfilePage() {
             </button>
           </form>
         </main>
+
+        <MobileShopBottomNav activePath="/account" />
       </div>
 
-      <MobileShopBottomNav activePath="/account" />
+      <div className="mx-auto hidden w-full max-w-4xl px-6 pb-10 pt-8 md:block">
+        <section className="rounded-[28px] border border-[#d7dfeb] bg-white p-8 shadow-sm">
+          <div className="mb-6 flex items-center gap-4">
+            <button
+              type="button"
+              aria-label="ย้อนกลับ"
+              onClick={handleBack}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-[#d5dce8] bg-[#eef2f8] text-[#2c3443]"
+            >
+              <ArrowLeft className="h-6 w-6" strokeWidth={2.2} />
+            </button>
+            <div>
+              <h1 className="text-[44px] font-extrabold leading-none tracking-tight text-[#111827]">
+                การตั้งค่าโปรไฟล์
+              </h1>
+              <p className="mt-1 text-[20px] text-[#64748b]">
+                จัดการชื่อ อีเมล และรหัสผ่านของคุณ
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-8 flex justify-center">
+            <div className="relative">
+              <div className="flex h-[140px] w-[140px] items-center justify-center rounded-full bg-[#e5e7eb] text-[#6b7280]">
+                <UserRound className="h-[68px] w-[68px]" strokeWidth={1.8} />
+              </div>
+              <button
+                type="button"
+                aria-label="อัปเดตรูปโปรไฟล์"
+                disabled
+                className="absolute bottom-1 right-1 flex h-11 w-11 items-center justify-center rounded-full bg-[#2f6ef4] text-white shadow-[0_6px_14px_rgba(47,110,244,0.35)] disabled:opacity-80"
+              >
+                <Camera className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <form onSubmit={onSubmit} className="mx-auto max-w-2xl space-y-5">
+            <div>
+              <label className="mb-2 block text-[20px] font-semibold text-[#334155]">
+                ชื่อ-นามสกุล
+              </label>
+              <input
+                value={form.name}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, name: event.target.value }))
+                }
+                placeholder="กรอกชื่อ-นามสกุล"
+                className="h-14 w-full rounded-xl border border-[#d9dee7] bg-[#f7f9fc] px-4 text-[20px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-[20px] font-semibold text-[#334155]">
+                อีเมล
+              </label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, email: event.target.value }))
+                }
+                placeholder="กรอกอีเมล"
+                className="h-14 w-full rounded-xl border border-[#d9dee7] bg-[#f7f9fc] px-4 text-[20px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-[20px] font-semibold text-[#334155]">
+                รหัสผ่านใหม่ (ถ้าต้องการเปลี่ยน)
+              </label>
+              <input
+                type="password"
+                value={form.newPassword}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    newPassword: event.target.value,
+                  }))
+                }
+                placeholder="อย่างน้อย 8 ตัวอักษร"
+                className="h-14 w-full rounded-xl border border-[#d9dee7] bg-[#f7f9fc] px-4 text-[20px] outline-none placeholder:text-[#8f99ac] focus:border-[#2f6ef4]"
+              />
+            </div>
+
+            <p className="text-[16px] text-[#6b7280]">
+              ระบบ backend ปัจจุบันรองรับการแก้ไขชื่อ, อีเมล และรหัสผ่านเท่านั้น
+            </p>
+
+            {errorMessage ? (
+              <p className="rounded-xl border border-[#ffc9c9] bg-[#fff2f2] px-3 py-2 text-[18px] text-[#db4f4f]">
+                {errorMessage}
+              </p>
+            ) : null}
+
+            {successMessage ? (
+              <p className="rounded-xl border border-[#bfe8cf] bg-[#edfdf2] px-3 py-2 text-[18px] text-[#22995d]">
+                {successMessage}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full rounded-xl bg-[#2f6ef4] py-3 text-[22px] font-semibold leading-none text-white disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
+            </button>
+          </form>
+        </section>
+      </div>
     </div>
   );
 }
+

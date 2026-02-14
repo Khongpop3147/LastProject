@@ -91,6 +91,7 @@ model CartItem {
 model Order {
   id            String      @id @default(uuid())
   userId        String
+  locale        String      @default("th")
   status        String      @default("PENDING")
   totalAmount   Float
   paymentMethod String?

@@ -58,20 +58,20 @@ export default function SimpleCollectionPage({
         <title>{title}</title>
       </Head>
 
-      <div className="min-h-screen bg-[#f3f3f4] text-[#111827]">
-        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl">
-          <header className="sticky top-16 sm:top-20 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
-            <div className="flex h-[80px] md:h-[88px] items-center px-4 md:px-6">
+      <div className="min-h-screen desktop-page bg-[#f3f3f4] text-[#111827]">
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl desktop-shell">
+          <header className="sticky top-0 md:top-24 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4] md:bg-white md:shadow-sm">
+            <div className="flex h-[66px] md:h-[88px] items-center px-4 md:px-6">
               <button
                 type="button"
                 aria-label="ย้อนกลับ"
                 onClick={handleBack}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-[#dce1ea] text-[#222b3a]"
+                className="flex h-10 w-10 md:h-11 md:w-11 items-center justify-center rounded-full bg-[#dce1ea] text-[#222b3a]"
               >
-                <ArrowLeft className="h-6 w-6" strokeWidth={2.25} />
+                <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" strokeWidth={2.25} />
               </button>
 
-              <h1 className="ml-4 text-[28px] md:text-[30px] font-extrabold leading-none tracking-tight text-black">
+              <h1 className="ml-3 md:ml-4 text-[22px] md:text-[30px] font-extrabold leading-tight tracking-tight text-black">
                 {title}
               </h1>
             </div>
@@ -97,7 +97,7 @@ export default function SimpleCollectionPage({
                 ยังไม่มีสินค้าในหมวดนี้
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
                 {products.map((product, idx) => (
                   <ProductCard
                     key={product.id}
@@ -118,3 +118,4 @@ export default function SimpleCollectionPage({
     </>
   );
 }
+

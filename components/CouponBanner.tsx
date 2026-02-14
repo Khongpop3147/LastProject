@@ -12,7 +12,7 @@ export default function CouponBanner() {
     <Link
       href="/coupons"
       aria-label="ไปยังหน้าคูปองส่วนลด"
-      className="mx-4 mb-4 block rounded-2xl border border-[#cfd7e6] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition-colors hover:border-[#c1cce1]"
+      className="block rounded-2xl border border-[#cfd7e6] bg-white shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition-colors hover:border-[#c1cce1] my-4"
     >
       <div className="relative overflow-hidden rounded-2xl px-4 py-4">
         <div className="pointer-events-none absolute left-0 top-0 h-full w-2 bg-[#2f6ef4]" />

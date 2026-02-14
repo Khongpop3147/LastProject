@@ -1,79 +1,83 @@
-﻿import Layout from "@/components/Layout";
+import Layout from "@/components/Layout";
+import useTranslation from "next-translate/useTranslation";
 
 export default function TermsPage() {
+  const { t } = useTranslation("common");
+
   return (
-    <Layout title="ข้อกำหนดและเงื่อนไข">
-      <div className="max-w-5xl mx-auto py-10 px-4 md:px-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">เงื่อนไขการให้บริการ (Terms of Service)</h1>
-        <p className="text-gray-700 leading-relaxed mb-6">
-          ยินดีต้อนรับสู่เว็บไซต์ของ Computer Engineering CMU กรุณาอ่านข้อกำหนดเหล่านี้อย่างละเอียดก่อนใช้งาน
-          การเข้าใช้งานเว็บไซต์ถือว่าท่านยอมรับเงื่อนไขทั้งหมด
-        </p>
+    <Layout title={t("termsPage.pageTitle")} hideBottomNav>
+      <div className="mx-auto w-full max-w-[440px] md:max-w-6xl px-4 md:px-6 pb-8 pt-4 md:pt-8">
+        <article className="rounded-[28px] border border-[#d9e0eb] bg-white px-5 py-8 md:px-10 desktop-shell">
+          <h1 className="mb-3 text-3xl font-bold text-gray-900 md:text-4xl">
+            {t("termsPage.heading")}
+          </h1>
+          <p className="mb-6 text-gray-700 leading-relaxed">
+            {t("termsPage.intro")}
+          </p>
 
-        <div className="space-y-5 text-gray-800 leading-relaxed">
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">1. การยอมรับเงื่อนไข</h2>
-            <p>
-              เมื่อท่านสมัครสมาชิกหรือใช้งานเว็บไซต์ ถือว่าท่านได้อ่านและยอมรับเงื่อนไขเหล่านี้ทั้งหมด
-              หากไม่ยอมรับ กรุณางดใช้งานเว็บไซต์
-            </p>
-          </section>
+          <div className="space-y-5 text-gray-800 leading-relaxed">
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s1Heading")}
+              </h2>
+              <p>{t("termsPage.s1Text")}</p>
+            </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">2. คุณสมบัติผู้ใช้</h2>
-            <p>
-              ผู้ใช้ต้องมีอายุขั้นต่ำตามที่กฎหมายกำหนด และใช้บริการอย่างถูกต้องตามกฎหมาย
-              ห้ามใช้ระบบในทางที่ผิด หรือมีเจตนาหลอกลวง
-            </p>
-          </section>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s2Heading")}
+              </h2>
+              <p>{t("termsPage.s2Text")}</p>
+            </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">3. การใช้งานบัญชี</h2>
-            <p>
-              ผู้ใช้มีหน้าที่ดูแลข้อมูลบัญชีและรหัสผ่านของตนเอง หากมีการใช้งานผ่านบัญชีของท่าน
-              ถือว่าเป็นความรับผิดชอบของท่าน
-            </p>
-          </section>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s3Heading")}
+              </h2>
+              <p>{t("termsPage.s3Text")}</p>
+            </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">4. นโยบายสินค้าและการสั่งซื้อ</h2>
-            <p>สินค้าแต่ละรายการมีเงื่อนไขการสั่งซื้อและการคืนสินค้าที่แตกต่างกัน กรุณาตรวจสอบรายละเอียดก่อนสั่งซื้อ</p>
-            <p>หากต้องการเปลี่ยนหรือคืนสินค้า กรุณาติดต่อฝ่ายดูแลลูกค้าตามช่องทางที่เว็บไซต์กำหนด</p>
-          </section>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s4Heading")}
+              </h2>
+              <p>{t("termsPage.s4Text1")}</p>
+              <p>{t("termsPage.s4Text2")}</p>
+            </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">5. ลิขสิทธิ์และทรัพย์สินทางปัญญา</h2>
-            <p>
-              เนื้อหา รูปภาพ โลโก้ และข้อมูลทั้งหมดในเว็บไซต์เป็นทรัพย์สินของ Computer Engineering CMU
-              ห้ามคัดลอก ดัดแปลง หรือเผยแพร่ต่อโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
-            </p>
-          </section>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s5Heading")}
+              </h2>
+              <p>{t("termsPage.s5Text")}</p>
+            </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">6. การจำกัดความรับผิด</h2>
-            <p>
-              Computer Engineering CMU จะไม่รับผิดชอบต่อความเสียหายใด ๆ ที่เกิดจากการใช้งานเว็บไซต์
-              ทั้งทางตรง ทางอ้อม หรือความเสียหายต่อเนื่องในทุกกรณีตามที่กฎหมายอนุญาต
-            </p>
-          </section>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s6Heading")}
+              </h2>
+              <p>{t("termsPage.s6Text")}</p>
+            </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">7. การแก้ไขข้อกำหนด</h2>
-            <p>
-              เราขอสงวนสิทธิ์ในการแก้ไขหรือปรับปรุงเงื่อนไขการให้บริการได้ทุกเมื่อ โดยจะแจ้งการเปลี่ยนแปลงในหน้านี้
-              การใช้งานต่อจากนั้นถือว่าท่านยอมรับข้อกำหนดฉบับใหม่
-            </p>
-          </section>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s7Heading")}
+              </h2>
+              <p>{t("termsPage.s7Text")}</p>
+            </section>
 
-          <section>
-            <h2 className="text-2xl font-semibold mb-1">8. กฎหมายที่ใช้บังคับ</h2>
-            <p>
-              เงื่อนไขเหล่านี้อยู่ภายใต้กฎหมายของประเทศไทย หากเกิดข้อพิพาท ให้ดำเนินการตามเขตอำนาจศาลไทย
-            </p>
-          </section>
-        </div>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s8Heading")}
+              </h2>
+              <p>{t("termsPage.s8Text")}</p>
+            </section>
+          </div>
 
-        <p className="mt-8 text-sm text-gray-600">อัปเดตล่าสุด: 12 กุมภาพันธ์ 2026</p>
+          <p className="mt-8 text-sm text-gray-600">
+            {t("termsPage.lastUpdated")}
+          </p>
+        </article>
       </div>
     </Layout>
   );

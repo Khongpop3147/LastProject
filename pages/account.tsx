@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
+import useTranslation from "next-translate/useTranslation";
 import {
   Box,
   ChevronRight,
@@ -46,8 +47,10 @@ function getAuthToken(token: string | null) {
 export default function AccountPage() {
   const router = useRouter();
   const { token, logout } = useAuth();
+  const { t, lang } = useTranslation("common");
+  const locale = lang === "en" ? "en" : "th";
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState("ผู้ใช้งาน");
+  const [name, setName] = useState<string>(t("account.defaultUser"));
   const [email, setEmail] = useState("-");
   const [orderCount, setOrderCount] = useState(0);
   const [wishlistCount, setWishlistCount] = useState(0);
@@ -69,7 +72,7 @@ export default function AccountPage() {
           fetch("/api/auth/profile", {
             headers: { Authorization: `Bearer ${authToken}` },
           }),
-          fetch("/api/orders", {
+          fetch(`/api/orders?locale=${locale}`, {
             headers: { Authorization: `Bearer ${authToken}` },
           }),
           fetch("/api/auth/favorites", {
@@ -97,7 +100,7 @@ export default function AccountPage() {
           return key !== "COMPLETED" && key !== "CANCELLED";
         });
 
-        setName(profileJson.user?.name ?? "ผู้ใช้งาน");
+        setName(profileJson.user?.name ?? t("account.defaultUser"));
         setEmail(profileJson.user?.email ?? "-");
         setOrderCount(orders.length);
         setActiveOrderCount(activeOrders.length);
@@ -116,49 +119,49 @@ export default function AccountPage() {
     return () => {
       cancelled = true;
     };
-  }, [router, token]);
+  }, [locale, router, token, t]);
 
   const orderMenu = useMemo<AccountMenuItem[]>(
     () => [
       {
         href: "/orders",
         icon: Box,
-        title: "คำสั่งซื้อของฉัน",
-        subtitle: "ดูสถานะและประวัติการสั่งซื้อ",
+        title: t("account.myOrders"),
+        subtitle: t("account.myOrdersDesc"),
         badge: activeOrderCount > 0 ? activeOrderCount : undefined,
       },
       {
         href: "/wishlist",
         icon: Heart,
-        title: "รายการโปรด",
-        subtitle: "สินค้าที่ถูกใจ",
+        title: t("account.wishlist"),
+        subtitle: t("account.wishlistDesc"),
       },
     ],
-    [activeOrderCount],
+    [activeOrderCount, t],
   );
 
   const accountMenu = useMemo<AccountMenuItem[]>(
     () => [
       {
-        href: "/account/addresses",
+        href: "/account/addresses/select",
         icon: MapPin,
-        title: "ที่อยู่จัดส่ง",
-        subtitle: "จัดการที่อยู่สำหรับจัดส่งสินค้า",
+        title: t("account.shippingAddress"),
+        subtitle: t("account.shippingAddressDesc"),
       },
       {
         href: "/account/settings/payment",
         icon: CreditCard,
-        title: "วิธีชำระเงิน",
-        subtitle: "จัดการบัตรและวิธีชำระเงิน",
+        title: t("account.paymentMethods"),
+        subtitle: t("account.paymentMethodsDesc"),
       },
       {
         href: "/account/profile",
         icon: Settings,
-        title: "แก้ไขโปรไฟล์",
-        subtitle: "แก้ไขข้อมูลบัญชีของคุณ",
+        title: t("account.editProfile"),
+        subtitle: t("account.editProfileDesc"),
       },
     ],
-    [],
+    [t],
   );
 
   const supportMenu = useMemo<AccountMenuItem[]>(
@@ -166,25 +169,25 @@ export default function AccountPage() {
       {
         href: "/contact",
         icon: Phone,
-        title: "ติดต่อเรา",
-        subtitle: "สอบถามข้อมูล แจ้งปัญหา",
+        title: t("account.contactUs"),
+        subtitle: t("account.contactUsDesc"),
       },
       {
         href: "/qa",
         icon: CircleHelp,
-        title: "ช่วยเหลือ",
-        subtitle: "คำถามที่พบบ่อย วิธีใช้งาน",
+        title: t("account.help"),
+        subtitle: t("account.helpDesc"),
       },
     ],
-    [],
+    [t],
   );
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
-      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl pb-[110px] md:pb-12">
+    <div className="min-h-screen desktop-page overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
+      <div className="app-page-container-narrow pb-[110px] md:pb-12 desktop-shell">
         <section className="relative bg-gradient-to-br from-[#2f6ef4] to-[#4e8cff] px-4 md:px-6 pb-8 md:pb-10 pt-6 md:pt-8 text-white">
           <h1 className="text-[34px] md:text-[38px] font-extrabold leading-none tracking-tight">
-            บัญชีของฉัน
+            {t("account.title")}
           </h1>
 
           <div className="mt-6 flex items-center gap-4 md:gap-5">
@@ -213,7 +216,7 @@ export default function AccountPage() {
                   {orderCount}
                 </p>
                 <p className="mt-1 text-[16px] md:text-[17px] leading-tight text-[#4b5563]">
-                  คำสั่งซื้อ
+                  {t("account.ordersCount")}
                 </p>
               </div>
               <div>
@@ -221,7 +224,7 @@ export default function AccountPage() {
                   {wishlistCount}
                 </p>
                 <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">
-                  รายการโปรด
+                  {t("account.wishlistCount")}
                 </p>
               </div>
               <div>
@@ -229,7 +232,7 @@ export default function AccountPage() {
                   {activeOrderCount}
                 </p>
                 <p className="mt-1 text-[16px] leading-tight text-[#4b5563]">
-                  กำลังดำเนินการ
+                  {t("account.processingCount")}
                 </p>
               </div>
             </div>
@@ -237,9 +240,12 @@ export default function AccountPage() {
         </section>
 
         <main className="space-y-4 px-4 pt-5">
-          <MenuSection title="คำสั่งซื้อ" items={orderMenu} />
-          <MenuSection title="บัญชีของฉัน" items={accountMenu} />
-          <MenuSection title="อื่นๆ" items={supportMenu} />
+          <MenuSection title={t("account.orderSection")} items={orderMenu} />
+          <MenuSection
+            title={t("account.accountSection")}
+            items={accountMenu}
+          />
+          <MenuSection title={t("account.otherSection")} items={supportMenu} />
 
           <button
             type="button"
@@ -250,13 +256,13 @@ export default function AccountPage() {
               <LogOut className="h-8 w-8" />
             </div>
             <span className="text-[24px] font-bold leading-tight text-[#ef4444]">
-              ออกจากระบบ
+              {t("logout")}
             </span>
           </button>
 
           {loading ? (
             <p className="text-center text-[16px] text-[#6b7280]">
-              กำลังโหลดข้อมูลบัญชี...
+              {t("account.loading")}
             </p>
           ) : null}
         </main>

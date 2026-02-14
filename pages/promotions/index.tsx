@@ -27,43 +27,49 @@ const PromotionsPage: NextPage<PromotionsPageProps> = ({ promotions }) => {
         <meta name="description" content={t("allPromosDesc")} />
       </Head>
 
-      <section className="container mx-auto py-16">
-        <h1 className="text-3xl font-semibold mb-8">{t("allPromos")}</h1>
+      <div className="mx-auto w-full max-w-[440px] md:max-w-7xl px-4 md:px-6 pb-8 pt-4 md:pt-8">
+        <section className="rounded-[28px] border border-[#d9e0eb] bg-white p-4 md:p-8 desktop-shell">
+          <h1 className="mb-8 text-3xl font-semibold md:text-4xl">
+            {t("allPromos")}
+          </h1>
 
-        {promotions.length === 0 ? (
-          <p>{t("noPromosYet")}</p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {promotions.map((p) => (
-              <div
-                key={p.id}
-                className="rounded-lg overflow-hidden shadow hover:shadow-lg transition"
-              >
-                <img
-                  src={p.imageUrl}
-                  alt={p.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h2 className="text-xl font-bold mb-2">{p.title}</h2>
-                  <p className="text-gray-600 mb-2">{p.sub}</p>
-                  {p.description && (
-                    <p className="text-gray-700 mb-4 line-clamp-3">
-                      {p.description}
-                    </p>
-                  )}
-                  <Link
-                    href={`/promotions/${p.id}`}
-                    className="text-green-600 hover:underline"
-                  >
-                    {t("viewDetails")} →
-                  </Link>
+          {promotions.length === 0 ? (
+            <p>{t("noPromosYet")}</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {promotions.map((p) => (
+                <div
+                  key={p.id}
+                  className="overflow-hidden rounded-2xl border border-[#e4e8f0] bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <img
+                    src={p.imageUrl}
+                    alt={p.title}
+                    className="h-56 w-full object-cover"
+                  />
+                  <div className="p-4">
+                    <h2 className="mb-2 line-clamp-2 text-xl font-bold">
+                      {p.title}
+                    </h2>
+                    <p className="mb-2 line-clamp-2 text-gray-600">{p.sub}</p>
+                    {p.description ? (
+                      <p className="mb-4 line-clamp-3 text-gray-700">
+                        {p.description}
+                      </p>
+                    ) : null}
+                    <Link
+                      href={`/promotions/${p.id}`}
+                      className="font-medium text-green-600 hover:underline"
+                    >
+                      {t("viewDetails")} →
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </Layout>
   );
 };

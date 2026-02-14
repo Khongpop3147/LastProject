@@ -3,10 +3,7 @@
 
 import { useState, useEffect } from "react";
 import Head from "next/head";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import Navbar from "./Navbar";
-import Footer from "./Footer";
 import PromoModal from "./PromoModal";
 import CookieConsent from "./CookieConsent";
 import MobileShopBottomNav from "./MobileShopBottomNav";
@@ -59,7 +56,7 @@ export default function Layout({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-white md:bg-transparent overflow-x-hidden">
       <Head>
         <title>{title}</title>
         <meta name="description" content="Fresh marketplace by ICN_FREEZE" />
@@ -69,8 +66,6 @@ export default function Layout({
         />
       </Head>
 
-      <Navbar />
-
       <PromoModal show={showPromo} onClose={() => setShowPromo(false)} />
       {showCookieConsent && (
         <CookieConsent
@@ -79,11 +74,9 @@ export default function Layout({
         />
       )}
 
-      <main className="flex-grow w-full max-w-full mx-auto py-4 mt-16 sm:mt-20 md:mt-24 pb-20 md:pb-4 overflow-x-hidden">
+      <main className="flex-grow w-full max-w-full mx-auto pt-0 pb-24 md:pb-4 overflow-x-hidden desktop-page md:px-6">
         {children}
       </main>
-
-      <Footer />
 
       {/* Bottom Navigation - Mobile Only (hidden on md and above) */}
       {!hideBottomNav && (

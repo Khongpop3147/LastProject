@@ -6,15 +6,21 @@ import SimpleCollectionPage from "@/components/SimpleCollectionPage";
 
 type NewPageProps = {
   products: Product[];
+  title: string;
+  introText: string;
 };
 
-export default function NewProductsPage({ products }: NewPageProps) {
+export default function NewProductsPage({
+  products,
+  title,
+  introText,
+}: NewPageProps) {
   return (
     <SimpleCollectionPage
-      title="สินค้าใหม่"
+      title={title}
       activePath="/"
       products={products}
-      introText="อัปเดตสินค้ามาใหม่ล่าสุด คัดมาให้เลือกก่อนใคร"
+      introText={introText}
       badgeMode="new"
     />
   );
@@ -24,6 +30,16 @@ export const getServerSideProps: GetServerSideProps<NewPageProps> = async ({
   locale,
 }) => {
   const lang = locale ?? "th";
+  const copy =
+    lang === "en"
+      ? {
+          title: "New Arrivals",
+          introText: "Freshly updated products, selected for you first.",
+        }
+      : {
+          title: "สินค้าใหม่",
+          introText: "อัปเดตสินค้ามาใหม่ล่าสุด คัดมาให้เลือกก่อนใคร",
+        };
 
   const raw = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
@@ -35,7 +51,9 @@ export const getServerSideProps: GetServerSideProps<NewPageProps> = async ({
 
   return {
     props: {
-      products: raw.map(mapToProduct),
+      products: raw.map((item) => mapToProduct(item, lang)),
+      title: copy.title,
+      introText: copy.introText,
     },
   };
 };
