@@ -85,11 +85,10 @@ export default function HomeManagePage() {
             <button
               key={key}
               onClick={() => setTab(key as any)}
-              className={`px-5 py-2 rounded-md font-medium ${
-                tab === key
+              className={`px-5 py-2 rounded-md font-medium ${tab === key
                   ? "bg-green-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+                }`}
             >
               {label}
             </button>
@@ -570,16 +569,11 @@ function ManageProductSection() {
       )}
 
       {editProduct && (
-<<<<<<< HEAD
-        <div className="fixed inset-0 bg-black bg-opacity-30 overflow-y-auto flex items-start md:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6">
-=======
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
           <div
             className="bg-white rounded shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto p-6"
             style={{ scrollbarWidth: "thin", scrollbarColor: "#888 #f1f1f1" }} // เพิ่ม style scroll bar สำหรับ Firefox
           >
->>>>>>> origin/khongpop
             <h3 className="text-xl mb-4">แก้ไขสินค้า</h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <label className="block">
