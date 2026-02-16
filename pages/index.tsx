@@ -21,7 +21,6 @@ import {
   CreditCard,
   ChevronLeft,
   ChevronRight,
-  Clock,
   MapPin,
   PackageCheck,
   PhoneCall,
@@ -35,8 +34,6 @@ interface HomeProps {
   onSale: Product[];
   bestSellers: Product[];
   categories: Category[];
-  flashEndAt: string;
-  serverNowTs: number;
 }
 
 type PaymentMethodId = "credit_card" | "bank_transfer" | "cod";
@@ -126,13 +123,10 @@ export default function HomePage({
   onSale,
   bestSellers,
   categories,
-  flashEndAt,
-  serverNowTs,
 }: HomeProps) {
   const { t, lang } = useTranslation("common");
   const { token, user } = useAuth();
   const locale: "th" | "en" = lang === "en" ? "en" : "th";
-  const [nowTs, setNowTs] = useState<number>(serverNowTs);
   const [desktopHeroIndex, setDesktopHeroIndex] = useState(0);
   const [shortcutStats, setShortcutStats] = useState<ShortcutStats>({
     addressCount: null,
@@ -141,24 +135,6 @@ export default function HomePage({
     preferredPaymentMethod: null,
     faqCount: null,
   });
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setNowTs(Date.now());
-    }, 1000);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const endAtMs = useMemo(() => {
-    const parsed = new Date(flashEndAt).getTime();
-    return Number.isFinite(parsed) ? parsed : Date.now();
-  }, [flashEndAt]);
-
-  const remainingMs = Math.max(endAtMs - nowTs, 0);
-  const hours = Math.min(Math.floor(remainingMs / 3_600_000), 99);
-  const minutes = Math.floor((remainingMs % 3_600_000) / 60_000);
-  const seconds = Math.floor((remainingMs % 60_000) / 1_000);
   const commonSectionClass = "px-4 md:px-6 lg:px-8 mb-6 md:mb-8";
   const actionLinkClass =
     "px-4 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-medium hover:bg-blue-100 transition-all duration-300 hover:scale-105 hover:shadow-md";
@@ -392,9 +368,6 @@ export default function HomePage({
     },
   ];
 
-  const format2 = (value: number) =>
-    String(Math.max(0, value)).padStart(2, "0");
-
   return (
     <Layout title={t("siteTitle")}>
       {/* Mobile Header - Only on Mobile */}
@@ -603,7 +576,7 @@ export default function HomePage({
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
 
               <div className="relative z-10 flex items-center justify-between">
-                {/* Left Side - Title & Timer */}
+                {/* Left Side - Title */}
                 <div className="flex items-center gap-4">
                   <div>
                     <h2 className="text-3xl font-extrabold text-white mb-2 drop-shadow-lg">
@@ -689,39 +662,10 @@ export default function HomePage({
 
 export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
   locale,
+  res,
 }) => {
   const lang = locale ?? "th";
-
-  const rawHero = await prisma.bannerLocale.findMany({
-    where: {
-      locale: lang,
-      banner: {
-        isNot: {
-          position: "sub",
-        },
-      },
-    },
-    include: { banner: true },
-    orderBy: { banner: { order: "asc" } },
-  });
-
-  const banners: BannerSlide[] = rawHero.map(({ title, sub, banner }) => ({
-    title: title ?? "",
-    sub: sub ?? "",
-    img: banner.imageUrl,
-  }));
-
-  const rawPromo = await prisma.bannerLocale.findMany({
-    where: { locale: lang, banner: { position: "sub" } },
-    include: { banner: true },
-    orderBy: { banner: { order: "asc" } },
-  });
-
-  const subBanners: BannerSlide[] = rawPromo.map(({ title, sub, banner }) => ({
-    title: title ?? "",
-    sub: sub ?? "",
-    img: banner.imageUrl,
-  }));
+  res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
 
   // helper: fetch localized products
   async function getProducts(where: Prisma.ProductWhereInput, take?: number) {
@@ -734,65 +678,99 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
     return raw.map((item) => mapToProduct(item, lang));
   }
 
-  const featured = await getProducts({ isFeatured: true }, 10);
-  const onSale = await getProducts({ salePrice: { not: null } }, 10);
+  const [rawHero, rawPromo, featured, onSale, top, rawCats] = await Promise.all([
+    prisma.bannerLocale.findMany({
+      where: {
+        locale: lang,
+        banner: {
+          isNot: {
+            position: "sub",
+          },
+        },
+      },
+      include: { banner: true },
+      orderBy: { banner: { order: "asc" } },
+    }),
+    prisma.bannerLocale.findMany({
+      where: { locale: lang, banner: { position: "sub" } },
+      include: { banner: true },
+      orderBy: { banner: { order: "asc" } },
+    }),
+    getProducts({ isFeatured: true }, 10),
+    getProducts({ salePrice: { not: null } }, 10),
+    prisma.orderItem.groupBy({
+      by: ["productId"],
+      _sum: { quantity: true },
+      orderBy: { _sum: { quantity: "desc" } },
+      take: 8,
+    }),
+    prisma.categoryLocale.findMany({
+      where: { locale: lang },
+      include: { category: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
-  const top = await prisma.orderItem.groupBy({
-    by: ["productId"],
-    _sum: { quantity: true },
-    orderBy: { _sum: { quantity: "desc" } },
-    take: 8,
-  });
+  const banners: BannerSlide[] = rawHero.map(({ title, sub, banner }) => ({
+    title: title ?? "",
+    sub: sub ?? "",
+    img: banner.imageUrl,
+  }));
+  const subBanners: BannerSlide[] = rawPromo.map(({ title, sub, banner }) => ({
+    title: title ?? "",
+    sub: sub ?? "",
+    img: banner.imageUrl,
+  }));
+
   const bestSellerIds = top.map((item) => item.productId);
-  const bestSellersRaw = await prisma.product.findMany({
-    where: { id: { in: bestSellerIds } },
-    include: { translations: { where: { locale: lang }, take: 1 } },
-  });
+  const bestSellersRaw =
+    bestSellerIds.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: bestSellerIds } },
+          include: { translations: { where: { locale: lang }, take: 1 } },
+        })
+      : [];
   const bestById = new Map(bestSellersRaw.map((item) => [item.id, item]));
   const bestSellers: Product[] = bestSellerIds
     .map((id) => bestById.get(id))
     .filter((item): item is NonNullable<typeof item> => Boolean(item))
     .map((item) => mapToProduct(item, lang));
 
-  const rawCats = await prisma.categoryLocale.findMany({
-    where: { locale: lang },
-    include: { category: true },
-    orderBy: { name: "asc" },
-  });
+  const categoryIds = rawCats.map((item) => item.category.id);
+  const [categoryCounts, categoryCovers] =
+    categoryIds.length > 0
+      ? await Promise.all([
+          prisma.product.groupBy({
+            by: ["categoryId"],
+            where: { categoryId: { in: categoryIds } },
+            _count: { _all: true },
+          }),
+          prisma.product.findMany({
+            where: { categoryId: { in: categoryIds }, imageUrl: { not: null } },
+            select: { categoryId: true, imageUrl: true },
+            orderBy: [{ categoryId: "asc" }, { updatedAt: "desc" }],
+            distinct: ["categoryId"],
+          }),
+        ])
+      : [[], []];
 
-  const categories: Category[] = await Promise.all(
-    rawCats.map(async ({ category, name }) => {
-      // นับจำนวนสินค้าในแต่ละหมวดหมู่
-      const [productCount, coverProduct] = await Promise.all([
-        prisma.product.count({
-          where: { categoryId: category.id },
-        }),
-        prisma.product.findFirst({
-          where: { categoryId: category.id, imageUrl: { not: null } },
-          orderBy: { updatedAt: "desc" },
-          select: { imageUrl: true },
-        }),
-      ]);
-
-      return {
-        id: category.id,
-        name,
-        productCount,
-        imageUrl: coverProduct?.imageUrl ?? null,
-      };
-    }),
+  const countByCategoryId = new Map(
+    categoryCounts
+      .filter((item) => typeof item.categoryId === "string")
+      .map((item) => [item.categoryId as string, item._count._all]),
+  );
+  const coverByCategoryId = new Map(
+    categoryCovers
+      .filter((item) => typeof item.categoryId === "string")
+      .map((item) => [item.categoryId as string, item.imageUrl]),
   );
 
-  const now = new Date();
-  const configuredEnd = process.env.FLASH_SALE_END_AT;
-  let flashEndDate = new Date(now.getTime() + 3 * 60 * 60 * 1000);
-
-  if (configuredEnd) {
-    const parsed = new Date(configuredEnd);
-    if (!Number.isNaN(parsed.getTime())) {
-      flashEndDate = parsed;
-    }
-  }
+  const categories: Category[] = rawCats.map(({ category, name }) => ({
+    id: category.id,
+    name,
+    productCount: countByCategoryId.get(category.id) ?? 0,
+    imageUrl: coverByCategoryId.get(category.id) ?? null,
+  }));
 
   return {
     props: {
@@ -802,8 +780,6 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
       onSale,
       bestSellers,
       categories,
-      flashEndAt: flashEndDate.toISOString(),
-      serverNowTs: now.getTime(),
     },
   };
 };

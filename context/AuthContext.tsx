@@ -2,7 +2,9 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
+  useMemo,
   useState,
   ReactNode,
   useEffect,
@@ -33,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     const t = Cookies.get("token");
     if (!t) {
       setUser(null);
@@ -54,55 +56,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setToken(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     refreshProfile();
   }, []);
 
-  const login = async (email: string, password: string, remember: boolean) => {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const { error } = await res.json();
-      throw new Error(error || "Invalid credentials");
-    }
-    const { user: u, token: tkn } = await res.json();
+  const login = useCallback(
+    async (email: string, password: string, remember: boolean) => {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error || "Invalid credentials");
+      }
+      const { user: u, token: tkn } = await res.json();
 
-    if (remember) {
-      Cookies.set("token", tkn, { expires: 7 });
-    } else {
-      Cookies.set("token", tkn);
-    }
+      if (remember) {
+        Cookies.set("token", tkn, { expires: 7 });
+      } else {
+        Cookies.set("token", tkn);
+      }
 
-    setUser(u);
-    setToken(tkn);
-    router.push("/");
-  };
+      setUser(u);
+      setToken(tkn);
+      router.push("/");
+    },
+    [router],
+  );
 
-  const logout = () => {
+  const logout = useCallback(() => {
     Cookies.remove("token");
     setUser(null);
     setToken(null);
     router.push("/login");
-  };
+  }, [router]);
 
-  const adminLogout = async () => {
+  const adminLogout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     Cookies.remove("token");
     setUser(null);
     setToken(null);
     router.push("/admin/login");
-  };
+  }, [router]);
 
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout, adminLogout, refreshProfile }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, token, login, logout, adminLogout, refreshProfile }),
+    [user, token, login, logout, adminLogout, refreshProfile],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

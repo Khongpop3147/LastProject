@@ -3,10 +3,9 @@ import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import { AuthProvider } from "../context/AuthContext";
 import Head from "next/head";
-import { useEffect, useRef, useState } from "react";
-import Router from "next/router";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { Loader2, RotateCcw, Smartphone } from "lucide-react";
+import { RotateCcw, Smartphone } from "lucide-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import appWithI18n from "next-translate/appWithI18n";
 import i18nConfig from "../i18n.json";
@@ -22,51 +21,13 @@ const DESKTOP_CHROME_OFFSET_CLASS = "md:pt-[156px]";
 
 function MyApp({ Component, pageProps }: AppProps) {
   const router = useRouter();
-  const [isRouteLoading, setIsRouteLoading] = useState(false);
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
-  const loaderDelayRef = useRef<number | null>(null);
   const showDesktopChrome =
     !desktopChromeHiddenPathnames.has(router.pathname) &&
     !desktopChromeHiddenPrefixes.some(
       (prefix) =>
         router.pathname === prefix || router.pathname.startsWith(`${prefix}/`),
     );
-
-  useEffect(() => {
-    const handleRouteChangeStart = (nextUrl: string) => {
-      if (nextUrl === Router.asPath) return;
-
-      if (loaderDelayRef.current !== null) {
-        window.clearTimeout(loaderDelayRef.current);
-      }
-
-      // หน่วงเล็กน้อยเพื่อลดการกระพริบในกรณีเปลี่ยนหน้าเร็วมาก
-      loaderDelayRef.current = window.setTimeout(() => {
-        setIsRouteLoading(true);
-      }, 120);
-    };
-
-    const handleRouteChangeDone = () => {
-      if (loaderDelayRef.current !== null) {
-        window.clearTimeout(loaderDelayRef.current);
-        loaderDelayRef.current = null;
-      }
-      setIsRouteLoading(false);
-    };
-
-    Router.events.on("routeChangeStart", handleRouteChangeStart);
-    Router.events.on("routeChangeComplete", handleRouteChangeDone);
-    Router.events.on("routeChangeError", handleRouteChangeDone);
-
-    return () => {
-      Router.events.off("routeChangeStart", handleRouteChangeStart);
-      Router.events.off("routeChangeComplete", handleRouteChangeDone);
-      Router.events.off("routeChangeError", handleRouteChangeDone);
-      if (loaderDelayRef.current !== null) {
-        window.clearTimeout(loaderDelayRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     const detectMobileLandscape = () => {
@@ -115,7 +76,7 @@ function MyApp({ Component, pageProps }: AppProps) {
               showDesktopChrome ? DESKTOP_CHROME_OFFSET_CLASS : undefined
             }
           >
-            <Component {...pageProps} key={router.asPath} />
+            <Component {...pageProps} />
           </div>
 
           {showDesktopChrome ? <Footer /> : null}
@@ -137,25 +98,6 @@ function MyApp({ Component, pageProps }: AppProps) {
                   กรุณาหมุนหน้าจอกลับเป็นแนวตั้ง
                   <br />
                   เพื่อใช้งานต่อ
-                </p>
-              </div>
-            </div>
-          ) : null}
-          {isRouteLoading ? (
-            <div className="fixed inset-0 z-[220] flex items-center justify-center bg-black/10 px-5">
-              <div
-                role="status"
-                aria-live="polite"
-                className="w-full max-w-[292px] rounded-2xl border border-[#d9deea] bg-white px-5 py-5 text-center shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
-              >
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#eaf1ff]">
-                  <Loader2 className="h-7 w-7 animate-spin text-[#2f6ef4]" />
-                </div>
-                <p className="mt-4 text-[18px] font-semibold text-[#1f2937]">
-                  กำลังโหลดหน้า...
-                </p>
-                <p className="mt-1 text-[14px] text-[#6b7280]">
-                  กรุณารอสักครู่
                 </p>
               </div>
             </div>

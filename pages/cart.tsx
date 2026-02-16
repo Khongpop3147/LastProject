@@ -777,8 +777,4 @@ export default function CartPage() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  return {
-    props: {},
-  };
-};
+// Removed empty getServerSideProps — no SSR needed for this page

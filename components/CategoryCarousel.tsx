@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import useTranslation from "next-translate/useTranslation";
 import type { Category } from "@/types/product";
 
@@ -25,11 +26,13 @@ export default function CategoryCarousel({
             href={`/all-products?category=${cat.id}`}
             className="flex flex-col items-center group"
           >
-            <div className="mb-2 h-16 w-16 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 transition-all duration-300 group-hover:border-blue-400 group-hover:scale-110 group-hover:shadow-lg">
-              <img
+            <div className="relative mb-2 h-16 w-16 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 transition-all duration-300 group-hover:border-blue-400 group-hover:scale-110 group-hover:shadow-lg">
+              <Image
                 src={cat.imageUrl ?? "/images/placeholder.png"}
                 alt={cat.name}
-                className="h-full w-full object-cover"
+                fill
+                sizes="64px"
+                className="object-cover"
               />
             </div>
             <p className="overflow-safe line-clamp-2 text-center text-xs font-medium text-gray-700 transition-colors duration-300 group-hover:text-blue-600">
@@ -48,11 +51,13 @@ export default function CategoryCarousel({
             className="flex h-full flex-col group"
           >
             <div className="flex h-full flex-col items-center justify-between p-5 rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-blue-400 hover:shadow-xl hover:-translate-y-1">
-              <div className="mb-3 h-20 w-20 flex-shrink-0 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 group-hover:border-blue-400 transition-all duration-300 group-hover:scale-110">
-                <img
+              <div className="relative mb-3 h-20 w-20 flex-shrink-0 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 group-hover:border-blue-400 transition-all duration-300 group-hover:scale-110">
+                <Image
                   src={cat.imageUrl ?? "/images/placeholder.png"}
                   alt={cat.name}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="80px"
+                  className="object-cover"
                 />
               </div>
 

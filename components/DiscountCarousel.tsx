@@ -35,9 +35,17 @@ export default function DiscountCarousel({ items }: Props) {
     };
     // รันทันทีตอน mount
     updateCount();
-    // ฟัง resize
-    window.addEventListener("resize", updateCount);
-    return () => window.removeEventListener("resize", updateCount);
+    // ฟัง resize (debounced)
+    let timer: ReturnType<typeof setTimeout>;
+    const debouncedUpdate = () => {
+      clearTimeout(timer);
+      timer = setTimeout(updateCount, 200);
+    };
+    window.addEventListener("resize", debouncedUpdate);
+    return () => {
+      window.removeEventListener("resize", debouncedUpdate);
+      clearTimeout(timer);
+    };
   }, [total]);
 
   if (total === 0) return null;
@@ -53,7 +61,7 @@ export default function DiscountCarousel({ items }: Props) {
 
   const handleAdd = async (
     e: React.MouseEvent,
-    p: Product & { stock: number }
+    p: Product & { stock: number },
   ) => {
     e.stopPropagation();
     if (p.stock === 0) return;

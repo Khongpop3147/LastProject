@@ -4,9 +4,11 @@
 import { useState, useEffect } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import PromoModal from "./PromoModal";
-import CookieConsent from "./CookieConsent";
+import dynamic from "next/dynamic";
 import MobileShopBottomNav from "./MobileShopBottomNav";
+
+const PromoModal = dynamic(() => import("./PromoModal"), { ssr: false });
+const CookieConsent = dynamic(() => import("./CookieConsent"), { ssr: false });
 import type { ReactNode } from "react";
 
 interface LayoutProps {

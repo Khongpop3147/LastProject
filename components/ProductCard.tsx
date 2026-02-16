@@ -81,6 +81,7 @@ export default function ProductCard({
             src={product.imageUrl ?? "/images/placeholder.png"}
             alt={product.name}
             fill
+            sizes="(max-width: 768px) 160px, (max-width: 1024px) 25vw, 20vw"
             className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
           />
 
