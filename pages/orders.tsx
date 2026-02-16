@@ -171,6 +171,8 @@ export default function OrdersPage() {
   const [updatingId, setUpdatingId] = useState("");
   const [uploadingSlipId, setUploadingSlipId] = useState("");
   const [uploadError, setUploadError] = useState("");
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [selectedOrderForQr, setSelectedOrderForQr] = useState<OrderSummary | null>(null);
 
   const desktopOrderTabs: Array<{ key: DesktopOrderTab; label: string }> = [
     { key: "ALL", label: t("ordersPage.tabAll") },
@@ -339,6 +341,112 @@ export default function OrdersPage() {
     }
   };
 
+  const QrCodeModal = () => {
+    if (!showQrModal || !selectedOrderForQr) return null;
+
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+        onClick={() => setShowQrModal(false)}
+      >
+        <div
+          className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-800">💳 ชำระเงิน</h2>
+              <button
+                onClick={() => setShowQrModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6 space-y-4">
+            {/* Order Info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <p className="text-sm text-gray-600">หมายเลขคำสั่งซื้อ</p>
+              <p className="text-lg font-bold text-gray-800">{toOrderRef(selectedOrderForQr.id)}</p>
+              <p className="text-2xl font-bold text-green-600 mt-2">
+                ฿{selectedOrderForQr.totalAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+
+            {/* QR Code */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+                สแกน QR Code เพื่อชำระเงิน
+              </h3>
+
+              <div className="bg-white rounded-xl p-4">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                    <img
+                      src="/images/qr-promptpay.png"
+                      alt="PromptPay QR Code"
+                      className="w-48 h-48 object-contain"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        const parent = e.currentTarget.parentElement;
+                        if (parent && !parent.querySelector('.qr-placeholder')) {
+                          const placeholder = document.createElement('div');
+                          placeholder.className = 'qr-placeholder w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm text-center p-4';
+                          placeholder.innerHTML = 'วาง QR Code ของคุณที่<br/>/public/images/qr-promptpay.png';
+                          parent.appendChild(placeholder);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-center border-t border-gray-200 pt-4">
+                  <p className="text-sm text-gray-600">ชื่อบัญชี</p>
+                  <p className="text-base font-bold text-gray-800">ICN FREEZE</p>
+                  <p className="text-sm text-gray-600 mt-2">พร้อมเพย์</p>
+                  <p className="text-base font-semibold text-blue-600">0XX-XXX-XXXX</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Upload Slip */}
+            <div className="bg-white border border-gray-200 rounded-xl p-4">
+              <h3 className="text-base font-semibold mb-3">📎 อัปโหลดสลิปการโอนเงิน</h3>
+              <label className="flex cursor-pointer items-center justify-center rounded-lg bg-orange-500 px-6 py-3 text-base font-bold text-white hover:bg-orange-600 transition-colors">
+                <Upload className="mr-2 h-5 w-5" />
+                {uploadingSlipId === selectedOrderForQr.id ? "กำลังอัปโหลด..." : "เลือกไฟล์สลิป"}
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  className="hidden"
+                  disabled={uploadingSlipId === selectedOrderForQr.id}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleUploadSlip(selectedOrderForQr.id, file);
+                      setShowQrModal(false);
+                    }
+                  }}
+                />
+              </label>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                รองรับไฟล์ JPG, PNG, PDF
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-xs text-yellow-800 text-center">
+                ⚠️ กรุณาโอนเงินตามยอดที่ระบุ และอัปโหลดสลิปเพื่อยืนยันการชำระเงิน
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen desktop-page overflow-x-hidden bg-[#f3f3f4] text-[#111827]">
       <div className="md:hidden sticky top-0 z-40 border-b border-[#cfcfd2] bg-[#f3f3f4]">
@@ -451,11 +559,10 @@ export default function OrdersPage() {
                             key={tab.key}
                             type="button"
                             onClick={() => setDesktopActiveTab(tab.key)}
-                            className={`shrink-0 border-b-2 px-7 py-4 text-[18px] font-semibold transition ${
-                              active
-                                ? "border-[#e44a59] text-[#e44a59]"
-                                : "border-transparent text-[#334155] hover:bg-[#f8fafc]"
-                            }`}
+                            className={`shrink-0 border-b-2 px-7 py-4 text-[18px] font-semibold transition ${active
+                              ? "border-[#e44a59] text-[#e44a59]"
+                              : "border-transparent text-[#334155] hover:bg-[#f8fafc]"
+                              }`}
                           >
                             {tab.label}
                           </button>
@@ -578,23 +685,17 @@ export default function OrdersPage() {
 
                               <div className="flex items-center gap-2">
                                 {needsSlip ? (
-                                  <label className="flex cursor-pointer items-center justify-center rounded-lg bg-[#f97316] px-6 py-2.5 text-[17px] font-bold text-white hover:bg-[#ea580c]">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedOrderForQr(order);
+                                      setShowQrModal(true);
+                                    }}
+                                    className="flex items-center justify-center rounded-lg bg-[#f97316] px-6 py-2.5 text-[17px] font-bold text-white hover:bg-[#ea580c]"
+                                  >
                                     <Upload className="mr-2 h-5 w-5" />
-                                    {uploadingSlipId === order.id
-                                      ? t("ordersPage.uploading")
-                                      : t("ordersPage.uploadSlip")}
-                                    <input
-                                      type="file"
-                                      accept="image/*,.pdf"
-                                      className="hidden"
-                                      disabled={uploadingSlipId === order.id}
-                                      onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file)
-                                          handleUploadSlip(order.id, file);
-                                      }}
-                                    />
-                                  </label>
+                                    {t("ordersPage.uploadSlip")}
+                                  </button>
                                 ) : canTrack ? (
                                   <button
                                     type="button"
@@ -737,22 +838,17 @@ export default function OrdersPage() {
 
                       <div className="mt-3 flex gap-2">
                         {needsSlip ? (
-                          <label className="flex flex-1 cursor-pointer items-center justify-center rounded-xl bg-[#fbbf24] py-2 text-[18px] font-semibold text-white hover:bg-[#f59e0b]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedOrderForQr(order);
+                              setShowQrModal(true);
+                            }}
+                            className="flex flex-1 items-center justify-center rounded-xl bg-[#fbbf24] py-2 text-[18px] font-semibold text-white hover:bg-[#f59e0b]"
+                          >
                             <Upload className="mr-2 h-5 w-5" />
-                            {uploadingSlipId === order.id
-                              ? t("ordersPage.uploading")
-                              : t("ordersPage.uploadSlip")}
-                            <input
-                              type="file"
-                              accept="image/*,.pdf"
-                              className="hidden"
-                              disabled={uploadingSlipId === order.id}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleUploadSlip(order.id, file);
-                              }}
-                            />
-                          </label>
+                            {t("ordersPage.uploadSlip")}
+                          </button>
                         ) : canTrack ? (
                           <button
                             type="button"
@@ -811,6 +907,7 @@ export default function OrdersPage() {
         </main>
       </div>
 
+      <QrCodeModal />
       <MobileShopBottomNav activePath="/account" />
     </div>
   );

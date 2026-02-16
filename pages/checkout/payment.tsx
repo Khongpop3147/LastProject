@@ -241,42 +241,141 @@ export default function CheckoutPaymentPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_380px] lg:gap-8">
-          <section className="bg-white rounded-2xl border border-gray-100 p-5">
-            <h2 className="text-xl font-semibold mb-3">{t("checkout.addressHeading")}</h2>
-            <p className="text-sm text-gray-700 mb-5">
-              {address.recipient} | {address.line1}
-              {address.line2 ? `, ${address.line2}` : ""}
-              {address.line3 ? `, ${address.line3}` : ""}, {address.city} {address.postalCode}, {address.country}
-            </p>
+            <section className="bg-white rounded-2xl border border-gray-100 p-5">
+              <h2 className="text-xl font-semibold mb-3">{t("checkout.addressHeading")}</h2>
+              <p className="text-sm text-gray-700 mb-5">
+                {address.recipient} | {address.line1}
+                {address.line2 ? `, ${address.line2}` : ""}
+                {address.line3 ? `, ${address.line3}` : ""}, {address.city} {address.postalCode}, {address.country}
+              </p>
 
-            <h2 className="text-xl font-semibold mb-4">{t("checkout.paymentHeading")}</h2>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value as any)}
-              className="w-full border border-gray-300 p-3 rounded-lg text-base"
-            >
-              <option value="bank_transfer">{t("checkout.payBank")}</option>
-              <option value="credit_card" disabled={!stripeEnabled}>
-                {stripeEnabled ? t("checkout.payCard") : `${t("checkout.payCard")} (Unavailable)`}
-              </option>
-              <option value="cod">{t("checkout.payCod")}</option>
-            </select>
+              <h2 className="text-xl font-semibold mb-4">{t("checkout.paymentHeading")}</h2>
+              <select
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as any)}
+                className="w-full border border-gray-300 p-3 rounded-lg text-base"
+              >
+                <option value="bank_transfer">{t("checkout.payBank")}</option>
+                <option value="credit_card" disabled={!stripeEnabled}>
+                  {stripeEnabled ? t("checkout.payCard") : `${t("checkout.payCard")} (Unavailable)`}
+                </option>
+                <option value="cod">{t("checkout.payCod")}</option>
+              </select>
 
-            {paymentMethod === "bank_transfer" && (
-              <div className="mt-4 space-y-4">
-                <h3 className="text-base font-semibold">{t("checkout.uploadSlip")}</h3>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setSlipFile(e.target.files?.[0] || null)}
-                  className="border border-gray-300 p-3 rounded-lg w-full text-base"
-                />
+              {paymentMethod === "bank_transfer" && (
+                <div className="mt-4 space-y-4">
+                  {/* QR Code Section */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 text-center">
+                      💳 สแกน QR Code เพื่อชำระเงิน
+                    </h3>
 
-                <div className="flex justify-end">
+                    <div className="bg-white rounded-xl p-4 shadow-sm">
+                      {/* QR Code Image - Replace with your actual QR code */}
+                      <div className="flex justify-center mb-4">
+                        <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                          <img
+                            src="/images/qr-promptpay.png"
+                            alt="PromptPay QR Code"
+                            className="w-48 h-48 object-contain"
+                            onError={(e) => {
+                              // Fallback if image not found
+                              e.currentTarget.style.display = 'none';
+                              const parent = e.currentTarget.parentElement;
+                              if (parent && !parent.querySelector('.qr-placeholder')) {
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'qr-placeholder w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm text-center p-4';
+                                placeholder.innerHTML = 'วาง QR Code ของคุณที่<br/>/public/images/qr-promptpay.png';
+                                parent.appendChild(placeholder);
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Bank Account Details */}
+                      <div className="space-y-2 text-center border-t border-gray-200 pt-4">
+                        <p className="text-sm text-gray-600">ชื่อบัญชี</p>
+                        <p className="text-base font-bold text-gray-800">ICN FREEZE</p>
+                        <p className="text-sm text-gray-600 mt-2">พร้อมเพย์</p>
+                        <p className="text-base font-semibold text-blue-600">0XX-XXX-XXXX</p>
+                        <p className="text-lg font-bold text-green-600 mt-3">
+                          ยอดชำระ: ฿{grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-xs text-yellow-800 text-center">
+                          ⚠️ กรุณาโอนเงินตามยอดที่ระบุ และอัปโหลดสลิปด้านล่าง
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Slip Upload Section */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <h3 className="text-base font-semibold mb-3 flex items-center gap-2">
+                      📎 {t("checkout.uploadSlip")}
+                      <span className="text-sm font-normal text-gray-500">(ไม่บังคับ - สามารถอัปโหลดภายหลังได้)</span>
+                    </h3>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setSlipFile(e.target.files?.[0] || null)}
+                      className="border border-gray-300 p-3 rounded-lg w-full text-base"
+                    />
+                    {slipFile && (
+                      <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                        ✓ เลือกไฟล์: {slipFile.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={async () => {
+                        setLoading(true);
+                        const res = await createFormOrder("bank_transfer");
+                        setLoading(false);
+                        if (res.ok) router.push("/success");
+                        else {
+                          const e = await res.json();
+                          alert(t("checkout.orderError", { message: e.error }));
+                        }
+                      }}
+                      disabled={loading}
+                      className="touch-target px-6 py-3 bg-green-600 text-white rounded-xl disabled:opacity-50 hover:bg-green-700 transition-colors"
+                    >
+                      {loading ? "กำลังดำเนินการ..." : t("checkout.confirmBank")}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === "credit_card" && stripePromise && (
+                <div className="mt-4">
+                  <Elements stripe={stripePromise}>
+                    <CreditCardForm
+                      orderItems={items.map((i) => ({
+                        productId: i.product.id,
+                        quantity: i.quantity,
+                        priceAtPurchase: i.product.salePrice ?? i.product.price,
+                      }))}
+                      address={address}
+                      total={grandTotal}
+                      deliveryFee={deliveryFee}
+                      locale={locale}
+                    />
+                  </Elements>
+                </div>
+              )}
+
+              {paymentMethod === "cod" && (
+                <div className="mt-4 flex justify-end">
                   <button
                     onClick={async () => {
                       setLoading(true);
-                      const res = await createFormOrder("bank_transfer");
+                      const res = await createFormOrder("cod");
                       setLoading(false);
                       if (res.ok) router.push("/success");
                       else {
@@ -285,110 +384,70 @@ export default function CheckoutPaymentPage() {
                       }
                     }}
                     disabled={loading}
-                    className="touch-target px-6 py-3 bg-green-600 text-white rounded-xl disabled:opacity-50"
+                    className="touch-target px-6 py-3 bg-yellow-500 text-white rounded-xl disabled:opacity-50"
                   >
-                    {t("checkout.confirmBank")}
+                    {t("checkout.confirmCod")}
                   </button>
                 </div>
-              </div>
-            )}
+              )}
+            </section>
 
-            {paymentMethod === "credit_card" && stripePromise && (
-              <div className="mt-4">
-                <Elements stripe={stripePromise}>
-                  <CreditCardForm
-                    orderItems={items.map((i) => ({
-                      productId: i.product.id,
-                      quantity: i.quantity,
-                      priceAtPurchase: i.product.salePrice ?? i.product.price,
-                    }))}
-                    address={address}
-                    total={grandTotal}
-                    deliveryFee={deliveryFee}
-                    locale={locale}
+            <aside className="h-fit lg:sticky lg:top-24 space-y-4">
+              <section className="bg-white rounded-2xl border border-gray-100 p-5">
+                <h2 className="text-xl font-semibold mb-4">{t("checkout.orderSummary")}</h2>
+                <div className="space-y-2 text-sm">
+                  {items.map((i) => {
+                    const unit = i.product.salePrice ?? i.product.price;
+                    return (
+                      <div key={i.id} className="flex justify-between">
+                        <span className="truncate max-w-[70%]">{i.product.name} x {i.quantity}</span>
+                        <span>THB {unit * i.quantity}</span>
+                      </div>
+                    );
+                  })}
+                  <div className="flex justify-between pt-2 border-t border-gray-100">
+                    <span>{t("checkout.subtotal")}</span>
+                    <span>THB {subtotal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t("checkout.discountLabel")}</span>
+                    <span className="text-green-700">- THB {discountAmount}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>{t("checkout.deliveryFee")}</span>
+                    <span>THB {deliveryFee ?? 0}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-100">
+                    <span>{t("checkout.grandTotal")}</span>
+                    <span>THB {grandTotal}</span>
+                  </div>
+                </div>
+
+                {deliveryLoading ? <p className="text-sm text-gray-700 mt-3">{t("checkout.calculatingDelivery")}</p> : null}
+                {deliveryError ? <p className="text-sm text-red-700 mt-3">{deliveryError}</p> : null}
+              </section>
+
+              <section className="bg-white rounded-2xl border border-gray-100 p-5">
+                <h2 className="text-base font-semibold mb-3">{t("checkout.couponHeading")}</h2>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder={t("checkout.couponPlaceholder")}
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    className="flex-1 border border-gray-300 p-3 rounded-lg text-base"
                   />
-                </Elements>
-              </div>
-            )}
-
-            {paymentMethod === "cod" && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={async () => {
-                    setLoading(true);
-                    const res = await createFormOrder("cod");
-                    setLoading(false);
-                    if (res.ok) router.push("/success");
-                    else {
-                      const e = await res.json();
-                      alert(t("checkout.orderError", { message: e.error }));
-                    }
-                  }}
-                  disabled={loading}
-                  className="touch-target px-6 py-3 bg-yellow-500 text-white rounded-xl disabled:opacity-50"
-                >
-                  {t("checkout.confirmCod")}
-                </button>
-              </div>
-            )}
-          </section>
-
-          <aside className="h-fit lg:sticky lg:top-24 space-y-4">
-            <section className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="text-xl font-semibold mb-4">{t("checkout.orderSummary")}</h2>
-              <div className="space-y-2 text-sm">
-                {items.map((i) => {
-                  const unit = i.product.salePrice ?? i.product.price;
-                  return (
-                    <div key={i.id} className="flex justify-between">
-                      <span className="truncate max-w-[70%]">{i.product.name} x {i.quantity}</span>
-                      <span>THB {unit * i.quantity}</span>
-                    </div>
-                  );
-                })}
-                <div className="flex justify-between pt-2 border-t border-gray-100">
-                  <span>{t("checkout.subtotal")}</span>
-                  <span>THB {subtotal}</span>
+                  <button
+                    onClick={applyCoupon}
+                    className="touch-target px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
+                  >
+                    {t("checkout.couponApply")}
+                  </button>
                 </div>
-                <div className="flex justify-between">
-                  <span>{t("checkout.discountLabel")}</span>
-                  <span className="text-green-700">- THB {discountAmount}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t("checkout.deliveryFee")}</span>
-                  <span>THB {deliveryFee ?? 0}</span>
-                </div>
-                <div className="flex justify-between text-lg font-bold pt-2 border-t border-gray-100">
-                  <span>{t("checkout.grandTotal")}</span>
-                  <span>THB {grandTotal}</span>
-                </div>
-              </div>
-
-              {deliveryLoading ? <p className="text-sm text-gray-700 mt-3">{t("checkout.calculatingDelivery")}</p> : null}
-              {deliveryError ? <p className="text-sm text-red-700 mt-3">{deliveryError}</p> : null}
-            </section>
-
-            <section className="bg-white rounded-2xl border border-gray-100 p-5">
-              <h2 className="text-base font-semibold mb-3">{t("checkout.couponHeading")}</h2>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder={t("checkout.couponPlaceholder")}
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value)}
-                  className="flex-1 border border-gray-300 p-3 rounded-lg text-base"
-                />
-                <button
-                  onClick={applyCoupon}
-                  className="touch-target px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600"
-                >
-                  {t("checkout.couponApply")}
-                </button>
-              </div>
-              {couponError ? <p className="mt-2 text-sm text-red-600">{couponError}</p> : null}
-            </section>
-          </aside>
-        </div>
+                {couponError ? <p className="mt-2 text-sm text-red-600">{couponError}</p> : null}
+              </section>
+            </aside>
+          </div>
         </div>
       </div>
     </Layout>
