@@ -224,6 +224,7 @@ export default function HomePage({
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
+    let timeoutId: NodeJS.Timeout;
 
     const loadShortcutStats = async () => {
       const authToken = token ?? Cookies.get("token") ?? "";
@@ -241,44 +242,42 @@ export default function HomePage({
         }
       };
 
-      const [faqData, profileData, addressData, orderData, paymentData] =
-        await Promise.all([
-          safeJson<{ faqs?: Array<unknown> }>(
-            fetch(`/api/faqs?locale=${locale}`, { signal: controller.signal }),
-          ),
-          authHeaders
-            ? safeJson<{ user?: { name?: string | null } }>(
-                fetch("/api/auth/profile", {
-                  headers: authHeaders,
-                  signal: controller.signal,
-                }),
-              )
-            : Promise.resolve(null),
-          authHeaders
-            ? safeJson<{ addresses?: Array<unknown> }>(
-                fetch("/api/addresses", {
-                  headers: authHeaders,
-                  signal: controller.signal,
-                }),
-              )
-            : Promise.resolve(null),
-          authHeaders
-            ? safeJson<{ orders?: OrdersApiItem[] }>(
-                fetch(`/api/orders?locale=${locale}`, {
-                  headers: authHeaders,
-                  signal: controller.signal,
-                }),
-              )
-            : Promise.resolve(null),
-          authHeaders
-            ? safeJson<{ preferredMethod?: PaymentMethodId }>(
-                fetch("/api/payments/methods", {
-                  headers: authHeaders,
-                  signal: controller.signal,
-                }),
-              )
-            : Promise.resolve(null),
-        ]);
+      // Load FAQs first (doesn't need auth)
+      const faqData = await safeJson<{ faqs?: Array<unknown> }>(
+        fetch(`/api/faqs?locale=${locale}`, { signal: controller.signal }),
+      );
+
+      if (cancelled) return;
+
+      // Load user data in parallel if authenticated
+      const [profileData, addressData, orderData, paymentData] = authHeaders
+        ? await Promise.all([
+            safeJson<{ user?: { name?: string | null } }>(
+              fetch("/api/auth/profile", {
+                headers: authHeaders,
+                signal: controller.signal,
+              }),
+            ),
+            safeJson<{ addresses?: Array<unknown> }>(
+              fetch("/api/addresses", {
+                headers: authHeaders,
+                signal: controller.signal,
+              }),
+            ),
+            safeJson<{ orders?: OrdersApiItem[] }>(
+              fetch(`/api/orders?locale=${locale}`, {
+                headers: authHeaders,
+                signal: controller.signal,
+              }),
+            ),
+            safeJson<{ preferredMethod?: PaymentMethodId }>(
+              fetch("/api/payments/methods", {
+                headers: authHeaders,
+                signal: controller.signal,
+              }),
+            ),
+          ])
+        : [null, null, null, null];
 
       if (cancelled) return;
 
@@ -308,11 +307,17 @@ export default function HomePage({
       });
     };
 
-    loadShortcutStats();
+    // Delay loading to prioritize initial page render (lazy loading)
+    timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        loadShortcutStats();
+      }
+    }, 300);
 
     return () => {
       cancelled = true;
       controller.abort();
+      clearTimeout(timeoutId);
     };
   }, [locale, token, user?.name]);
 
@@ -665,6 +670,7 @@ export const getServerSideProps: GetServerSideProps<HomeProps> = async ({
   res,
 }) => {
   const lang = locale ?? "th";
+  // ISR: revalidate every 60 seconds
   res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
 
   // helper: fetch localized products
