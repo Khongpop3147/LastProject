@@ -1,11 +1,17 @@
 "use client";
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
+import useTranslation from "next-translate/useTranslation";
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation("common");
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const token =
+    typeof router.query.token === "string"
+      ? router.query.token
+      : Array.isArray(router.query.token)
+        ? router.query.token[0] || ""
+        : "";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -17,11 +23,11 @@ export default function ResetPasswordPage() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError("รหัสผ่านไม่ตรงกัน");
+      setError(t("resetPassword.passwordMismatch"));
       return;
     }
     if (!token) {
-      setError("Token ไม่ถูกต้อง");
+      setError(t("resetPassword.invalidToken"));
       return;
     }
 
@@ -38,46 +44,54 @@ export default function ResetPasswordPage() {
       }, 3000);
     } else {
       const data = await res.json();
-      setError(data.error || "เกิดข้อผิดพลาด");
+      setError(data.error || t("resetPassword.errorGeneric"));
     }
   };
 
   if (success)
     return (
-      <div className="max-w-md mx-auto mt-20 p-4 border rounded shadow text-center">
-        <h2 className="text-2xl font-bold mb-4">รีเซ็ตรหัสผ่านสำเร็จ</h2>
-        <p>กำลังไปหน้าล็อกอิน...</p>
+      <div className="min-h-screen desktop-page bg-[#f3f3f4]">
+        <div className="mx-auto w-full max-w-md desktop-shell p-6 text-center">
+          <h2 className="text-2xl font-bold mb-4">
+            {t("resetPassword.successHeading")}
+          </h2>
+          <p>{t("resetPassword.redirecting")}</p>
+        </div>
       </div>
     );
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-4 border rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">ตั้งรหัสผ่านใหม่</h1>
-      {error && <p className="text-red-600 mb-2">{error}</p>}
-      <form onSubmit={onSubmit} className="space-y-4">
-        <input
-          type="password"
-          placeholder="รหัสผ่านใหม่"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="w-full border p-2 rounded"
-        />
-        <input
-          type="password"
-          placeholder="ยืนยันรหัสผ่านใหม่"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          className="w-full border p-2 rounded"
-        />
-        <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
-        >
-          ตั้งรหัสผ่านใหม่
-        </button>
-      </form>
+    <div className="min-h-screen desktop-page bg-[#f3f3f4]">
+      <div className="mx-auto w-full max-w-md desktop-shell p-6">
+        <h1 className="text-2xl font-bold mb-4">
+          {t("resetPassword.heading")}
+        </h1>
+        {error && <p className="text-red-600 mb-2">{error}</p>}
+        <form onSubmit={onSubmit} className="space-y-4">
+          <input
+            type="password"
+            placeholder={t("resetPassword.newPasswordPlaceholder")}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full border p-2 rounded"
+          />
+          <input
+            type="password"
+            placeholder={t("resetPassword.confirmPasswordPlaceholder")}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            className="w-full border p-2 rounded"
+          />
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+          >
+            {t("resetPassword.submit")}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

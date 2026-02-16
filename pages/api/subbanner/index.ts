@@ -1,12 +1,14 @@
-// pages/api/subbanner/index.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // GET /api/subbanner
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   if (req.method === "GET") {
     const sb = await prisma.subBanner.findFirst({
       include: { translations: true },
@@ -21,7 +23,7 @@ export default async function handler(
       imageUrl: sb.imageUrl,
       createdAt: sb.createdAt,
       updatedAt: sb.updatedAt,
-      buttonLink: sb.buttonLink, // ไม่แปล
+      buttonLink: sb.buttonLink,
       titleTh: th?.title ?? "",
       descriptionTh: th?.description ?? "",
       buttonTextTh: th?.buttonText ?? "",
@@ -31,7 +33,6 @@ export default async function handler(
     });
   }
 
-  // PUT /api/subbanner
   if (req.method === "PUT") {
     const {
       titleTh,
@@ -56,7 +57,7 @@ export default async function handler(
     if (!titleTh || !buttonTextTh || !titleEn || !buttonTextEn || !buttonLink) {
       return res.status(400).json({
         error:
-          "ต้องระบุ titleTh, buttonTextTh, titleEn, buttonTextEn และ buttonLink",
+          "titleTh, buttonTextTh, titleEn, buttonTextEn and buttonLink are required",
       });
     }
 
@@ -64,7 +65,6 @@ export default async function handler(
     let result;
 
     if (existing) {
-      // อัปเดตเรคอร์ดหลัก และ translations
       result = await prisma.subBanner.update({
         where: { id: existing.id },
         data: {
@@ -116,7 +116,6 @@ export default async function handler(
         include: { translations: true },
       });
     } else {
-      // สร้างใหม่
       result = await prisma.subBanner.create({
         data: {
           buttonLink,
@@ -142,9 +141,8 @@ export default async function handler(
       });
     }
 
-    // map response กลับให้เหมือน GET
-    const th = result.translations.find((t) => t.locale === "th")!;
-    const en = result.translations.find((t) => t.locale === "en")!;
+    const th = result.translations.find((t) => t.locale === "th");
+    const en = result.translations.find((t) => t.locale === "en");
 
     return res.status(200).json({
       id: result.id,
@@ -152,12 +150,12 @@ export default async function handler(
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
       buttonLink: result.buttonLink,
-      titleTh: th.title,
-      descriptionTh: th.description,
-      buttonTextTh: th.buttonText,
-      titleEn: en.title,
-      descriptionEn: en.description,
-      buttonTextEn: en.buttonText,
+      titleTh: th?.title ?? "",
+      descriptionTh: th?.description ?? "",
+      buttonTextTh: th?.buttonText ?? "",
+      titleEn: en?.title ?? "",
+      descriptionEn: en?.description ?? "",
+      buttonTextEn: en?.buttonText ?? "",
     });
   }
 

@@ -3,9 +3,10 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import Layout from "@/components/AdminLayout"; // ใช้ layout ที่คุณมี
 import { useAuth } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import type { GetServerSideProps } from "next";
 import { adminGuard } from "@/lib/adminGuard";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -141,9 +142,18 @@ function CreateProductSection() {
   useEffect(() => {
     // ดึงหมวดหมู่ภาษาไทย (หรือใช้ locale param ตามต้องการ)
     fetch("/api/categories?locale=th")
-      .then((r) => r.json())
-      .then((data) => setCategories(data))
-      .catch(console.error);
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        const cats = Array.isArray(data) ? data : (data.items || []);
+        setCategories(Array.isArray(cats) ? cats : []);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch categories:", err);
+        setCategories([]);
+      });
   }, []);
 
   const onChange = (
@@ -348,16 +358,34 @@ function ManageProductSection() {
   useEffect(() => {
     // โหลดสินค้า
     fetch("/api/products")
-      .then((r) => r.json())
-      .then((data) => setProducts(data.items || data))
-      .catch(console.error)
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        const products = Array.isArray(data) ? data : (data.items || []);
+        setProducts(Array.isArray(products) ? products : []);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch products:", err);
+        setProducts([]);
+      })
       .finally(() => setLoading(false));
 
     // โหลดหมวดหมู่
     fetch("/api/categories")
-      .then((r) => r.json())
-      .then((data) => setCategories(data.items || data))
-      .catch(console.error);
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        const categories = Array.isArray(data) ? data : (data.items || []);
+        setCategories(Array.isArray(categories) ? categories : []);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch categories:", err);
+        setCategories([]);
+      });
   }, []);
 
   const toggleFeatured = async (id: string, current: boolean) => {
@@ -542,8 +570,16 @@ function ManageProductSection() {
       )}
 
       {editProduct && (
+<<<<<<< HEAD
         <div className="fixed inset-0 bg-black bg-opacity-30 overflow-y-auto flex items-start md:items-center justify-center z-50 p-4">
           <div className="bg-white rounded shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6">
+=======
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
+          <div
+            className="bg-white rounded shadow-lg w-full max-w-lg max-h-[80vh] overflow-y-auto p-6"
+            style={{ scrollbarWidth: "thin", scrollbarColor: "#888 #f1f1f1" }} // เพิ่ม style scroll bar สำหรับ Firefox
+          >
+>>>>>>> origin/khongpop
             <h3 className="text-xl mb-4">แก้ไขสินค้า</h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">
               <label className="block">
@@ -1310,8 +1346,11 @@ export function ManageBannerSection() {
 
       {editBanner && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6">
-            <h3 className="text-xl font-semibold mb-4">
+          <div
+            className="bg-white rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] overflow-auto p-6"
+            style={{ scrollbarWidth: "thin", scrollbarColor: "#888 #f1f1f1" }} // เพิ่ม style scroll bar สำหรับ Firefox
+          >
+            <h3 className="text-xl mb-4">
               แก้ไขแบนเนอร์ / Edit Banner
             </h3>
             <form onSubmit={handleEditSubmit} className="space-y-4">

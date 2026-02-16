@@ -1,44 +1,47 @@
 import Layout from "@/components/Layout";
+import useTranslation from "next-translate/useTranslation";
 
 export default function CookiePolicyPage() {
+  const { t } = useTranslation("common");
+
   return (
-    <Layout title="นโยบายการใช้งานคุกกี้">
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-6">นโยบายการใช้งานคุกกี้</h1>
+    <Layout title={t("cookiePolicy.pageTitle")} hideBottomNav>
+      <div className="mx-auto w-full max-w-[440px] md:max-w-5xl px-4 md:px-6 pb-8 pt-4 md:pt-8">
+        <article className="rounded-[28px] border border-[#d9e0eb] bg-white p-6 md:p-10 desktop-shell">
+          <h1 className="mb-6 text-3xl font-bold md:text-4xl">
+            {t("cookiePolicy.heading")}
+          </h1>
 
-        <p>
-          เว็บไซต์ของเราใช้คุกกี้เพื่อเพิ่มประสิทธิภาพและประสบการณ์การใช้งานของคุณ
-          โดยคุกกี้คือไฟล์ข้อความเล็กๆ
-          ที่ถูกเก็บไว้บนอุปกรณ์ของคุณเมื่อคุณเข้าเยี่ยมชมเว็บไซต์
-        </p>
+          <p>{t("cookiePolicy.intro")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">ประเภทของคุกกี้</h2>
-        <ul className="list-disc pl-6">
-          <li>
-            <strong>คุกกี้จำเป็น:</strong> ใช้เพื่อให้เว็บไซต์ทำงานอย่างถูกต้อง
-            เช่น การเข้าสู่ระบบ
-          </li>
-          <li>
-            <strong>คุกกี้วิเคราะห์:</strong>{" "}
-            ช่วยเก็บข้อมูลการใช้งานเพื่อปรับปรุงเว็บไซต์
-          </li>
-          <li>
-            <strong>คุกกี้โฆษณา:</strong> ใช้สำหรับแสดงโฆษณาที่ตรงกับความสนใจ
-          </li>
-        </ul>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("cookiePolicy.typesHeading")}
+          </h2>
+          <ul className="list-disc pl-6">
+            <li>
+              <strong>{t("cookiePolicy.essentialLabel")}</strong>{" "}
+              {t("cookiePolicy.essentialDesc")}
+            </li>
+            <li>
+              <strong>{t("cookiePolicy.analyticsLabel")}</strong>{" "}
+              {t("cookiePolicy.analyticsDesc")}
+            </li>
+            <li>
+              <strong>{t("cookiePolicy.advertisingLabel")}</strong>{" "}
+              {t("cookiePolicy.advertisingDesc")}
+            </li>
+          </ul>
 
-        <h2 className="mt-6 text-xl font-semibold">การจัดการคุกกี้</h2>
-        <p>
-          คุณสามารถตั้งค่าการจัดการคุกกี้ผ่านเบราว์เซอร์ของคุณเพื่อปฏิเสธหรือลบคุกกี้ได้
-          อย่างไรก็ตาม
-          การปิดคุกกี้บางประเภทอาจทำให้การใช้งานเว็บไซต์บางอย่างจำกัด
-        </p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("cookiePolicy.managementHeading")}
+          </h2>
+          <p>{t("cookiePolicy.managementDesc")}</p>
 
-        <h2 className="mt-6 text-xl font-semibold">ผลกระทบของการปิดคุกกี้</h2>
-        <p>
-          หากคุณเลือกปิดคุกกี้ อาจส่งผลให้บางฟีเจอร์ เช่น การเข้าสู่ระบบ
-          หรือการใช้งานตระกร้าสินค้า ไม่สามารถทำงานได้อย่างเต็มประสิทธิภาพ
-        </p>
+          <h2 className="mt-6 text-xl font-semibold">
+            {t("cookiePolicy.impactHeading")}
+          </h2>
+          <p>{t("cookiePolicy.impactDesc")}</p>
+        </article>
       </div>
     </Layout>
   );

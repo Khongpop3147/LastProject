@@ -1,67 +1,83 @@
-// pages/terms.tsx
 import Layout from "@/components/Layout";
+import useTranslation from "next-translate/useTranslation";
 
 export default function TermsPage() {
+  const { t } = useTranslation("common");
+
   return (
-    <Layout title="Terms of Service">
-      <div className="prose lg:prose-xl mx-auto py-12 px-4">
-        <h1>เงื่อนไขการให้บริการ (Terms of Service)</h1>
+    <Layout title={t("termsPage.pageTitle")} hideBottomNav>
+      <div className="mx-auto w-full max-w-[440px] md:max-w-6xl px-4 md:px-6 pb-8 pt-4 md:pt-8">
+        <article className="rounded-[28px] border border-[#d9e0eb] bg-white px-5 py-8 md:px-10 desktop-shell">
+          <h1 className="mb-3 text-3xl font-bold text-gray-900 md:text-4xl">
+            {t("termsPage.heading")}
+          </h1>
+          <p className="mb-6 text-gray-700 leading-relaxed">
+            {t("termsPage.intro")}
+          </p>
 
-        <p>
-          ยินดีต้อนรับสู่ ICN_FREEZE กรุณาอ่านข้อกำหนดเหล่านี้อย่างละเอียดก่อนใช้งานเว็บไซต์
-          การเข้าใช้เว็บไซต์ของท่านถือว่าท่านยอมรับเงื่อนไขทั้งหมด
-        </p>
+          <div className="space-y-5 text-gray-800 leading-relaxed">
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s1Heading")}
+              </h2>
+              <p>{t("termsPage.s1Text")}</p>
+            </section>
 
-        <h2>1. การยอมรับเงื่อนไข</h2>
-        <p>
-          เมื่อท่านสมัครสมาชิกหรือใช้งานเว็บไซต์ ถือว่าท่านได้อ่านและยอมรับเงื่อนไขเหล่านี้ทั้งหมด
-          หากไม่ยอมรับ กรุณาอย่าใช้งานเว็บไซต์ของเรา
-        </p>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s2Heading")}
+              </h2>
+              <p>{t("termsPage.s2Text")}</p>
+            </section>
 
-        <h2>2. คุณสมบัติผู้ใช้</h2>
-        <p>
-          ท่านต้องมีอายุขั้นต่ำตามที่กฎหมายกำหนดและมีสิทธิ์ใช้บริการอย่างถูกต้อง
-          ห้ามใช้บริการในทางที่ผิดกฎหมายหรือหลอกลวง
-        </p>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s3Heading")}
+              </h2>
+              <p>{t("termsPage.s3Text")}</p>
+            </section>
 
-        <h2>3. การใช้งานบัญชี</h2>
-        <p>
-          ท่านต้องรับผิดชอบรักษาข้อมูลบัญชีและรหัสผ่านของท่าน หากมีการใช้งานโดยผู้ใดก็ตามถือว่าเป็นความรับผิดชอบของท่าน
-        </p>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s4Heading")}
+              </h2>
+              <p>{t("termsPage.s4Text1")}</p>
+              <p>{t("termsPage.s4Text2")}</p>
+            </section>
 
-        <h2>4. นโยบายสินค้าและการสั่งซื้อ</h2>
-        <p>
-          - สินค้าแต่ละชนิดมีเงื่อนไขการสั่งซื้อและการคืนสินค้าที่แตกต่างกัน<br/>
-          - กรุณาตรวจสอบรายละเอียดสินค้า โปรดติดต่อฝ่ายบริการลูกค้าในกรณีที่ต้องการเปลี่ยนหรือคืนสินค้า
-        </p>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s5Heading")}
+              </h2>
+              <p>{t("termsPage.s5Text")}</p>
+            </section>
 
-        <h2>5. ลิขสิทธิ์และทรัพย์สินทางปัญญา</h2>
-        <p>
-          เนื้อหา รูปภาพ โลโก้ หรือข้อมูลใด ๆ ภายในเว็บไซต์เป็นทรัพย์สินของ ICN_FREEZE
-          ห้ามคัดลอก ดัดแปลง หรือเผยแพร่ต่อโดยไม่ได้รับอนุญาตเป็นลายลักษณ์อักษร
-        </p>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s6Heading")}
+              </h2>
+              <p>{t("termsPage.s6Text")}</p>
+            </section>
 
-        <h2>6. การจำกัดความรับผิด</h2>
-        <p>
-          ICN_FREEZE จะไม่รับผิดชอบต่อความเสียหายใด ๆ ที่เกิดขึ้นจากการใช้งานเว็บไซต์
-          รวมถึงความเสียหายทางตรง ทางอ้อม หรือทางใด ๆ ก็ตาม
-        </p>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s7Heading")}
+              </h2>
+              <p>{t("termsPage.s7Text")}</p>
+            </section>
 
-        <h2>7. การแก้ไขข้อกำหนด</h2>
-        <p>
-          เราขอสงวนสิทธิ์ในการแก้ไขหรือปรับปรุงเงื่อนไขการให้บริการได้ทุกเมื่อ
-          โดยจะแจ้งในหน้านี้ การใช้งานต่อไปถือว่าท่านยอมรับข้อกำหนดใหม่
-        </p>
+            <section>
+              <h2 className="mb-1 text-2xl font-semibold">
+                {t("termsPage.s8Heading")}
+              </h2>
+              <p>{t("termsPage.s8Text")}</p>
+            </section>
+          </div>
 
-        <h2>8. กฎหมายที่ใช้บังคับ</h2>
-        <p>
-          เงื่อนไขเหล่านี้อยู่ภายใต้และตีความตามกฎหมายของประเทศไทย
-          หากมีข้อพิพาทใด ๆ ให้ยื่นฟ้องต่อศาลไทยตามเขตที่บริษัทตั้งอยู่
-        </p>
-
-        <p className="mt-8 text-sm text-gray-600">
-          อัปเดตล่าสุด: 20 พฤษภาคม 2025
-        </p>
+          <p className="mt-8 text-sm text-gray-600">
+            {t("termsPage.lastUpdated")}
+          </p>
+        </article>
       </div>
     </Layout>
   );

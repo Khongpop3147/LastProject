@@ -1,6 +1,7 @@
 // pages/api/admin/stats.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export type StatsResponse = {
   totalSales: number;
@@ -11,8 +12,11 @@ export type StatsResponse = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<StatsResponse>
+  res: NextApiResponse<StatsResponse>,
 ) {
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
   if (req.method !== "GET") {
     return res.status(405).end();
   }
@@ -48,26 +52,28 @@ export default async function handler(
     take: 5,
   });
 
-  // ดึงชื่อสินค้าตาม locale
-  const topProducts = await Promise.all(
-    top.map(async (t) => {
-      const prod = await prisma.product.findUnique({
-        where: { id: t.productId },
-        include: {
-          translations: {
-            where: { locale },
-            take: 1,
-            select: { name: true },
+  // ดึงชื่อสินค้าตาม locale (single query แทน N+1)
+  const topProductIds = top.map((t) => t.productId);
+  const topProductsRaw =
+    topProductIds.length > 0
+      ? await prisma.product.findMany({
+          where: { id: { in: topProductIds } },
+          include: {
+            translations: {
+              where: { locale },
+              take: 1,
+              select: { name: true },
+            },
           },
-        },
-      });
-
-      return {
-        name: prod?.translations[0]?.name ?? "Unknown",
-        sold: t._sum.quantity ?? 0,
-      };
-    })
+        })
+      : [];
+  const prodById = new Map(
+    topProductsRaw.map((p) => [p.id, p.translations[0]?.name ?? "Unknown"]),
   );
+  const topProducts = top.map((t) => ({
+    name: prodById.get(t.productId) ?? "Unknown",
+    sold: t._sum.quantity ?? 0,
+  }));
 
   return res.status(200).json({
     totalSales,

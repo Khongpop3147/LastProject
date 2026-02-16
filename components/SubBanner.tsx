@@ -1,11 +1,14 @@
 // components/SubBanner.tsx
+"use client";
+
 import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface SubBannerProps {
   title: string;
   description: string;
-  buttonText: string;
-  buttonLink: string;
+  buttonText?: string;
+  buttonLink?: string;
   img: string;
 }
 
@@ -16,32 +19,45 @@ export default function SubBanner({
   buttonLink,
   img,
 }: SubBannerProps) {
-  const hasImage = Boolean(img);
-
   return (
-    <div
-      className={`
-        my-4 p-3 sm:p-4 rounded-xl
-        flex flex-col space-y-3 md:flex-row md:space-y-0 md:space-x-4
-        items-center justify-between
-        ${hasImage ? "bg-cover bg-center" : "bg-green-200"}
-        h-40
-      `}
-      style={hasImage ? { backgroundImage: `url(${img})` } : undefined}
+    <div 
+      className="relative rounded-2xl overflow-hidden h-32 md:h-40 bg-cover bg-center"
+      style={{ backgroundImage: `url(${img || "/images/placeholder.png"})` }}
     >
-      {/* ข้อความลอยบนพื้นหลัง */}
-      <div className="mb-2 md:mb-0 text-white text-center md:text-left">
-        <h2 className="text-lg sm:text-xl font-bold">{title}</h2>
-        <p className="mt-1 text-xs sm:text-sm">{description}</p>
+      {/* Dark overlay for better text readability */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
+      
+      <div className="relative h-full flex items-center justify-between px-4 md:px-6">
+        {/* Left Content */}
+        <div className="flex-1 text-white z-10">
+          <p className="text-sm md:text-base opacity-95 mb-1">{buttonText || "Recommended for you"}</p>
+          <h2 className="text-lg md:text-2xl lg:text-3xl font-bold mb-1">{title}</h2>
+          <p className="text-sm md:text-base opacity-90 mb-2">{description}</p>
+          {/* Dots indicator */}
+          <div className="flex gap-1.5">
+            <div className="w-6 h-1 bg-white rounded-full"></div>
+            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+            <div className="w-1 h-1 bg-white/40 rounded-full"></div>
+          </div>
+        </div>
       </div>
 
-      <a
-        href={buttonLink}
-        className="w-full md:w-auto text-center px-3 py-1.5 sm:px-4 sm:py-2
-                   bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+      {/* Navigation Arrows */}
+      <button 
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
+        aria-label="Previous"
       >
-        {buttonText}
-      </a>
+        <ChevronLeft className="w-5 h-5 text-white" />
+      </button>
+      <button 
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 bg-white/25 hover:bg-white/35 rounded-full flex items-center justify-center transition-colors z-20"
+        aria-label="Next"
+      >
+        <ChevronRight className="w-5 h-5 text-white" />
+      </button>
     </div>
   );
 }

@@ -12,9 +12,11 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
-    "@prisma/client": "^4.0.0",
+    "@prisma/client": "^4.16.2",
     "@stripe/react-stripe-js": "^3.7.0",
     "@stripe/stripe-js": "^7.3.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@tanstack/react-query": "^5.90.21",
     "bcryptjs": "^3.0.2",
     "cookie": "^1.0.2",
     "icn_freeze": "file:",
@@ -30,11 +32,12 @@
     "prisma": "^4.0.0",
     "react": "latest",
     "react-dom": "latest",
-    "recharts": "^2.15.3",
+    "recharts": "^2.15.4",
     "stripe": "^18.1.1",
     "swr": "^2.3.3"
   },
   "devDependencies": {
+    "@tailwindcss/line-clamp": "^0.4.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie": "^0.6.0",
     "@types/formidable": "^3.4.5",
@@ -47,11 +50,11 @@
     "@types/react-dom": "^19.1.5",
     "@types/recharts": "^2.0.1",
     "@types/stripe": "^8.0.416",
-    "autoprefixer": "^10.4.0",
+    "autoprefixer": "^10.4.21",
     "formidable": "^3.5.4",
     "next-translate-plugin": "^2.6.2",
     "postcss": "^8.4.0",
-    "tailwindcss": "^3.0.0",
+    "tailwindcss": "^3.4.19",
     "typescript": "^4.5.4"
   }
 }

@@ -1,8 +1,10 @@
-"use client";
+﻿"use client";
 
 import {
   createContext,
+  useCallback,
   useContext,
+  useMemo,
   useState,
   ReactNode,
   useEffect,
@@ -20,13 +22,10 @@ interface User {
 interface AuthContextValue {
   user: User | null;
   token: string | null;
-  /**
-   * @param remember ถ้า true → คุกกี้อยู่ได้นาน 7 วัน
-   *                 ถ้า false → คุกกี้เป็น session cookie (หายเมื่อปิดเบราว์เซอร์)
-   */
   login: (email: string, password: string, remember: boolean) => Promise<void>;
   logout: () => void;
   adminLogout: () => void;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -36,70 +35,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
 
-  // โหลด token จากคุกกี้ตอน mount
-  useEffect(() => {
+  const refreshProfile = useCallback(async () => {
     const t = Cookies.get("token");
-    if (t) {
-      setToken(t);
-      // ดึงข้อมูลโปรไฟล์ (ถ้ามี API)
-      fetch("/api/auth/profile", {
+    if (!t) {
+      setUser(null);
+      setToken(null);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/auth/profile", {
         headers: { Authorization: `Bearer ${t}` },
-      })
-        .then((res) => res.json())
-        .then((data) => setUser(data.user))
-        .catch(() => logout());
+      });
+      if (!res.ok) throw new Error("Unauthorized");
+      const data = await res.json();
+      setToken(t);
+      setUser(data.user || null);
+    } catch {
+      Cookies.remove("token");
+      setUser(null);
+      setToken(null);
     }
   }, []);
 
-  const login = async (email: string, password: string, remember: boolean) => {
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const { error } = await res.json();
-      throw new Error(error || "Invalid credentials");
-    }
-    const { user: u, token: tkn } = await res.json();
+  useEffect(() => {
+    refreshProfile();
+  }, []);
 
-    // เซ็ตคุกกี้
-    if (remember) {
-      Cookies.set("token", tkn, { expires: 7 });
-    } else {
-      Cookies.set("token", tkn);
-    }
+  const login = useCallback(
+    async (email: string, password: string, remember: boolean) => {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json();
+        throw new Error(error || "Invalid credentials");
+      }
+      const { user: u, token: tkn } = await res.json();
 
-    setUser(u);
-    setToken(tkn);
-    router.push("/");
-  };
+      if (remember) {
+        Cookies.set("token", tkn, { expires: 7 });
+      } else {
+        Cookies.set("token", tkn);
+      }
 
-  const logout = () => {
+      setUser(u);
+      setToken(tkn);
+      router.push("/");
+    },
+    [router],
+  );
+
+  const logout = useCallback(() => {
     Cookies.remove("token");
     setUser(null);
     setToken(null);
     router.push("/login");
-  };
+  }, [router]);
 
-  const adminLogout = async () => {
-    // 1. ล้าง HTTP-only cookie บนเซิร์ฟเวอร์
+  const adminLogout = useCallback(async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-
-    // 2. ถ้าคุณเคยเซ็ต cookie ด้วย js-cookie ด้วยชื่อเดียวกัน
     Cookies.remove("token");
-
-    // 3. เคลียร์ state และ redirect
     setUser(null);
     setToken(null);
     router.push("/admin/login");
-  };
+  }, [router]);
 
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout, adminLogout }}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, token, login, logout, adminLogout, refreshProfile }),
+    [user, token, login, logout, adminLogout, refreshProfile],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

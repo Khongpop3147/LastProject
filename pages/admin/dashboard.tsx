@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
   // Daily metrics
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
+    new Date().toISOString().slice(0, 10),
   );
   const [dailySales, setDailySales] = useState<DailySales | null>(null);
   const [dailyOrders, setDailyOrders] = useState<DailyOrders | null>(null);

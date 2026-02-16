@@ -1,24 +1,34 @@
-// pages/api/products/index.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import multer from "multer";
-import fs from "fs";
 import path from "path";
+import fs from "fs";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export const config = { api: { bodyParser: false } };
 
-const uploadDir = path.join(process.cwd(), "public", "uploads", "products");
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const name = Date.now() + "-" + file.originalname.replace(/\s+/g, "-");
-    cb(null, name);
-  },
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const uploadDir = path.join(
+        process.cwd(),
+        "public",
+        "uploads",
+        "products"
+      );
+      fs.mkdirSync(uploadDir, { recursive: true });
+      cb(null, uploadDir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      const base = path
+        .basename(file.originalname, ext)
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+      cb(null, `${Date.now()}-${base}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
-
-const upload = multer({ storage });
 
 function runMiddleware(req: NextApiRequest, res: NextApiResponse, fn: any) {
   return new Promise<void>((resolve, reject) =>
@@ -30,10 +40,14 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  await runMiddleware(req, res, upload.single("image"));
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
+
+  if (req.method === "POST") {
+    await runMiddleware(req, res, upload.single("image"));
+  }
 
   if (req.method === "GET") {
-    // ดึง translations มาเต็มๆ ไม่กรอง locale
     const raw = await prisma.product.findMany({
       include: {
         category: true,
@@ -42,7 +56,6 @@ export default async function handler(
       orderBy: { createdAt: "desc" },
     });
 
-    // map ให้คืนทั้งสองภาษา
     const items = raw.map((p) => {
       const th = p.translations.find((t) => t.locale === "th");
       const en = p.translations.find((t) => t.locale === "en");
@@ -60,6 +73,7 @@ export default async function handler(
         stock: p.stock,
         imageUrl: p.imageUrl,
         category: p.category,
+        categoryId: p.categoryId,
         isFeatured: p.isFeatured,
       };
     });
@@ -83,10 +97,12 @@ export default async function handler(
     } = req.body;
 
     if (!file) {
-      return res.status(400).json({ error: "ต้องระบุรูปสินค้า" });
+      return res.status(400).json({ error: "Image is required" });
     }
     if (!nameTh || !price) {
-      return res.status(400).json({ error: "ต้องระบุชื่อสินค้า (TH) และราคา" });
+      return res
+        .status(400)
+        .json({ error: "Thai name and price are required" });
     }
 
     try {
@@ -117,7 +133,6 @@ export default async function handler(
         include: { translations: true },
       });
 
-      // คืนเหมือน GET: แปลงชื่อ–รายละเอียดกลับเป็นสองภาษา
       const th = newProduct.translations.find((t) => t.locale === "th");
       const en = newProduct.translations.find((t) => t.locale === "en");
 

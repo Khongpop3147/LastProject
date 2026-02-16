@@ -15,4 +15,6 @@ export interface Product {
 export interface Category {
   id: string;
   name: string;
+  productCount?: number; // จำนวนสินค้าในหมวดหมู่
+  imageUrl?: string | null;
 }

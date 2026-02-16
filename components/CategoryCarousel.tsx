@@ -1,9 +1,9 @@
 // components/CategoryCarousel.tsx
 "use client";
 
-import { useRef } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
+import useTranslation from "next-translate/useTranslation";
 import type { Category } from "@/types/product";
 
 interface CategoryCarouselProps {
@@ -13,61 +13,68 @@ interface CategoryCarouselProps {
 export default function CategoryCarousel({
   categories = [],
 }: CategoryCarouselProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (delta: number) => {
-    if (!containerRef.current) return;
-    containerRef.current.scrollBy({ left: delta, behavior: "smooth" });
-  };
+  const { t } = useTranslation("common");
+  const displayCategories = categories.slice(0, 16);
 
   return (
-    <div className="relative py-3 bg-white">
-      {/* ปุ่มเลื่อนซ้าย */}
-      <button
-        onClick={() => scroll(-200)}
-        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:shadow-lg transition z-10"
-        aria-label="Scroll categories left"
-      >
-        <ChevronLeft size={20} className="text-gray-700" />
-      </button>
-
-      {/* แถบเลื่อนหมวดหมู่ */}
-      <div
-        ref={containerRef}
-        className="flex space-x-3 overflow-x-auto px-4 sm:px-8 scrollbar-hide"
-        style={{ paddingBottom: 8 }}
-      >
-        {categories.map((cat) => (
+    <>
+      {/* Mobile: รูปวงกลมแบบง่าย 4 คอลัมน์ */}
+      <div className="grid grid-cols-4 gap-3 md:hidden">
+        {displayCategories.map((cat) => (
           <Link
             key={cat.id}
             href={`/all-products?category=${cat.id}`}
-            className="
-              flex-shrink-0
-              bg-white
-              rounded-lg
-              shadow-md              /* เงาหลัก */
-              px-4 sm:px-5 py-2 sm:py-3
-              hover:shadow-xl         /* เงาชัดขึ้นตอนโฮเวอร์ */
-              transition-shadow
-              select-none
-              cursor-pointer
-            "
+            className="flex flex-col items-center group"
           >
-            <span className="text-sm font-medium text-gray-800 whitespace-nowrap">
+            <div className="relative mb-2 h-16 w-16 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 transition-all duration-300 group-hover:border-blue-400 group-hover:scale-110 group-hover:shadow-lg">
+              <Image
+                src={cat.imageUrl ?? "/images/placeholder.png"}
+                alt={cat.name}
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            </div>
+            <p className="overflow-safe line-clamp-2 text-center text-xs font-medium text-gray-700 transition-colors duration-300 group-hover:text-blue-600">
               {cat.name}
-            </span>
+            </p>
           </Link>
         ))}
       </div>
 
-      {/* ปุ่มเลื่อนขวา */}
-      <button
-        onClick={() => scroll(200)}
-        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow hover:shadow-lg transition z-10"
-        aria-label="Scroll categories right"
-      >
-        <ChevronRight size={20} className="text-gray-700" />
-      </button>
-    </div>
+      {/* Desktop: การ์ดใหญ่แบบเต็ม */}
+      <div className="hidden grid-cols-5 gap-5 md:grid lg:grid-cols-6">
+        {displayCategories.map((cat) => (
+          <Link
+            key={cat.id}
+            href={`/all-products?category=${cat.id}`}
+            className="flex h-full flex-col group"
+          >
+            <div className="flex h-full flex-col items-center justify-between p-5 rounded-xl border border-gray-200 bg-white transition-all duration-300 hover:border-blue-400 hover:shadow-xl hover:-translate-y-1">
+              <div className="relative mb-3 h-20 w-20 flex-shrink-0 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 group-hover:border-blue-400 transition-all duration-300 group-hover:scale-110">
+                <Image
+                  src={cat.imageUrl ?? "/images/placeholder.png"}
+                  alt={cat.name}
+                  fill
+                  sizes="80px"
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="text-center w-full flex flex-col">
+                <p className="overflow-safe mb-1 min-h-[3rem] line-clamp-2 text-base font-bold text-gray-900 transition-colors duration-300 group-hover:text-blue-600">
+                  {cat.name}
+                </p>
+                <p className="text-sm text-gray-600 font-medium transition-colors duration-300 group-hover:text-gray-800">
+                  {cat.productCount
+                    ? `${cat.productCount} ${t("unit.items") || "รายการ"}`
+                    : `0 ${t("unit.items") || "รายการ"}`}
+                </p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </>
   );
 }

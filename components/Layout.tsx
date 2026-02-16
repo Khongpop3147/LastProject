@@ -3,24 +3,29 @@
 
 import { useState, useEffect } from "react";
 import Head from "next/head";
-import Link from "next/link"; // ← เพิ่มตรงนี้
-import Navbar from "./Navbar";
-import Footer from "./Footer";
-import PromoModal from "./PromoModal";
-import CookieConsent from "./CookieConsent";
+import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
+import MobileShopBottomNav from "./MobileShopBottomNav";
+
+const PromoModal = dynamic(() => import("./PromoModal"), { ssr: false });
+const CookieConsent = dynamic(() => import("./CookieConsent"), { ssr: false });
 import type { ReactNode } from "react";
 
 interface LayoutProps {
   children: ReactNode;
   title?: string;
+  hideBottomNav?: boolean;
 }
 
 export default function Layout({
   children,
   title = "ICN_FREEZE",
+  hideBottomNav = false,
 }: LayoutProps) {
+  const router = useRouter();
   const [showPromo, setShowPromo] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
+  const [seniorMode, setSeniorMode] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -33,8 +38,19 @@ export default function Layout({
       if (!cookieConsent) {
         setShowCookieConsent(true);
       }
+      const seniorPref = localStorage.getItem("seniorMode");
+      const enabled = seniorPref === "true";
+      setSeniorMode(enabled);
+      document.documentElement.classList.toggle("senior-mode", enabled);
     }
   }, []);
+
+  const toggleSeniorMode = () => {
+    const next = !seniorMode;
+    setSeniorMode(next);
+    localStorage.setItem("seniorMode", next ? "true" : "false");
+    document.documentElement.classList.toggle("senior-mode", next);
+  };
 
   const handleCookieConsent = (accepted: boolean) => {
     localStorage.setItem("cookieConsent", accepted ? "true" : "false");
@@ -42,32 +58,16 @@ export default function Layout({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-white md:bg-transparent overflow-x-hidden">
       <Head>
         <title>{title}</title>
-        <meta name="description" content="ตลาดสินค้าเกษตรสดใหม่ ICN_FREEZE" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="description" content="Fresh marketplace by ICN_FREEZE" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
       </Head>
 
-      {/* fixed header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow">
-        <div className="flex items-center justify-between px-4 py-2">
-          {/* Language Switcher */}
-          <nav className="flex space-x-2">
-            <Link href="/" locale="th" className="hover:underline">
-              ไทย
-            </Link>
-            <span>|</span>
-            <Link href="/" locale="en" className="hover:underline">
-              EN
-            </Link>
-          </nav>
-          {/* Main Navbar */}
-          <Navbar />
-        </div>
-      </header>
-
-      {/* promo + cookie */}
       <PromoModal show={showPromo} onClose={() => setShowPromo(false)} />
       {showCookieConsent && (
         <CookieConsent
@@ -76,12 +76,22 @@ export default function Layout({
         />
       )}
 
-      {/* content with top margin so it doesn't sit under the fixed header */}
-      <main className="flex-grow w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
+      <main className="flex-grow w-full max-w-full mx-auto pt-0 pb-24 md:pb-4 overflow-x-hidden desktop-page md:px-6">
         {children}
       </main>
 
-      <Footer />
+      {/* Bottom Navigation - Mobile Only (hidden on md and above) */}
+      {!hideBottomNav && (
+        <div className="block md:hidden">
+          <MobileShopBottomNav
+            activePath={
+              router.pathname === "/all-products"
+                ? "/all-products"
+                : router.pathname
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

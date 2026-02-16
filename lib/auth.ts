@@ -20,9 +20,7 @@ interface JwtPayload {
  */
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    const raw = token.startsWith("Bearer ")
-      ? token.slice(7)
-      : token;
+    const raw = token.startsWith("Bearer ") ? token.slice(7) : token;
 
     const payload = jwt.verify(raw, JWT_SECRET) as JwtPayload;
     return payload;
@@ -37,7 +35,7 @@ export function verifyToken(token: string): JwtPayload | null {
  * @param token string | undefined
  */
 export async function getUserFromToken(
-  token: string | undefined
+  token: string | undefined,
 ): Promise<User | null> {
   if (!token) return null;
 
@@ -49,4 +47,29 @@ export async function getUserFromToken(
   });
 
   return user;
+}
+
+/**
+ * Extract token from request (supports both Authorization header and cookies)
+ */
+export function getTokenFromRequest(req: any): string | undefined {
+  // Try Authorization header first
+  if (typeof req.headers.authorization === "string") {
+    return req.headers.authorization;
+  }
+
+  // Fallback to cookie
+  if (typeof req.cookies?.token === "string" && req.cookies.token.length > 0) {
+    return `Bearer ${req.cookies.token}`;
+  }
+
+  return undefined;
+}
+
+/**
+ * Get user from request (extracts token automatically)
+ */
+export async function getUserFromRequest(req: any): Promise<User | null> {
+  const token = getTokenFromRequest(req);
+  return getUserFromToken(token);
 }

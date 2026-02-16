@@ -31,10 +31,17 @@ export default async function handler(
     expiresIn: "7d",
   });
 
-  res.setHeader(
-    "Set-Cookie",
-    `token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}`
-  );
+  const isProd = process.env.NODE_ENV === "production";
+  const cookieParts = [
+    `token=${token}`,
+    "HttpOnly",
+    "Path=/",
+    `Max-Age=${7 * 24 * 60 * 60}`,
+    "SameSite=Lax",
+  ];
+  if (isProd) cookieParts.push("Secure");
+
+  res.setHeader("Set-Cookie", cookieParts.join("; "));
 
   return res.status(200).json({ success: true });
 }

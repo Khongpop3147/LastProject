@@ -10,6 +10,7 @@ interface Supplier {
   productName: string;
   stock: number;
   unitPrice: number;
+  lineId?: string | null;
 }
 
 export default function AdminSuppliersPage() {
@@ -21,6 +22,7 @@ export default function AdminSuppliersPage() {
     productName: "",
     stock: "",
     unitPrice: "",
+    lineId: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -31,6 +33,7 @@ export default function AdminSuppliersPage() {
     productName: "",
     stock: "",
     unitPrice: "",
+    lineId: "",
   });
 
   useEffect(() => {
@@ -61,6 +64,7 @@ export default function AdminSuppliersPage() {
         productName: form.productName,
         stock: Number(form.stock),
         unitPrice: Number(form.unitPrice),
+        lineId: form.lineId || null,
       };
       const res = await fetch("/api/admin/suppliers", {
         method: "POST",
@@ -72,7 +76,7 @@ export default function AdminSuppliersPage() {
         body: JSON.stringify(payload),
       });
       if (res.ok) {
-        setForm({ companyName: "", productName: "", stock: "", unitPrice: "" });
+        setForm({ companyName: "", productName: "", stock: "", unitPrice: "", lineId: "" });
         fetchSuppliers();
       } else {
         alert("สร้างไม่สำเร็จ");
@@ -91,6 +95,7 @@ export default function AdminSuppliersPage() {
       productName: s.productName,
       stock: String(s.stock),
       unitPrice: String(s.unitPrice),
+      lineId: s.lineId || "",
     });
   }
   function closeEditModal() {
@@ -106,6 +111,7 @@ export default function AdminSuppliersPage() {
         productName: editForm.productName,
         stock: Number(editForm.stock),
         unitPrice: Number(editForm.unitPrice),
+        lineId: editForm.lineId || null,
       };
       const res = await fetch(`/api/admin/suppliers/${editSupplier.id}`, {
         method: "PATCH",
@@ -205,6 +211,17 @@ export default function AdminSuppliersPage() {
           </div>
         </div>
 
+        <div>
+          <label className="block mb-1 font-medium">LINE ID (เช่น @yourline)</label>
+          <input
+            type="text"
+            placeholder="@yourline"
+            value={form.lineId}
+            onChange={(e) => setForm((f) => ({ ...f, lineId: e.target.value }))}
+            className="w-full border p-2 rounded"
+          />
+        </div>
+
         <button
           onClick={createSupplier}
           disabled={loading}
@@ -236,6 +253,21 @@ export default function AdminSuppliersPage() {
                 <span className="font-semibold">ราคาต่อหน่วย:</span>{" "}
                 {s.unitPrice} ฿
               </p>
+              {s.lineId ? (
+                <p>
+                  <span className="font-semibold">LINE:</span>{" "}
+                  <a
+                    href={`https://line.me/R/ti/p/${encodeURIComponent(
+                      s.lineId
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#00b900] underline"
+                  >
+                    {s.lineId}
+                  </a>
+                </p>
+              ) : null}
               <p className="pt-1 text-right font-bold">
                 <span className="font-semibold">ราคารวม:</span>{" "}
                 {s.stock * s.unitPrice} ฿
@@ -279,6 +311,18 @@ export default function AdminSuppliersPage() {
                     }))
                   }
                   required
+                  className="w-full border p-2 rounded"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-1 font-medium">LINE ID (เช่น @yourline)</label>
+                <input
+                  type="text"
+                  value={editForm.lineId}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, lineId: e.target.value }))
+                  }
                   className="w-full border p-2 rounded"
                 />
               </div>

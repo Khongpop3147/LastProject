@@ -18,6 +18,7 @@ model User {
   addresses           Address[]
   cart                Cart?
   orders              Order[]
+  favorites           Favorite[]
   passwordResetTokens PasswordResetToken[]
 }
 
@@ -54,6 +55,7 @@ model Product {
   cartItems    CartItem[]
   orderItems   OrderItem[]
   translations ProductLocale[]
+  favorites    Favorite[]
 }
 
 model ProductLocale {
@@ -89,6 +91,7 @@ model CartItem {
 model Order {
   id            String      @id @default(uuid())
   userId        String
+  locale        String      @default("th")
   status        String      @default("PENDING")
   totalAmount   Float
   paymentMethod String?
@@ -123,20 +126,33 @@ model OrderItem {
 }
 
 model Coupon {
-  id            String    @id @default(uuid())
-  code          String    @unique
+  id            String           @id @default(uuid())
+  code          String           @unique
   discountType  String
   discountValue Float
   usageLimit    Int?
   usedCount     Int       @default(0)
   expiresAt     DateTime?
+  translations  CouponLocale[]
   orders        Order[]
+}
+
+model CouponLocale {
+  id         String  @id @default(uuid())
+  coupon     Coupon  @relation(fields: [couponId], references: [id])
+  couponId   String
+  locale     String  // e.g. 'th' | 'en'
+  title      String
+  description String?
+  @@unique([couponId, locale])
 }
 
 model Address {
   id         String  @id @default(uuid())
   userId     String
+  label      String? // e.g., "Home", "Work"
   recipient  String
+  phone      String?
   line1      String
   line2      String?
   city       String
@@ -144,6 +160,8 @@ model Address {
   country    String
   latitude   Float?
   longitude  Float?
+  isFavorite Boolean @default(false)
+  isDefault  Boolean @default(false)
   user       User    @relation(fields: [userId], references: [id])
 }
 
@@ -234,6 +252,19 @@ model Supplier {
   productName String
   stock       Int      @default(0)
   unitPrice   Float    @default(0)
+  lineId      String?  // optional LINE ID or handle (e.g. @myline)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
 }

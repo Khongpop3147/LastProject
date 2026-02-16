@@ -12,22 +12,20 @@ export interface BannerSlide {
 
 interface BannerProps {
   slides: BannerSlide[];
-  /** ถ้าเป็นแบนเนอร์ Promotion ให้เปลี่ยนสไตล์หัวเรื่อง */
   isPromotion?: boolean;
 }
 
 export default function Banner({ slides, isPromotion = false }: BannerProps) {
-  // ถ้าไม่มี slides หรือ array ว่าง ไม่ต้องเรนเดอร์อะไร
   if (!slides || slides.length === 0) return null;
 
   const [idx, setIdx] = useState(0);
   const total = slides.length;
 
-  // auto-slide ทุก 5 วิ
+  // auto-slide every 7 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setIdx((i) => (i + 1) % total);
-    }, 5000);
+    }, 7000);
     return () => clearInterval(timer);
   }, [total]);
 
@@ -35,51 +33,54 @@ export default function Banner({ slides, isPromotion = false }: BannerProps) {
   const next = () => setIdx((i) => (i + 1) % total);
 
   return (
-    <div className="relative w-full h-40 sm:h-64 md:h-80 lg:h-96 overflow-hidden rounded-3xl mb-6">
-      {/* รูปพื้นหลัง */}
-      <Image
-        src={slides[idx].img}
-        alt={slides[idx].title}
-        fill
-        className="object-cover"
-      />
-
-      {/* Overlay กราดิเอนต์ + ข้อความ */}
-      <div>
-        <div className="text-white max-w-lg">
-          <p className="uppercase text-xs sm:text-sm mb-2">{slides[idx].sub}</p>
-          <h2
-            className={`font-bold ${
-              isPromotion ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+    <div className="my-4 relative w-full h-52 md:h-64 lg:h-72 overflow-hidden rounded-2xl bg-gray-100 shadow-md">
+      {slides.map((slide, i) => {
+        const active = i === idx;
+        return (
+          <div
+            key={`${slide.img}-${i}`}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              active ? "opacity-100" : "opacity-0"
             }`}
+            aria-hidden={!active}
           >
-            {slides[idx].title}
-          </h2>
-        </div>
-      </div>
+            <Image
+              src={slide.img}
+              alt={slide.title}
+              fill
+              className="object-cover"
+              priority={i === 0}
+            />
+          </div>
+        );
+      })}
 
-      {/* Prev / Next buttons */}
       <button
+        type="button"
         onClick={prev}
-        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white border-2 border-green-200 p-2 sm:p-3 rounded-full shadow-lg z-10"
+        aria-label="Previous slide"
+        className="hidden md:flex min-h-0 absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-white/30 backdrop-blur-sm text-white items-center justify-center hover:bg-white/40 transition-colors"
       >
-        <ChevronLeft size={20} className="text-green-600" />
+        <ChevronLeft className="w-5 h-5" />
       </button>
       <button
+        type="button"
         onClick={next}
-        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white border-2 border-green-200 p-2 sm:p-3 rounded-full shadow-lg z-10"
+        aria-label="Next slide"
+        className="hidden md:flex min-h-0 absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-lg bg-white/30 backdrop-blur-sm text-white items-center justify-center hover:bg-white/40 transition-colors"
       >
-        <ChevronRight size={20} className="text-green-600" />
+        <ChevronRight className="w-5 h-5" />
       </button>
 
-      {/* Dots indicator */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2">
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2">
         {slides.map((_, i) => (
           <button
             key={i}
+            type="button"
             onClick={() => setIdx(i)}
-            className={`w-3 h-3 rounded-full transition-colors ${
-              i === idx ? "bg-white" : "bg-white/50"
+            aria-label={`Go to slide ${i + 1}`}
+            className={`min-h-0 h-2 rounded-full transition-all duration-500 ${
+              i === idx ? "w-6 bg-white" : "w-2 bg-white/50 hover:bg-white/70"
             }`}
           />
         ))}

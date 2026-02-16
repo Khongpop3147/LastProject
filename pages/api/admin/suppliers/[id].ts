@@ -1,31 +1,31 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import { getUserFromToken } from "@/lib/auth";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   const { id } = req.query;
+  const supplierId = Array.isArray(id) ? id[0] : id;
+  if (!supplierId) {
+    return res.status(400).json({ error: "Missing supplier id" });
+  }
 
-  //   // ตรวจสอบสิทธิ์แอดมิน
-  //   const authHeader = req.headers.authorization;
-  //   const user = await getUserFromToken(authHeader);
-  //   if (!user || user.role !== "ADMIN") {
-  //     return res.status(401).json({ error: "Unauthorized" });
-  //   }
+  const { errorSent } = await requireAdmin(req, res);
+  if (errorSent) return;
 
-  // อัปเดต Supplier
   if (req.method === "PATCH") {
-    const { companyName, productName, stock, unitPrice } = req.body;
+    const { companyName, productName, stock, unitPrice, lineId } = req.body;
     try {
       const updated = await prisma.supplier.update({
-        where: { id: id as string },
+        where: { id: supplierId },
         data: {
           companyName,
           productName,
           stock: Number(stock),
           unitPrice: Number(unitPrice),
+          lineId: lineId ?? undefined,
         },
       });
       return res.status(200).json(updated);
@@ -35,10 +35,9 @@ export default async function handler(
     }
   }
 
-  // ลบ Supplier
   if (req.method === "DELETE") {
     try {
-      await prisma.supplier.delete({ where: { id: id as string } });
+      await prisma.supplier.delete({ where: { id: supplierId } });
       return res.status(204).end();
     } catch (err) {
       console.error("Delete supplier error:", err);

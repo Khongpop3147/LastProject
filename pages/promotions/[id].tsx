@@ -23,9 +23,11 @@ const PromotionDetailPage: NextPage<PromotionDetailProps> = ({ promotion }) => {
   if (!promotion) {
     return (
       <Layout title={t("promoNotFound")}>
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-semibold mb-4">{t("promoNotFound")}</h1>
-          <p>{t("promoNotFoundMsg")}</p>
+        <div className="mx-auto w-full max-w-[440px] md:max-w-5xl px-4 md:px-6 pb-8 pt-4 md:pt-8">
+          <div className="rounded-[28px] border border-[#d9e0eb] bg-white p-8 text-center desktop-shell">
+            <h1 className="mb-4 text-2xl font-semibold">{t("promoNotFound")}</h1>
+            <p>{t("promoNotFoundMsg")}</p>
+          </div>
         </div>
       </Layout>
     );
@@ -38,38 +40,40 @@ const PromotionDetailPage: NextPage<PromotionDetailProps> = ({ promotion }) => {
         <meta name="description" content={promotion.sub} />
       </Head>
       <Layout title={promotion.title}>
-        {/* Hero Image */}
-        <section
-          className="relative w-full h-64 sm:h-80 md:h-96 overflow-hidden rounded-lg mb-8"
-          style={{
-            backgroundImage: `url('${promotion.imageUrl}')`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <div className="text-center px-4">
-              <h1 className="text-white text-3xl sm:text-4xl md:text-5xl font-bold">
-                {promotion.title}
-              </h1>
-              <p className="text-white mt-2 text-lg sm:text-xl">
-                {promotion.sub}
-              </p>
-            </div>
-          </div>
-        </section>
+        <div className="mx-auto w-full max-w-[440px] md:max-w-7xl px-4 md:px-6 pb-8 pt-4 md:pt-8">
+          <article className="overflow-hidden rounded-[28px] border border-[#d9e0eb] bg-white desktop-shell">
+            <section
+              className="relative h-64 w-full overflow-hidden md:h-[460px]"
+              style={{
+                backgroundImage: `url('${promotion.imageUrl}')`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <div className="px-4 text-center">
+                  <h1 className="text-3xl font-bold text-white sm:text-4xl md:text-5xl">
+                    {promotion.title}
+                  </h1>
+                  <p className="mt-2 text-lg text-white sm:text-xl">
+                    {promotion.sub}
+                  </p>
+                </div>
+              </div>
+            </section>
 
-        {/* Description */}
-        <section className="container mx-auto px-4 py-8">
-          <h2 className="text-2xl font-semibold mb-4">{t("promoDetails")}</h2>
-          {promotion.description ? (
-            <p className="text-gray-700 leading-relaxed">
-              {promotion.description}
-            </p>
-          ) : (
-            <p className="text-gray-700">{t("noAdditionalInfo")}</p>
-          )}
-        </section>
+            <section className="px-5 py-6 md:px-10 md:py-8">
+              <h2 className="mb-4 text-2xl font-semibold">{t("promoDetails")}</h2>
+              {promotion.description ? (
+                <p className="leading-relaxed text-gray-700">
+                  {promotion.description}
+                </p>
+              ) : (
+                <p className="text-gray-700">{t("noAdditionalInfo")}</p>
+              )}
+            </section>
+          </article>
+        </div>
       </Layout>
     </>
   );
@@ -81,7 +85,6 @@ export const getServerSideProps: GetServerSideProps<
   const id = params?.id as string;
   const lang = locale || "th";
 
-  // ดึง translation จาก BannerLocale ตามภาษาที่เลือก
   const raw = await prisma.bannerLocale.findFirst({
     where: { bannerId: id, locale: lang },
     include: { banner: true },

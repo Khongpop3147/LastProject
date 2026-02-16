@@ -1,8 +1,8 @@
-const provinces: Record<string, { latitude: number; longitude: number }> =
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("../data/provinces.json");
-
+import provincesJson from "@/data/provinces.json";
 import { haversineDistance, calculateDeliveryFee } from "@/lib/distance";
+
+const provinces =
+  provincesJson as Record<string, { latitude: number; longitude: number }>;
 
 const geocodeCache = new Map<string, { latitude: number; longitude: number } | null>();
 

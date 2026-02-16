@@ -2,46 +2,65 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 
+type Locale = "th" | "en";
+type CouponErrorKey = "REQUIRED" | "INVALID" | "EXPIRED" | "USAGE_LIMIT";
+
+const MESSAGES: Record<Locale, Record<CouponErrorKey, string>> = {
+  th: {
+    REQUIRED:   "กรุณาระบุรหัสคูปอง",
+    INVALID:    "โค้ดคูปองไม่ถูกต้อง",
+    EXPIRED:    "คูปองหมดอายุแล้ว",
+    USAGE_LIMIT:"คูปองถูกใช้งานครบจำนวนที่กำหนดแล้ว",
+  },
+  en: {
+    REQUIRED:   "Coupon code is required",
+    INVALID:    "Invalid coupon code",
+    EXPIRED:    "Coupon has expired",
+    USAGE_LIMIT:"Coupon usage limit reached",
+  },
+};
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // GET /api/coupons → ส่ง list ทั้งหมด (ถ้าอยากมี)
+  // determine locale
+  const locale = (typeof req.query.locale === "string" && ["th","en"].includes(req.query.locale)
+    ? req.query.locale
+    : "th"
+  ) as Locale;
+
+  const T = MESSAGES[locale];
+
   if (req.method === "GET") {
     const coupons = await prisma.coupon.findMany();
     return res.status(200).json({ items: coupons });
   }
 
-  // POST /api/coupons → ใช้เป็น apply
   if (req.method === "POST") {
     const { code } = req.body as { code?: string };
     if (!code) {
-      return res.status(400).json({ error: "Coupon code is required" });
+      return res.status(400).json({ error: T.REQUIRED });
     }
 
-    const coupon = await prisma.coupon.findUnique({
-      where: { code },
-    });
-
+    const coupon = await prisma.coupon.findUnique({ where: { code } });
     if (!coupon) {
-      return res.status(400).json({ error: "Invalid coupon code" });
+      return res.status(400).json({ error: T.INVALID });
     }
     if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-      return res.status(400).json({ error: "Coupon has expired" });
+      return res.status(400).json({ error: T.EXPIRED });
     }
     if (coupon.usageLimit != null && coupon.usedCount >= coupon.usageLimit) {
-      return res.status(400).json({ error: "Coupon usage limit reached" });
+      return res.status(400).json({ error: T.USAGE_LIMIT });
     }
 
-    // เพิ่ม counter
-    await prisma.coupon.update({
-      where: { code },
-      data: { usedCount: coupon.usedCount + 1 },
+    // Preview only. Usage is incremented when an order is actually created.
+    return res.status(200).json({
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
     });
-
-    return res.status(200).json({ discountValue: coupon.discountValue });
   }
 
   res.setHeader("Allow", ["GET", "POST"]);
-  res.status(405).end(`Method ${req.method} Not Allowed`);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
 }
