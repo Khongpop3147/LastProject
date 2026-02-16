@@ -2,7 +2,7 @@ import type { GetServerSideProps } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import useTranslation from "next-translate/useTranslation";
-import { ArrowLeft, Clock3 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import MobileShopBottomNav from "@/components/MobileShopBottomNav";
@@ -20,7 +20,6 @@ type SaleProduct = Product & {
 
 type SalePageProps = {
   products: SaleProduct[];
-  flashEndAt: string;
   initialFilter: DiscountFilter;
 };
 
@@ -69,13 +68,8 @@ function getDiscountBucket(discountPercent: number): DiscountFilter | 0 {
   return 0;
 }
 
-function format2(value: number) {
-  return String(Math.max(0, value)).padStart(2, "0");
-}
-
 export default function SalePage({
   products,
-  flashEndAt,
   initialFilter,
 }: SalePageProps) {
   const router = useRouter();
@@ -83,34 +77,15 @@ export default function SalePage({
   const [activeFilter, setActiveFilter] = useState<DiscountFilter>(
     () => parseDiscountFilter(router.query.discount) ?? initialFilter,
   );
-  const [nowTs, setNowTs] = useState<number>(() => Date.now());
 
   useEffect(() => {
     const filterFromQuery = parseDiscountFilter(router.query.discount);
     setActiveFilter(filterFromQuery ?? initialFilter);
   }, [initialFilter, router.query.discount]);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNowTs(Date.now());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
   const handleBack = () => {
     goBackOrPush(router, "/");
   };
-
-  const endAtMs = useMemo(() => {
-    const parsed = new Date(flashEndAt).getTime();
-    return Number.isFinite(parsed) ? parsed : Date.now();
-  }, [flashEndAt]);
-
-  const remainingMs = Math.max(endAtMs - nowTs, 0);
-  const hours = Math.min(Math.floor(remainingMs / 3_600_000), 99);
-  const minutes = Math.floor((remainingMs % 3_600_000) / 60_000);
-  const seconds = Math.floor((remainingMs % 60_000) / 1_000);
 
   const filteredProducts = useMemo(() => {
     if (activeFilter === "all") return products;
@@ -169,23 +144,6 @@ export default function SalePage({
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-3 px-4 text-[15px]">
-              <div className="flex items-center gap-1">
-                <Clock3 className="h-5 w-5" />
-                {t("flash.endsIn")}
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="rounded-lg bg-white px-2 py-0.5 font-bold text-[#2f6ef4]">
-                  {format2(hours)}
-                </span>
-                <span className="rounded-lg bg-white px-2 py-0.5 font-bold text-[#2f6ef4]">
-                  {format2(minutes)}
-                </span>
-                <span className="rounded-lg bg-white px-2 py-0.5 font-bold text-[#2f6ef4]">
-                  {format2(seconds)}
-                </span>
-              </div>
-            </div>
           </header>
 
           {/* Desktop Header */}
@@ -196,7 +154,7 @@ export default function SalePage({
               <div className="absolute bottom-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
 
               <div className="relative z-10 flex items-center justify-between gap-6">
-                {/* Left Side - Title & Timer */}
+                {/* Left Side - Title */}
                 <div className="flex items-center gap-4">
                   <div>
                     <h1 className="text-3xl font-extrabold text-white mb-2 drop-shadow-lg">
@@ -205,39 +163,6 @@ export default function SalePage({
                     <p className="text-white/90 text-base font-semibold mb-3">
                       {t("flash.discountUpTo")}
                     </p>
-
-                    {/* Countdown Timer */}
-                    <div className="flex items-center gap-2">
-                      <Clock3 className="w-5 h-5 text-white animate-pulse" />
-                      <div className="flex items-center gap-2">
-                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
-                          <div className="text-2xl font-black text-red-600">
-                            {format2(hours)}
-                          </div>
-                          <div className="text-xs font-bold text-gray-600 mt-1">
-                            {t("flash.hours")}
-                          </div>
-                        </div>
-                        <span className="text-xl font-bold text-white">:</span>
-                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
-                          <div className="text-2xl font-black text-red-600">
-                            {format2(minutes)}
-                          </div>
-                          <div className="text-xs font-bold text-gray-600 mt-1">
-                            {t("flash.minutes")}
-                          </div>
-                        </div>
-                        <span className="text-xl font-bold text-white">:</span>
-                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
-                          <div className="text-2xl font-black text-red-600">
-                            {format2(seconds)}
-                          </div>
-                          <div className="text-xs font-bold text-gray-600 mt-1">
-                            {t("flash.seconds")}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -369,21 +294,9 @@ export const getServerSideProps: GetServerSideProps<SalePageProps> = async ({
 
   const initialFilter = parseDiscountFilter(query.discount) ?? 20;
 
-  const now = new Date();
-  const configuredEnd = process.env.FLASH_SALE_END_AT;
-  let flashEndDate = new Date(now.getTime() + 3 * 60 * 60 * 1000);
-
-  if (configuredEnd) {
-    const parsed = new Date(configuredEnd);
-    if (!Number.isNaN(parsed.getTime())) {
-      flashEndDate = parsed;
-    }
-  }
-
   return {
     props: {
       products,
-      flashEndAt: flashEndDate.toISOString(),
       initialFilter,
     },
   };

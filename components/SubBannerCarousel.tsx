@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export interface SubBannerSlide {
@@ -49,17 +50,30 @@ export default function SubBannerCarousel({ slides }: SubBannerCarouselProps) {
     <div className="relative rounded-xl overflow-hidden h-28 md:h-36 shadow-md">
       {slides.map((slide, index) => {
         const active = index === currentIndex;
+        // Only render active and adjacent slides to avoid loading all images
+        const adjacent =
+          index === (currentIndex + 1) % total ||
+          index === (currentIndex - 1 + total) % total;
+        if (!active && !adjacent) return null;
         return (
           <div
             key={`${slide.img}-${index}`}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
               active ? "opacity-100" : "opacity-0"
             }`}
-            style={
-              slide.img ? { backgroundImage: `url(${slide.img})` } : undefined
-            }
             aria-hidden={!active}
-          />
+          >
+            {slide.img ? (
+              <Image
+                src={slide.img}
+                alt={slide.title || `sub-banner-${index}`}
+                fill
+                sizes="100vw"
+                className="object-cover"
+                priority={index === 0}
+              />
+            ) : null}
+          </div>
         );
       })}
 
