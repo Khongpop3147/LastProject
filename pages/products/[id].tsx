@@ -156,10 +156,10 @@ export default function ProductPage({ product }: ProductPageProps) {
     descriptionLines.length > 0
       ? descriptionLines
       : (
-          normalizedDescription
-            .match(/.{1,70}(?:\s|$)/g)
-            ?.map((line) => line.trim()) || []
-        ).filter(Boolean);
+        normalizedDescription
+          .match(/.{1,70}(?:\s|$)/g)
+          ?.map((line) => line.trim()) || []
+      ).filter(Boolean);
   const finalDescriptionLines =
     fallbackLines.length > 0
       ? fallbackLines
@@ -277,9 +277,8 @@ export default function ProductPage({ product }: ProductPageProps) {
                   className="flex h-12 w-12 items-center justify-center rounded-full bg-[#dce1ea] text-[#5f6775]"
                 >
                   <Heart
-                    className={`h-7 w-7 ${
-                      isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : ""
-                    }`}
+                    className={`h-7 w-7 ${isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : ""
+                      }`}
                   />
                 </button>
                 <button
@@ -364,203 +363,197 @@ export default function ProductPage({ product }: ProductPageProps) {
 
             {/* Product Details */}
             <main className="space-y-5 py-4 md:space-y-4 md:py-0">
-            <section>
-              <div className="mb-2 flex items-end gap-3">
-                <span className="text-[36px] font-extrabold leading-none text-[#2f6ef4]">
-                  ฿{displayPrice.toLocaleString("th-TH")}
-                </span>
-                {hasDiscount ? (
-                  <span className="pb-1 text-[24px] text-[#9ca3af] line-through">
-                    ฿{product.price.toLocaleString("th-TH")}
+              <section>
+                <div className="mb-2 flex items-end gap-3">
+                  <span className="text-[36px] font-extrabold leading-none text-[#2f6ef4]">
+                    ฿{displayPrice.toLocaleString("th-TH")}
                   </span>
-                ) : null}
-              </div>
+                  {hasDiscount ? (
+                    <span className="pb-1 text-[24px] text-[#9ca3af] line-through">
+                      ฿{product.price.toLocaleString("th-TH")}
+                    </span>
+                  ) : null}
+                </div>
 
-              <h1 className="overflow-safe break-words text-[28px] font-extrabold leading-tight text-[#111827]">
-                {product.name}
-              </h1>
-            </section>
+                <h1 className="overflow-safe break-words text-[28px] font-extrabold leading-tight text-[#111827]">
+                  {product.name}
+                </h1>
+              </section>
 
-            <section className="rounded-2xl border border-[#d8dde8] bg-white p-4">
-              <h2 className="mb-2 text-[24px] font-extrabold text-[#111827]">
-                รายละเอียดสินค้า
-              </h2>
+              <section className="rounded-2xl border border-[#d8dde8] bg-white p-4">
+                <h2 className="mb-2 text-[24px] font-extrabold text-[#111827]">
+                  รายละเอียดสินค้า
+                </h2>
 
-              <ul className="space-y-2">
-                {visibleDescriptionLines.map((line, idx) => (
-                  <li
-                    key={`${line}-${idx}`}
-                    className="flex items-start gap-2 text-[18px] leading-relaxed text-[#374151]"
+                <ul className="space-y-2">
+                  {visibleDescriptionLines.map((line, idx) => (
+                    <li
+                      key={`${line}-${idx}`}
+                      className="flex items-start gap-2 text-[18px] leading-relaxed text-[#374151]"
+                    >
+                      <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#9ca3af]" />
+                      <span className="overflow-safe break-words">{line}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                {hasMoreDescriptionLines ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsDescriptionExpanded((prev) => !prev)}
+                    className="mt-3 text-[16px] font-semibold text-[#2f6ef4]"
                   >
-                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#9ca3af]" />
-                    <span className="overflow-safe break-words">{line}</span>
-                  </li>
-                ))}
-              </ul>
+                    {isDescriptionExpanded
+                      ? "ย่อรายละเอียด"
+                      : "ดูรายละเอียดเพิ่มเติม"}
+                  </button>
+                ) : null}
+              </section>
 
-              {hasMoreDescriptionLines ? (
+              <section>
+                <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
+                  วิธีจัดส่ง
+                </h2>
+
                 <button
                   type="button"
-                  onClick={() => setIsDescriptionExpanded((prev) => !prev)}
-                  className="mt-3 text-[16px] font-semibold text-[#2f6ef4]"
+                  onClick={() => setSelectedShipping("standard")}
+                  className={`mb-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left ${selectedShipping === "standard"
+                    ? "border-[#2f6ef4] bg-[#e9f0ff]"
+                    : "border-[#d1d5db] bg-white"
+                    }`}
                 >
-                  {isDescriptionExpanded
-                    ? "ย่อรายละเอียด"
-                    : "ดูรายละเอียดเพิ่มเติม"}
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${selectedShipping === "standard"
+                        ? "border-[#2f6ef4] bg-[#2f6ef4]"
+                        : "border-[#d1d5db]"
+                        }`}
+                    >
+                      {selectedShipping === "standard" ? (
+                        <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                      ) : null}
+                    </span>
+                    <span className="text-[19px] font-semibold text-[#111827]">
+                      จัดส่งปกติ
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
+                      5-7 วัน
+                    </span>
+                    <span className="text-[19px] font-bold text-[#6b7280]">
+                      ตามระยะทาง
+                    </span>
+                  </span>
                 </button>
-              ) : null}
-            </section>
 
-            <section>
-              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
-                วิธีจัดส่ง
-              </h2>
-
-              <button
-                type="button"
-                onClick={() => setSelectedShipping("standard")}
-                className={`mb-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left ${
-                  selectedShipping === "standard"
+                <button
+                  type="button"
+                  onClick={() => setSelectedShipping("express")}
+                  className={`mb-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left ${selectedShipping === "express"
                     ? "border-[#2f6ef4] bg-[#e9f0ff]"
                     : "border-[#d1d5db] bg-white"
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span
-                    className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                      selectedShipping === "standard"
+                    }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${selectedShipping === "express"
                         ? "border-[#2f6ef4] bg-[#2f6ef4]"
                         : "border-[#d1d5db]"
-                    }`}
-                  >
-                    {selectedShipping === "standard" ? (
-                      <Check className="h-4 w-4 text-white" strokeWidth={3} />
-                    ) : null}
+                        }`}
+                    >
+                      {selectedShipping === "express" ? (
+                        <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                      ) : null}
+                    </span>
+                    <span className="text-[19px] font-semibold text-[#111827]">
+                      จัดส่งด่วน
+                    </span>
                   </span>
-                  <span className="text-[19px] font-semibold text-[#111827]">
-                    จัดส่งปกติ
+                  <span className="flex items-center gap-2">
+                    <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
+                      1-2 วัน
+                    </span>
+                    <span className="text-[19px] font-bold text-[#111827]">
+                      ตามระยะทาง + ฿50
+                    </span>
                   </span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
-                    5-7 วัน
-                  </span>
-                  <span className="text-[19px] font-bold text-[#27b05f]">
-                    ฟรี
-                  </span>
-                </span>
-              </button>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => setSelectedShipping("express")}
-                className={`mb-2 flex w-full items-center justify-between rounded-xl border-2 px-3 py-3 text-left ${
-                  selectedShipping === "express"
-                    ? "border-[#2f6ef4] bg-[#e9f0ff]"
-                    : "border-[#d1d5db] bg-white"
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <span
-                    className={`flex h-6 w-6 items-center justify-center rounded-full border-2 ${
-                      selectedShipping === "express"
-                        ? "border-[#2f6ef4] bg-[#2f6ef4]"
-                        : "border-[#d1d5db]"
-                    }`}
-                  >
-                    {selectedShipping === "express" ? (
-                      <Check className="h-4 w-4 text-white" strokeWidth={3} />
-                    ) : null}
-                  </span>
-                  <span className="text-[19px] font-semibold text-[#111827]">
-                    จัดส่งด่วน
-                  </span>
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="rounded-lg bg-[#dfe7f8] px-2 py-1 text-[14px] text-[#2f6ef4]">
-                    1-2 วัน
-                  </span>
-                  <span className="text-[19px] font-bold text-[#111827]">
-                    ฿50
-                  </span>
-                </span>
-              </button>
-
-              {deliveryDate ? (
-                <p className="mb-3 text-[15px] text-[#6b7280]">
-                  จะจัดส่งถึงภายใน{deliveryDate}
-                </p>
-              ) : null}
-
-              <div className="flex items-center gap-3 rounded-xl bg-[#e3f3ea] px-3 py-3">
-                <Package className="h-7 w-7 text-[#27b05f]" />
-                <div>
-                  <p className="text-[18px] font-semibold text-[#177245]">
-                    จัดส่งฟรี
+                {deliveryDate ? (
+                  <p className="mb-3 text-[15px] text-[#6b7280]">
+                    จะจัดส่งถึงภายใน{deliveryDate}
                   </p>
-                  <p className="text-[14px] text-[#2f855a]">
-                    สำหรับคำสั่งซื้อ 500 บาทขึ้นไป
-                  </p>
+                ) : null}
+
+                <div className="flex items-center gap-3 rounded-xl bg-[#e3f3ea] px-3 py-3">
+                  <Package className="h-7 w-7 text-[#27b05f]" />
+                  <div>
+                    <p className="text-[18px] font-semibold text-[#177245]">
+                      ค่าจัดส่งตามระยะทาง
+                    </p>
+                    <p className="text-[14px] text-[#2f855a]">
+                      สำหรับทุกคำสั่งซื้อ
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
 
-            <section>
-              <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
-                จำนวน
-              </h2>
-              <QuantitySelector
-                quantity={quantity}
-                onDecrease={() => setQuantity(Math.max(1, quantity - 1))}
-                onIncrease={() =>
-                  setQuantity(Math.min(product.stock, quantity + 1))
-                }
-                max={product.stock}
-                disabled={isOutOfStock}
-              />
-            </section>
-
-            {/* Desktop Action Buttons */}
-            <section className="hidden md:flex gap-3 pt-4">
-              <button
-                onClick={handleWishlist}
-                aria-label="เพิ่มในรายการโปรด"
-                className="flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-[#2f6ef4] px-6 text-[18px] font-bold text-[#2f6ef4] hover:bg-[#2f6ef4] hover:text-white transition-colors"
-              >
-                <Heart
-                  className={`h-6 w-6 ${
-                    isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : ""
-                  }`}
+              <section>
+                <h2 className="mb-2 text-[26px] font-extrabold text-[#111827]">
+                  จำนวน
+                </h2>
+                <QuantitySelector
+                  quantity={quantity}
+                  onDecrease={() => setQuantity(Math.max(1, quantity - 1))}
+                  onIncrease={() =>
+                    setQuantity(Math.min(product.stock, quantity + 1))
+                  }
+                  max={product.stock}
+                  disabled={isOutOfStock}
                 />
-                {isWishlisted ? "ลบจากรายการโปรด" : "เพิ่มในรายการโปรด"}
-              </button>
-              <button
-                onClick={() => {
-                  void addToCart("none");
-                }}
-                disabled={loading || isOutOfStock}
-                className="flex h-14 flex-1 items-center justify-center rounded-xl border-2 border-[#2f6ef4] px-6 text-[18px] font-bold text-[#2f6ef4] disabled:opacity-40 hover:bg-blue-50 transition-colors"
-              >
-                {loading ? "กำลังเพิ่ม..." : "เพิ่มลงตะกร้า"}
-              </button>
-              <button
-                onClick={() => {
-                  void addToCart("checkout");
-                }}
-                disabled={loading || isOutOfStock}
-                className={`flex h-14 flex-1 items-center justify-center rounded-xl px-6 text-[18px] font-bold ${
-                  isOutOfStock
+              </section>
+
+              {/* Desktop Action Buttons */}
+              <section className="hidden md:flex gap-3 pt-4">
+                <button
+                  onClick={handleWishlist}
+                  aria-label="เพิ่มในรายการโปรด"
+                  className="flex h-14 items-center justify-center gap-2 rounded-xl border-2 border-[#2f6ef4] px-6 text-[18px] font-bold text-[#2f6ef4] hover:bg-[#2f6ef4] hover:text-white transition-colors"
+                >
+                  <Heart
+                    className={`h-6 w-6 ${isWishlisted ? "fill-[#ff4f80] text-[#ff4f80]" : ""
+                      }`}
+                  />
+                  {isWishlisted ? "ลบจากรายการโปรด" : "เพิ่มในรายการโปรด"}
+                </button>
+                <button
+                  onClick={() => {
+                    void addToCart("none");
+                  }}
+                  disabled={loading || isOutOfStock}
+                  className="flex h-14 flex-1 items-center justify-center rounded-xl border-2 border-[#2f6ef4] px-6 text-[18px] font-bold text-[#2f6ef4] disabled:opacity-40 hover:bg-blue-50 transition-colors"
+                >
+                  {loading ? "กำลังเพิ่ม..." : "เพิ่มลงตะกร้า"}
+                </button>
+                <button
+                  onClick={() => {
+                    void addToCart("checkout");
+                  }}
+                  disabled={loading || isOutOfStock}
+                  className={`flex h-14 flex-1 items-center justify-center rounded-xl px-6 text-[18px] font-bold ${isOutOfStock
                     ? "bg-[#d1d5db] text-[#6b7280]"
                     : "bg-[#2f6ef4] text-white hover:bg-[#2558c7] transition-colors"
-                }`}
-              >
-                {isOutOfStock
-                  ? "สินค้าหมด"
-                  : loading
-                    ? "กำลังเพิ่ม..."
-                    : "ซื้อเลย"}
-              </button>
-            </section>
+                    }`}
+                >
+                  {isOutOfStock
+                    ? "สินค้าหมด"
+                    : loading
+                      ? "กำลังเพิ่ม..."
+                      : "ซื้อเลย"}
+                </button>
+              </section>
             </main>
           </div>
         </div>
@@ -577,11 +570,10 @@ export default function ProductPage({ product }: ProductPageProps) {
               className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl border-2 border-[#d1d5db]"
             >
               <Heart
-                className={`h-7 w-7 ${
-                  isWishlisted
-                    ? "fill-[#ff4f80] text-[#ff4f80]"
-                    : "text-[#9ca3af]"
-                }`}
+                className={`h-7 w-7 ${isWishlisted
+                  ? "fill-[#ff4f80] text-[#ff4f80]"
+                  : "text-[#9ca3af]"
+                  }`}
               />
             </button>
 
@@ -600,11 +592,10 @@ export default function ProductPage({ product }: ProductPageProps) {
                 void addToCart("checkout");
               }}
               disabled={loading || isOutOfStock}
-              className={`flex-1 rounded-2xl py-3 text-[18px] font-bold ${
-                isOutOfStock
-                  ? "bg-[#d1d5db] text-[#6b7280]"
-                  : "bg-[#2f6ef4] text-white"
-              }`}
+              className={`flex-1 rounded-2xl py-3 text-[18px] font-bold ${isOutOfStock
+                ? "bg-[#d1d5db] text-[#6b7280]"
+                : "bg-[#2f6ef4] text-white"
+                }`}
             >
               {isOutOfStock
                 ? "สินค้าหมด"
@@ -640,16 +631,16 @@ export const getServerSideProps: GetServerSideProps<ProductPageProps> = async ({
   const trans = raw.translations[0] as ProductLocale | undefined;
   const product = trans
     ? {
-        id: raw.id,
-        name: trans.name,
-        description: trans.description ?? "",
-        material: trans.material ?? null,
-        price: raw.price,
-        salePrice: raw.salePrice,
-        stock: raw.stock,
-        imageUrl: raw.imageUrl,
-        categoryId: raw.categoryId,
-      }
+      id: raw.id,
+      name: trans.name,
+      description: trans.description ?? "",
+      material: trans.material ?? null,
+      price: raw.price,
+      salePrice: raw.salePrice,
+      stock: raw.stock,
+      imageUrl: raw.imageUrl,
+      categoryId: raw.categoryId,
+    }
     : null;
 
   return {

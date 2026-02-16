@@ -532,9 +532,8 @@ export default function CartPage() {
                                   onClick={(event) => {
                                     if (isEditing) event.preventDefault();
                                   }}
-                                  className={`line-clamp-2 text-[16px] font-medium leading-snug text-[#2f2f2f] ${
-                                    isEditing ? "pointer-events-none" : ""
-                                  }`}
+                                  className={`line-clamp-2 text-[16px] font-medium leading-snug text-[#2f2f2f] ${isEditing ? "pointer-events-none" : ""
+                                    }`}
                                 >
                                   {productName}
                                 </Link>
@@ -593,9 +592,8 @@ export default function CartPage() {
                                     type="button"
                                     aria-label={t("cart.removeFromCart")}
                                     onClick={() => removeItem(item.id)}
-                                    className={`ml-1 flex-shrink-0 rounded-full p-1 hover:bg-[#fff1ef] ${
-                                      isEditing ? "" : "hidden"
-                                    }`}
+                                    className={`ml-1 flex-shrink-0 rounded-full p-1 hover:bg-[#fff1ef] ${isEditing ? "" : "hidden"
+                                      }`}
                                   >
                                     <Trash2
                                       className="h-6 w-6 text-[#ff5858]"
@@ -668,8 +666,8 @@ export default function CartPage() {
                           </div>
                           <div className="flex items-center justify-between text-[15px] text-[#6b7280]">
                             <span>{t("cart.shipping")}</span>
-                            <span className="font-semibold text-[#27b05f]">
-                              {t("cart.free")}
+                            <span className="font-medium text-[#6b7280]">
+                              คำนวณที่หน้าชำระเงิน
                             </span>
                           </div>
                           <div className="border-t border-[#e0e0e0] pt-3 mt-3">
@@ -739,8 +737,8 @@ export default function CartPage() {
                     </div>
                     <div className="flex items-center justify-between text-[14px] text-[#6b7280]">
                       <span>{t("cart.shipping")}</span>
-                      <span className="font-medium text-[#27b05f]">
-                        {t("cart.free")}
+                      <span className="font-medium text-[#6b7280]">
+                        คำนวณที่หน้าชำระเงิน
                       </span>
                     </div>
                     <div className="flex items-center justify-between pt-0.5">

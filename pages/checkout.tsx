@@ -550,18 +550,16 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setShippingMethod("standard")}
-                    className={`flex w-full items-center rounded-2xl border px-3 py-3 ${
-                      shippingMethod === "standard"
+                    className={`flex w-full items-center rounded-2xl border px-3 py-3 ${shippingMethod === "standard"
                         ? "border-[#2f6ef4] bg-white"
                         : "border-[#d5d7dd] bg-white"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`mr-2 flex h-7 w-7 items-center justify-center rounded-full border ${
-                        shippingMethod === "standard"
+                      className={`mr-2 flex h-7 w-7 items-center justify-center rounded-full border ${shippingMethod === "standard"
                           ? "border-[#2f6ef4] bg-[#2f6ef4] text-white"
                           : "border-[#d1d5db] text-transparent"
-                      }`}
+                        }`}
                     >
                       <Check className="h-4 w-4" strokeWidth={3} />
                     </span>
@@ -589,18 +587,16 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => setShippingMethod("express")}
-                    className={`flex w-full items-center rounded-2xl border px-3 py-3 ${
-                      shippingMethod === "express"
+                    className={`flex w-full items-center rounded-2xl border px-3 py-3 ${shippingMethod === "express"
                         ? "border-[#2f6ef4] bg-white"
                         : "border-[#d5d7dd] bg-white"
-                    }`}
+                      }`}
                   >
                     <span
-                      className={`mr-2 flex h-7 w-7 items-center justify-center rounded-full border ${
-                        shippingMethod === "express"
+                      className={`mr-2 flex h-7 w-7 items-center justify-center rounded-full border ${shippingMethod === "express"
                           ? "border-[#2f6ef4] bg-[#2f6ef4] text-white"
                           : "border-[#d1d5db] text-transparent"
-                      }`}
+                        }`}
                     >
                       <Check className="h-4 w-4" strokeWidth={3} />
                     </span>
@@ -654,11 +650,10 @@ export default function CheckoutPage() {
                       setPaymentMethod("bank_transfer");
                       setOrderError("");
                     }}
-                    className={`rounded-full px-4 py-2 text-[16px] font-semibold ${
-                      paymentMethod === "bank_transfer"
+                    className={`rounded-full px-4 py-2 text-[16px] font-semibold ${paymentMethod === "bank_transfer"
                         ? "bg-[#dce4ff] text-[#2f6ef4]"
                         : "bg-[#e5e7eb] text-[#1f2937]"
-                    }`}
+                      }`}
                   >
                     {t("checkout.payBank")}
                   </button>
@@ -668,11 +663,10 @@ export default function CheckoutPage() {
                       setPaymentMethod("cod");
                       setOrderError("");
                     }}
-                    className={`rounded-full px-4 py-2 text-[16px] font-semibold ${
-                      paymentMethod === "cod"
+                    className={`rounded-full px-4 py-2 text-[16px] font-semibold ${paymentMethod === "cod"
                         ? "bg-[#dce4ff] text-[#2f6ef4]"
                         : "bg-[#e5e7eb] text-[#1f2937]"
-                    }`}
+                      }`}
                   >
                     <Wallet className="mr-1 inline h-4 w-4" />
                     {t("checkout.payCod")}
@@ -680,25 +674,76 @@ export default function CheckoutPage() {
                 </div>
 
                 {paymentMethod === "bank_transfer" ? (
-                  <div className="mt-3 rounded-xl border border-[#d7dbe5] bg-white p-3">
-                    <label className="mb-1 block text-[16px] font-semibold text-[#1f2937]">
-                      {t("checkout.attachSlipLabel")}
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0] ?? null;
-                        setBankSlipFile(file);
-                        setOrderError("");
-                      }}
-                      className="w-full rounded-lg border border-[#cfd5e3] bg-[#f8fafc] px-3 py-2 text-[14px] text-[#1f2937]"
-                    />
-                    <p className="mt-1 text-[13px] text-[#6b7280]">
-                      {bankSlipFile
-                        ? `ไฟล์ที่เลือก: ${bankSlipFile.name}`
-                        : t("checkout.slipRequired")}
-                    </p>
+                  <div className="mt-3 space-y-3">
+                    {/* QR Code Section */}
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4">
+                      <h3 className="text-lg font-bold text-gray-800 mb-3 text-center">
+                        💳 สแกน QR Code เพื่อชำระเงิน
+                      </h3>
+
+                      <div className="bg-white rounded-xl p-4 shadow-sm">
+                        {/* QR Code Image */}
+                        <div className="flex justify-center mb-4">
+                          <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+                            <img
+                              src="/images/qr-promptpay.png"
+                              alt="PromptPay QR Code"
+                              className="w-48 h-48 object-contain"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                const parent = e.currentTarget.parentElement;
+                                if (parent && !parent.querySelector('.qr-placeholder')) {
+                                  const placeholder = document.createElement('div');
+                                  placeholder.className = 'qr-placeholder w-48 h-48 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm text-center p-4';
+                                  placeholder.innerHTML = 'วาง QR Code ของคุณที่<br/>/public/images/qr-promptpay.png';
+                                  parent.appendChild(placeholder);
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Bank Account Details */}
+                        <div className="space-y-2 text-center border-t border-gray-200 pt-4">
+                          <p className="text-sm text-gray-600">ชื่อบัญชี</p>
+                          <p className="text-base font-bold text-gray-800">ICN FREEZE</p>
+                          <p className="text-sm text-gray-600 mt-2">พร้อมเพย์</p>
+                          <p className="text-base font-semibold text-blue-600">0XX-XXX-XXXX</p>
+                          <p className="text-lg font-bold text-green-600 mt-3">
+                            ยอดชำระ: ฿{grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                          <p className="text-xs text-yellow-800 text-center">
+                            ⚠️ กรุณาโอนเงินตามยอดที่ระบุ และอัปโหลดสลิปด้านล่าง
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Slip Upload Section */}
+                    <div className="rounded-xl border border-[#d7dbe5] bg-white p-3">
+                      <label className="mb-1 block text-[16px] font-semibold text-[#1f2937]">
+                        {t("checkout.attachSlipLabel")}
+                        <span className="ml-2 text-sm font-normal text-gray-500">(บังคับ)</span>
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          setBankSlipFile(file);
+                          setOrderError("");
+                        }}
+                        className="w-full rounded-lg border border-[#cfd5e3] bg-[#f8fafc] px-3 py-2 text-[14px] text-[#1f2937]"
+                      />
+                      <p className="mt-1 text-[13px] text-[#6b7280]">
+                        {bankSlipFile
+                          ? `✓ ไฟล์ที่เลือก: ${bankSlipFile.name}`
+                          : t("checkout.slipRequired")}
+                      </p>
+                    </div>
                   </div>
                 ) : null}
               </section>
@@ -751,7 +796,7 @@ export default function CheckoutPage() {
                         ? "-"
                         : deliveryFee === 0
                           ? "ฟรี"
-                            : toCurrency(deliveryFee, locale)}
+                          : toCurrency(deliveryFee, locale)}
                     </span>
                   </div>
                   {discountAmount > 0 ? (

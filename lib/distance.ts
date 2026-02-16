@@ -21,13 +21,13 @@ export function haversineDistance(
 
 export function getDistanceTier(distanceKm: number) {
   // thresholds updated per request:
-  // - near: 0 - 150 km => +10
-  // - medium: 150 - 400 km => +20
-  // - far: >400 km => +30
+  // - near: 0 - 150 km => +0 (no surcharge)
+  // - medium: 150 - 400 km => +10
+  // - far: >400 km => +20
   const d = Math.max(0, distanceKm);
-  if (d <= 150) return { tier: "near", surcharge: 10 };
-  if (d <= 400) return { tier: "medium", surcharge: 20 };
-  return { tier: "far", surcharge: 30 };
+  if (d <= 150) return { tier: "near", surcharge: 0 };
+  if (d <= 400) return { tier: "medium", surcharge: 10 };
+  return { tier: "far", surcharge: 20 };
 }
 
 export function calculateDeliveryFee(distanceKm: number, opts?: { base?: number; perKm?: number }) {
