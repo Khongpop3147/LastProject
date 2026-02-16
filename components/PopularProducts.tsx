@@ -9,6 +9,38 @@ interface PopularProductsProps {
   products?: (Product & { stock?: number })[];
 }
 
+function extractFirstImage(imageUrl: string | null | undefined): string {
+  if (!imageUrl) return "/images/placeholder.png";
+
+  const raw = imageUrl.trim();
+  if (!raw) return "/images/placeholder.png";
+
+  // Try to parse as JSON array
+  if (raw.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = String(parsed[0] || "").trim();
+        if (first) return first;
+      }
+    } catch {
+      // fallback below
+    }
+  }
+
+  // Try to split by common delimiters
+  const byDelimiter = raw
+    .split(/\r?\n|\s*\|\s*|\s*;\s*|\s*,\s*/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (byDelimiter.length > 0) {
+    return byDelimiter[0];
+  }
+
+  return raw;
+}
+
 export default function PopularProducts({
   products = [],
 }: PopularProductsProps) {
@@ -26,7 +58,7 @@ export default function PopularProducts({
           >
             <div className="mb-2 h-16 w-16 overflow-hidden rounded-full border-2 border-gray-200 bg-gray-50 transition-all duration-300 group-hover:border-blue-500 group-hover:scale-110 group-hover:shadow-lg">
               <Image
-                src={product.imageUrl ?? "/images/placeholder.png"}
+                src={extractFirstImage(product.imageUrl)}
                 alt={product.name}
                 width={64}
                 height={64}
@@ -50,7 +82,7 @@ export default function PopularProducts({
           >
             <div className="relative mb-3 aspect-square w-full flex-shrink-0 overflow-hidden rounded-xl border-2 border-gray-200 bg-gray-50 transition-all duration-300 group-hover:border-blue-500 group-hover:shadow-xl group-hover:-translate-y-1">
               <Image
-                src={product.imageUrl ?? "/images/placeholder.png"}
+                src={extractFirstImage(product.imageUrl)}
                 alt={product.name}
                 fill
                 sizes="(max-width: 1024px) 25vw, 12.5vw"
