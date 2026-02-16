@@ -142,9 +142,18 @@ function CreateProductSection() {
   useEffect(() => {
     // ดึงหมวดหมู่ภาษาไทย (หรือใช้ locale param ตามต้องการ)
     fetch("/api/categories?locale=th")
-      .then((r) => r.json())
-      .then((data) => setCategories(data))
-      .catch(console.error);
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        const cats = Array.isArray(data) ? data : (data.items || []);
+        setCategories(Array.isArray(cats) ? cats : []);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch categories:", err);
+        setCategories([]);
+      });
   }, []);
 
   const onChange = (
@@ -349,16 +358,34 @@ function ManageProductSection() {
   useEffect(() => {
     // โหลดสินค้า
     fetch("/api/products")
-      .then((r) => r.json())
-      .then((data) => setProducts(data.items || data))
-      .catch(console.error)
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        const products = Array.isArray(data) ? data : (data.items || []);
+        setProducts(Array.isArray(products) ? products : []);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch products:", err);
+        setProducts([]);
+      })
       .finally(() => setLoading(false));
 
     // โหลดหมวดหมู่
     fetch("/api/categories")
-      .then((r) => r.json())
-      .then((data) => setCategories(data.items || data))
-      .catch(console.error);
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error: ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        const categories = Array.isArray(data) ? data : (data.items || []);
+        setCategories(Array.isArray(categories) ? categories : []);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch categories:", err);
+        setCategories([]);
+      });
   }, []);
 
   const toggleFeatured = async (id: string, current: boolean) => {

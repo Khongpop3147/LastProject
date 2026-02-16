@@ -123,33 +123,9 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="my-6 flex w-full items-center">
-                <div className="h-px flex-grow bg-gray-300" />
-                <span className="mx-4 flex-shrink-0 text-sm text-gray-500">
-                  {t("auth.login.continueWith")}
-                </span>
-                <div className="h-px flex-grow bg-gray-300" />
-              </div>
-
-              <div className="mb-6 flex justify-center">
-                <button
-                  type="button"
-                  onClick={() => console.log("Line Login")}
-                  className="h-12 w-12 transition-all hover:opacity-80 hover:scale-105 active:scale-95"
-                >
-                  <Image
-                    src="/images/line.png"
-                    alt="Line Login"
-                    width={48}
-                    height={48}
-                    className="h-full w-full rounded-lg object-cover"
-                  />
-                </button>
-              </div>
-
               <button
                 onClick={() => router.push("/register")}
-                className="w-full rounded-2xl border-2 border-[#2f6ef4] py-3 text-[18px] font-semibold text-[#2f6ef4] transition hover:bg-blue-50"
+                className="mt-4 w-full rounded-2xl border-2 border-[#2f6ef4] py-3 text-[18px] font-semibold text-[#2f6ef4] transition hover:bg-blue-50"
               >
                 {t("auth.login.signUpNow")}
               </button>
@@ -158,7 +134,7 @@ export default function LoginPage() {
 
           <div className="relative hidden md:block">
             <Image
-              src="/images/image.png"
+              src="/images/logoelder.png"
               alt="Login Illustration"
               fill
               sizes="(min-width: 1280px) 540px, (min-width: 768px) 45vw, 100vw"

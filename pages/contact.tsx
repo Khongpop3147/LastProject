@@ -26,16 +26,16 @@ type ContactCard = {
 const CONTACT_CARDS: ContactCard[] = [
   {
     titleKey: "contactPage.cardPhone",
-    value: "02-123-4567",
-    href: "tel:021234567",
+    value: "xxxx-xxxx",
+    href: "tel:xxxx-xxxx",
     icon: PhoneCall,
     iconBg: "bg-[#e1f7ec]",
     iconColor: "text-[#22b35f]",
   },
   {
     titleKey: "contactPage.cardLine",
-    value: "@simplyshopthai",
-    href: "https://line.me",
+    value: "@xxxxxx",
+    href: "https://line.me/R/ti/p/%40simplyshopthai",
     icon: MessageCircle,
     iconBg: "bg-[#e1f7ec]",
     iconColor: "text-[#22b35f]",

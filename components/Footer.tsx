@@ -15,7 +15,7 @@ export default function Footer() {
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr_1fr]">
           <section>
             <h2 className="text-[24px] font-extrabold tracking-tight text-white">
-              ICN_FREEZE
+              Marketplace
             </h2>
             <p className="mt-2 max-w-[560px] text-[17px] leading-relaxed text-white/90">
               {t("footer.a11yDesc")}

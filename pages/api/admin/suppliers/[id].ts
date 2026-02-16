@@ -16,7 +16,7 @@ export default async function handler(
   if (errorSent) return;
 
   if (req.method === "PATCH") {
-    const { companyName, productName, stock, unitPrice } = req.body;
+    const { companyName, productName, stock, unitPrice, lineId } = req.body;
     try {
       const updated = await prisma.supplier.update({
         where: { id: supplierId },
@@ -25,6 +25,7 @@ export default async function handler(
           productName,
           stock: Number(stock),
           unitPrice: Number(unitPrice),
+          lineId: lineId ?? undefined,
         },
       });
       return res.status(200).json(updated);

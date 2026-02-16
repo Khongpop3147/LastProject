@@ -22,7 +22,7 @@ export default async function handler(
   }
 
   if (req.method === "POST") {
-    const { companyName, productName, stock, unitPrice } = req.body;
+    const { companyName, productName, stock, unitPrice, lineId } = req.body;
     try {
       const newItem = await prisma.supplier.create({
         data: {
@@ -30,6 +30,7 @@ export default async function handler(
           productName,
           stock: Number(stock),
           unitPrice: Number(unitPrice),
+          lineId: lineId || null,
         },
       });
       return res.status(201).json(newItem);

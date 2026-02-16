@@ -166,7 +166,8 @@ function SearchBar() {
       router.push("/all-products");
       return;
     }
-    router.push(`/all-products?search=${encodeURIComponent(nextQuery)}`);
+    // use `q` param to match pages/all-products.tsx which expects `q`
+    router.push(`/all-products?q=${encodeURIComponent(nextQuery)}`);
   };
 
   return (

@@ -612,27 +612,6 @@ export default function HomePage({
                     <p className="text-white/90 text-base font-semibold mb-3">
                       {t("flash.discountUpTo")}
                     </p>
-
-                    {/* Countdown Timer */}
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-white animate-pulse" />
-                      <div className="flex items-center gap-2">
-                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
-                          <div className="text-2xl font-black text-red-600">{format2(hours)}</div>
-                          <div className="text-xs font-bold text-gray-600 mt-1">{t("flash.hours")}</div>
-                        </div>
-                        <span className="text-xl font-bold text-white">:</span>
-                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
-                          <div className="text-2xl font-black text-red-600">{format2(minutes)}</div>
-                          <div className="text-xs font-bold text-gray-600 mt-1">{t("flash.minutes")}</div>
-                        </div>
-                        <span className="text-xl font-bold text-white">:</span>
-                        <div className="bg-white rounded-xl px-3 py-2 shadow-lg min-w-[60px] text-center">
-                          <div className="text-2xl font-black text-red-600">{format2(seconds)}</div>
-                          <div className="text-xs font-bold text-gray-600 mt-1">{t("flash.seconds")}</div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -656,18 +635,6 @@ export default function HomePage({
               <h2 className="text-lg font-bold text-gray-900">
                 Flash Sale
               </h2>
-              <Clock className="w-4 h-4 text-red-500" />
-              <div className="flex items-center gap-1 text-white text-xs font-bold">
-                <span className="bg-black px-1.5 py-0.5 rounded">
-                  {format2(hours)}
-                </span>
-                <span className="bg-black px-1.5 py-0.5 rounded">
-                  {format2(minutes)}
-                </span>
-                <span className="bg-black px-1.5 py-0.5 rounded">
-                  {format2(seconds)}
-                </span>
-              </div>
             </div>
             <Link href="/sale" className={actionLinkClass}>
               {t("viewAllArrow")}

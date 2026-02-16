@@ -191,7 +191,7 @@ export default function RegisterPage() {
 
           <div className="relative hidden md:block">
             <Image
-              src="/images/1.png"
+              src="/images/logoelder.png"
               alt="Register Illustration"
               fill
               sizes="(min-width: 1280px) 540px, (min-width: 768px) 45vw, 100vw"
