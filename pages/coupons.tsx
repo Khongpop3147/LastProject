@@ -192,11 +192,10 @@ export default function CouponsPage({ coupons }: CouponsPageProps) {
                       <button
                         type="button"
                         onClick={() => handleCopy(coupon.code)}
-                        className={`flex h-10 items-center rounded-xl border px-3 text-[15px] font-semibold ${
-                          isCopied
+                        className={`flex h-10 items-center rounded-xl border px-3 text-[15px] font-semibold ${isCopied
                             ? "border-[#9ad6b3] bg-[#e9f6ef] text-[#1f8b52]"
                             : "border-[#cfd5e3] bg-white text-[#1f2937]"
-                        }`}
+                          }`}
                       >
                         {isCopied ? (
                           <>
@@ -256,14 +255,6 @@ export default function CouponsPage({ coupons }: CouponsPageProps) {
                 </span>
                 เพื่อรับส่วนลด
               </p>
-
-              <button
-                type="button"
-                onClick={() => router.push("/checkout")}
-                className="mt-3 h-11 w-full rounded-xl bg-[#2f6ef4] text-[17px] font-semibold text-white"
-              >
-                {t("coupons.goToCheckout")}
-              </button>
             </section>
           ) : null}
         </main>

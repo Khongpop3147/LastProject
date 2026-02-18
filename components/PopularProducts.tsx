@@ -46,6 +46,14 @@ export default function PopularProducts({
 }: PopularProductsProps) {
   const displayProducts = products.slice(0, 8);
 
+  // Debug: Log product image URLs
+  console.log('PopularProducts - Products:', displayProducts.map(p => ({
+    name: p.name,
+    imageUrl: p.imageUrl,
+    extracted: extractFirstImage(p.imageUrl)
+  })));
+
+
   return (
     <>
       {/* Mobile: รูปวงกลม 2 แถว */}

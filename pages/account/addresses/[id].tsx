@@ -325,17 +325,16 @@ export default function AddressEditorPage() {
                             type: option.type,
                             label:
                               prev.label.trim().length > 0 &&
-                              prev.label !==
+                                prev.label !==
                                 getAddressTypeDefaultLabel(prev.type)
                                 ? prev.label
                                 : getAddressTypeDefaultLabel(option.type),
                           }))
                         }
-                        className={`rounded-2xl border p-3 text-center ${
-                          active
+                        className={`rounded-2xl border p-3 text-center ${active
                             ? "border-teal-600 bg-teal-50 text-teal-700"
                             : "border-[#cfd5df] bg-white text-[#6b7280]"
-                        }`}
+                          }`}
                       >
                         <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center">
                           <Icon className="h-7 w-7" strokeWidth={2.25} />
@@ -382,8 +381,10 @@ export default function AddressEditorPage() {
                   </label>
                   <input
                     type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={form.phone}
-                    onChange={(e) => updateField("phone", e.target.value)}
+                    onChange={(e) => updateField("phone", e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="กรอกเบอร์โทรศัพท์"
                     className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                   />
@@ -458,8 +459,9 @@ export default function AddressEditorPage() {
                   <input
                     type="text"
                     inputMode="numeric"
+                    pattern="[0-9]*"
                     value={form.postalCode}
-                    onChange={(e) => updateField("postalCode", e.target.value)}
+                    onChange={(e) => updateField("postalCode", e.target.value.replace(/[^0-9]/g, ""))}
                     placeholder="กรอกรหัสไปรษณีย์"
                     className="h-14 w-full rounded-2xl border border-[#d9dee7] bg-[#eef2f8] px-4 text-[17px] outline-none placeholder:text-[#8f99ac] focus:border-teal-600"
                   />
