@@ -2,12 +2,21 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimiter";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   if (req.method !== "POST") return res.status(405).end();
+
+  // Rate limit: 5 ครั้ง / 15 นาที ต่อ IP
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`forgot-password:${ip}`, { limit: 5, windowSec: 15 * 60 });
+  if (!rl.allowed) {
+    res.setHeader("Retry-After", String(Math.ceil((rl.resetAt - Date.now()) / 1000)));
+    return res.status(429).json({ error: "Too many requests. Please try again later." });
+  }
 
   const { email } = req.body;
   if (!email || typeof email !== "string") {

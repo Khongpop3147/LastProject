@@ -14,6 +14,11 @@ export default async function handler(
   if (!token || !newPassword)
     return res.status(400).json({ error: "Missing token or password" });
 
+  // ตรวจสอบความแข็งแรงของรหัสผ่าน
+  if (typeof newPassword !== "string" || newPassword.length < 8) {
+    return res.status(400).json({ error: "รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร" });
+  }
+
   // หาตัว token ใน DB พร้อม user ที่เกี่ยวข้อง
   const resetToken = await prisma.passwordResetToken.findUnique({
     where: { token },

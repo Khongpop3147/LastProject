@@ -63,26 +63,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(
-    async (email: string, password: string, remember: boolean) => {
+    async (email: string, password: string, _remember: boolean) => {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // ส่ง credentials เพื่อให้ browser รับ HttpOnly cookie จาก server
+        credentials: "include",
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
         const { error } = await res.json();
         throw new Error(error || "Invalid credentials");
       }
-      const { user: u, token: tkn } = await res.json();
+      const { user: u } = await res.json();
 
-      if (remember) {
-        Cookies.set("token", tkn, { expires: 7 });
-      } else {
-        Cookies.set("token", tkn);
-      }
-
+      // token ถูก set เป็น HttpOnly cookie โดย server แล้ว
+      // ดึง token จาก cookie เพื่อ set ใน state (สำหรับ API calls ที่ใช้ Authorization header)
+      const cookieToken = Cookies.get("token") ?? null;
       setUser(u);
-      setToken(tkn);
+      setToken(cookieToken);
       router.push("/");
     },
     [router],

@@ -12,11 +12,25 @@ function getJwtSecret(): string {
   return secret;
 }
 
+/**
+ * ตรวจสอบความแข็งแรงของรหัสผ่าน
+ * - ความยาวขั้นต่ำ 8 ตัวอักษร
+ */
+function validatePassword(password: string): void {
+  if (!password || typeof password !== "string") {
+    throw new Error("กรุณากรอกรหัสผ่าน");
+  }
+  if (password.length < 8) {
+    throw new Error("รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร");
+  }
+}
+
 export async function register(
   name: string,
   email: string,
   password: string
 ): Promise<Omit<User, "passwordHash">> {
+  validatePassword(password);
   const existing = await userModel.findUserByEmail(email);
   if (existing) throw new Error("Email already registered");
   const hash = await bcrypt.hash(password, 10);
@@ -29,14 +43,18 @@ export async function register(
 export async function login(
   email: string,
   password: string
-): Promise<{ user: Omit<User, "passwordHash">; token: string }> {
+): Promise<{ user: Omit<User, "passwordHash"> }> {
   const user = await userModel.findUserByEmail(email);
   if (!user) throw new Error("Invalid credentials");
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) throw new Error("Invalid credentials");
-  const token = jwt.sign({ userId: user.id }, getJwtSecret(), {
-    expiresIn: "7d",
-  });
   const { passwordHash, ...safeUser } = user;
-  return { user: safeUser, token };
+  return { user: safeUser };
+}
+
+/**
+ * สร้าง JWT token สำหรับ user
+ */
+export function createToken(userId: string): string {
+  return jwt.sign({ userId }, getJwtSecret(), { expiresIn: "7d" });
 }
